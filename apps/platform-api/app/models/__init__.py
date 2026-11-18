@@ -1,85 +1,120 @@
-from app.models.warehouse import Warehouse
-from app.models.item import Item
-from app.models.inventory import Inventory
-from app.models.order import HistoricalOrder
-from app.models.route import RouteSchedule, RouteStop
-from app.models.user import User
-from app.models.shipment import Shipment
-from app.models.alert import Alert
-from app.models.replenishment import ReplenishmentPlan
-from app.models.organization import Organization
-from app.models.membership import OrganizationMembership
-from app.models.provider_key import ProviderApiKey
-from app.models.fleet_asset import FleetAsset
-from app.models.usage_meter import OrganizationUsageCounter
-from app.models.audit_event import AuditEvent
-from app.models.route_history import RouteOptimizationRun
-from app.models.dock_appointment import DockAppointment
-from app.models.freight_invoice import FreightInvoice
-from app.models.feedback import Feedback
-from app.models.metered_event import MeteredEvent
-from app.models.billing_counter import BillingCounter
-from app.models.collection_account import CollectionAccount
-from app.models.invoice_line_item import InvoiceLineItem
-from app.models.notification import Notification
-from app.models.subscription_invoice import SubscriptionInvoice
-from app.models.trial_record import TrialRecord
-from app.models.payment_receipt import PaymentReceipt
-from app.models.receipt_extraction import ReceiptExtraction
-from app.models.wallet_credit import WalletCredit
-from app.models.sms_message import SmsMessage
-from app.models.trusted_payer import TrustedPayer
-from app.models.dispute_thread import DisputeThread
-from app.models.sender_fraud_flag import SenderFraudFlag
-from app.models.activation_state import OrganizationActivationState
-from app.models.threshold_crossing import ThresholdCrossing
-from app.models.driver import Driver
-from app.models.cash_collection import CashCollection
-from app.models.organization_invitation import OrganizationInvitation
-from app.models.dispatch import Customer, DeliveryOrder, DeliveryProof, DispatchRun
+"""SQLAlchemy model registry with lazy imports.
 
-__all__ = [
-    'Alert',
-    'AuditEvent',
-    'BillingCounter',
-    'CashCollection',
-    'CollectionAccount',
-    'Customer',
-    'DeliveryOrder',
-    'DeliveryProof',
-    'DisputeThread',
-    'DispatchRun',
-    'DockAppointment',
-    'Driver',
-    'Feedback',
-    'FleetAsset',
-    'FreightInvoice',
-    'HistoricalOrder',
-    'Inventory',
-    'InvoiceLineItem',
-    'Item',
-    'MeteredEvent',
-    'Notification',
-    'Organization',
-    'OrganizationActivationState',
-    'OrganizationInvitation',
-    'OrganizationMembership',
-    'OrganizationUsageCounter',
-    'PaymentReceipt',
-    'ProviderApiKey',
-    'ReceiptExtraction',
-    'ReplenishmentPlan',
-    'RouteOptimizationRun',
-    'RouteSchedule',
-    'RouteStop',
-    'SenderFraudFlag',
-    'Shipment',
-    'SmsMessage',
-    'SubscriptionInvoice',
-    'ThresholdCrossing',
-    'TrialRecord',
-    'TrustedPayer',
-    'User',
-    'WalletCredit',
-    'Warehouse',
-]
+Importing ``app.models.user`` no longer registers every unrelated table. This
+keeps Cloudflare's grouped API isolates below their memory limit. The regular
+application, tests, and Alembic still work because they load model modules when
+the relevant routers or ``load_all_models`` require them.
+"""
+
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+_EXPORTS = {
+    'Alert': 'alert',
+    'AuditEvent': 'audit_event',
+    'BillingCounter': 'billing_counter',
+    'CashCollection': 'cash_collection',
+    'CollectionAccount': 'collection_account',
+    'Customer': 'dispatch',
+    'DeliveryOrder': 'dispatch',
+    'DeliveryProof': 'dispatch',
+    'DisputeThread': 'dispute_thread',
+    'DispatchRun': 'dispatch',
+    'DockAppointment': 'dock_appointment',
+    'Driver': 'driver',
+    'Feedback': 'feedback',
+    'FleetAsset': 'fleet_asset',
+    'FreightInvoice': 'freight_invoice',
+    'HistoricalOrder': 'order',
+    'Inventory': 'inventory',
+    'InvoiceLineItem': 'invoice_line_item',
+    'Item': 'item',
+    'MeteredEvent': 'metered_event',
+    'Notification': 'notification',
+    'Organization': 'organization',
+    'OrganizationActivationState': 'activation_state',
+    'OrganizationInvitation': 'organization_invitation',
+    'OrganizationMembership': 'membership',
+    'OrganizationUsageCounter': 'usage_meter',
+    'PaymentReceipt': 'payment_receipt',
+    'ProviderApiKey': 'provider_key',
+    'ReceiptExtraction': 'receipt_extraction',
+    'ReplenishmentPlan': 'replenishment',
+    'RouteOptimizationRun': 'route_history',
+    'RouteSchedule': 'route',
+    'RouteStop': 'route',
+    'SenderFraudFlag': 'sender_fraud_flag',
+    'Shipment': 'shipment',
+    'SmsMessage': 'sms_message',
+    'SubscriptionInvoice': 'subscription_invoice',
+    'ThresholdCrossing': 'threshold_crossing',
+    'TrialRecord': 'trial_record',
+    'TrustedPayer': 'trusted_payer',
+    'User': 'user',
+    'WalletCredit': 'wallet_credit',
+    'Warehouse': 'warehouse',
+}
+_MODULES = {
+    'activation_state',
+    'alert',
+    'audit_event',
+    'billing_counter',
+    'cash_collection',
+    'collection_account',
+    'common',
+    'dispatch',
+    'dispute_thread',
+    'dock_appointment',
+    'driver',
+    'feedback',
+    'fleet_asset',
+    'freight_invoice',
+    'inventory',
+    'invoice_line_item',
+    'item',
+    'membership',
+    'metered_event',
+    'notification',
+    'order',
+    'organization',
+    'organization_invitation',
+    'payment_receipt',
+    'provider_key',
+    'receipt_extraction',
+    'replenishment',
+    'route',
+    'route_history',
+    'sender_fraud_flag',
+    'shipment',
+    'sms_message',
+    'subscription_invoice',
+    'threshold_crossing',
+    'trial_record',
+    'trusted_payer',
+    'usage_meter',
+    'user',
+    'wallet_credit',
+    'warehouse',
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _MODULES:
+        value = import_module(f'{__name__}.{name}')
+    elif name in _EXPORTS:
+        value = getattr(import_module(f'{__name__}.{_EXPORTS[name]}'), name)
+    else:
+        raise AttributeError(name)
+    globals()[name] = value
+    return value
+
+
+def load_all_models() -> None:
+    """Register every ORM table on ``Base.metadata``."""
+    for module_name in sorted(_MODULES - {'common'}):
+        import_module(f'{__name__}.{module_name}')
+
+
+__all__ = [*_EXPORTS, 'load_all_models']

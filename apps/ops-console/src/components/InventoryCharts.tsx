@@ -2,10 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,14 +12,12 @@ import {
 import { Panel } from './ui/Panel';
 import type { InventoryOverviewRow } from '../types/api';
 
-const COLORS = ['#0ea5e9', '#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
-
-const axisStyle = { fill: '#94a3b8', fontSize: 12 };
+const axisStyle = { fill: '#63766f', fontSize: 11 };
 const tooltipStyle = {
-  backgroundColor: '#020817',
-  border: '1px solid rgba(148, 163, 184, 0.22)',
-  borderRadius: '16px',
-  color: '#e2e8f0',
+  backgroundColor: '#ffffff',
+  border: '1px solid #d7dfdc',
+  borderRadius: '4px',
+  color: '#20372f',
 };
 
 type Props = {
@@ -31,7 +26,7 @@ type Props = {
 
 export function InventoryCharts({ data }: Props) {
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Panel
         eyebrow="Inventory intelligence"
         title="Stock by Warehouse"
@@ -40,23 +35,23 @@ export function InventoryCharts({ data }: Props) {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} barCategoryGap="18%">
-              <CartesianGrid stroke="rgba(148, 163, 184, 0.08)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="#e6ebe8" strokeDasharray="2 3" />
               <XAxis dataKey="warehouse_code" tick={axisStyle} axisLine={false} tickLine={false} />
               <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(148, 163, 184, 0.06)' }} />
-              <Legend wrapperStyle={{ color: '#cbd5e1', fontSize: 12 }} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f1f5f3' }} />
+              <Legend wrapperStyle={{ color: '#40534c', fontSize: 11 }} />
               <Bar
                 dataKey="total_quantity_on_hand"
                 name="Quantity On Hand"
-                fill="#0ea5e9"
-                radius={[6, 6, 0, 0]}
+                fill="#087f72"
+                radius={[2, 2, 0, 0]}
                 animationDuration={1000}
               />
               <Bar
                 dataKey="total_safety_stock"
                 name="Safety Stock"
-                fill="#6366f1"
-                radius={[6, 6, 0, 0]}
+                fill="#c7a04c"
+                radius={[2, 2, 0, 0]}
                 animationDuration={1200}
               />
             </BarChart>
@@ -71,24 +66,19 @@ export function InventoryCharts({ data }: Props) {
       >
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
+            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
+              <CartesianGrid stroke="#e6ebe8" strokeDasharray="2 3" horizontal={false} />
+              <XAxis type="number" domain={[0, 100]} unit="%" tick={axisStyle} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="warehouse_code" width={72} tick={axisStyle} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f1f5f3' }} />
+              <Bar
                 dataKey="utilization_percent"
-                nameKey="warehouse_code"
-                innerRadius={55}
-                outerRadius={100}
-                paddingAngle={3}
-                label={(entry) => `${entry.warehouse_code}: ${entry.utilization_percent}%`}
-                animationDuration={1200}
-                animationEasing="ease-out"
-              >
-                {data.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={tooltipStyle} />
-            </PieChart>
+                name="Utilization percent"
+                fill="#087f72"
+                radius={[0, 2, 2, 0]}
+                animationDuration={800}
+              />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </Panel>

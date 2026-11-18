@@ -3,31 +3,17 @@
 @tailwind utilities;
 
 :root {
-  /* Shared layout bounds for the site shell. */
-  color-scheme: dark;
+  color-scheme: light;
   --site-max-width: 1380px;
-
-  /* Single accent — cyan. Violet/amber/emerald accents removed (calm pass). */
-  --accent-cyan: 103 232 249;
-
-  /* Design tokens — shared with the ops console design system. */
-  --fp-black: #0a0f16;
-  --fp-surface: #0d141d;
-  --fp-elevated: #111a26;
-  --fp-border: #1f2a37;
-  --fp-muted: #5b6b7d;
-  --fp-secondary: #8fa1b3;
-  --fp-primary: #dbe4ee;
-  --fp-accent: #38bdf8;
-  --fp-accent-hover: #7dd3fc;
-
-  --fp-radius-sm: 6px;
-  --fp-radius-md: 10px;
-  --fp-radius-lg: 14px;
-  --fp-radius-xl: 16px;
-  --fp-radius-2xl: 20px;
-  --fp-radius-3xl: 24px;
-
+  --fp-black: #f4f6f5;
+  --fp-surface: #ffffff;
+  --fp-elevated: #f8faf9;
+  --fp-border: #d7dfdc;
+  --fp-muted: #63716c;
+  --fp-secondary: #51615b;
+  --fp-primary: #202b36;
+  --fp-accent: #087f72;
+  --fp-accent-hover: #06675d;
   --fp-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -37,10 +23,8 @@ html {
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(56, 189, 248, 0.07), transparent 45%),
-    #0a0f16;
-  color: white;
+  background: #f4f6f5;
+  color: #202b36;
   overflow-x: hidden;
 }
 
@@ -53,8 +37,8 @@ textarea {
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.24);
-  color: white;
+  background: #ccebe5;
+  color: #092f2b;
 }
 
 @layer components {
@@ -67,20 +51,21 @@ textarea {
 
   .kicker {
     @apply text-[11px] font-medium uppercase tracking-wide;
-    color: rgb(148 163 184 / 0.9);
+    color: #087f72;
   }
 
   .glass-panel {
-    @apply relative overflow-hidden rounded-2xl;
-    border: 1px solid rgb(255 255 255 / 0.08);
-    background: rgb(255 255 255 / 0.03);
+    @apply relative overflow-hidden;
+    border: 1px solid #d7dfdc;
+    background: #ffffff;
+    border-radius: 6px;
   }
 
   .pill {
-    @apply inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs uppercase tracking-wide;
-    border: 1px solid rgb(255 255 255 / 0.12);
-    background: rgb(255 255 255 / 0.05);
-    color: rgb(255 255 255 / 0.6);
+    @apply inline-flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wide;
+    border: 1px solid #d7dfdc;
+    background: #f5f8f6;
+    color: #52665e;
   }
 
   .balanced-headline {
@@ -89,44 +74,56 @@ textarea {
 
   .lede {
     max-width: 42rem;
-    color: rgb(255 255 255 / 0.68);
-    line-height: 1.9;
+    color: #5b6d66;
+    line-height: 1.7;
     text-wrap: pretty;
   }
 
   /* ── WCAG-compliant text utilities ── */
   .text-muted {
-    color: rgb(255 255 255 / 0.68);
+    color: #52665e;
   }
   .text-subtle {
-    color: rgb(255 255 255 / 0.60);
+    color: #5b6d66;
   }
   .text-faint {
-    color: rgb(255 255 255 / 0.52);
+    color: #63766f;
   }
 
   /* ── Section divider ── */
   .divider-glow {
     @apply mx-auto h-px w-full max-w-3xl;
-    background: linear-gradient(to right, transparent, rgb(148 163 184 / 0.25), transparent);
+    background: #d7dfdc;
   }
 
   /* ── Skip to content ── */
   .skip-to-content {
-    @apply fixed left-4 top-4 z-[100] -translate-y-20 rounded-lg bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition focus:translate-y-0;
+    @apply fixed left-4 top-4 z-[100] -translate-y-20 bg-[#087f72] px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus:translate-y-0;
   }
 
   /* ── Back-to-top button ── */
   .back-to-top {
-    @apply fixed bottom-6 right-6 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white/70 transition hover:border-white/25 hover:text-white;
+    @apply fixed bottom-6 right-6 z-50 inline-flex h-11 w-11 items-center justify-center border border-[#d7dfdc] bg-white text-[#40534c] transition hover:bg-[#eef3f0];
+  }
+
+  .fp-site-input {
+    @apply w-full border border-[#cfd9d5] bg-white px-3 py-2.5 text-sm text-[#202b36] outline-none transition placeholder:text-[#63766f] focus:border-[#087f72] focus:ring-2 focus:ring-[#087f72]/15;
+    border-radius: 4px;
   }
 }
 
 /* ── Visible focus ring for keyboard users ── */
 :focus-visible {
-  outline: 2px solid rgba(56, 189, 248, 0.7);
+  outline: 2px solid #087f72;
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 2px;
+}
+
+/* Horizontal table scrolling stays inside its own region, never the page. */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }
 
 /* "How it works" expand — CSS grid-rows reveal, NOT framer-motion

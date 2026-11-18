@@ -19,7 +19,8 @@ from starlette.responses import JSONResponse, Response
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.observability import app_metrics
-from app.db.session import engine
+from app.db.migration_status import migration_readiness
+from app.db.session import get_engine
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
 logger = logging.getLogger('app.http')
@@ -131,9 +132,11 @@ def health() -> dict:
     connection detail (host, user, or which parameter is wrong) reaches an
     anonymous caller.
     """
+    schema = {'status': 'unavailable', 'current': None, 'expected': None}
     try:
-        with engine.connect() as conn:
+        with get_engine().connect() as conn:
             conn.execute(text('SELECT 1'))
+            schema = migration_readiness(conn)
         db_status = 'ok'
     except Exception as exc:
         db_status = 'unavailable'
@@ -146,4 +149,10 @@ def health() -> dict:
             type(exc).__name__,
             redacted[:300],
         )
-    return {'status': 'ok' if db_status == 'ok' else 'degraded', 'db': db_status}
+    return {
+        'status': 'ok' if db_status == 'ok' else 'degraded',
+        'db': db_status,
+        'schema': schema['status'],
+        'revision': schema['current'],
+        'expected_revision': schema['expected'],
+    }

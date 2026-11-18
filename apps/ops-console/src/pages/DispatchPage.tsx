@@ -25,8 +25,7 @@ import {
 } from '../services/dispatchApi';
 import type { Customer, DeliveryOrder, DispatchRun, Driver } from '../types/api';
 
-const FIELD =
-  'min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400';
+const FIELD = 'fp-input min-h-9';
 
 function isoOrUndefined(value: string): string | undefined {
   return value ? new Date(value).toISOString() : undefined;
@@ -362,29 +361,29 @@ export function DispatchPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Customer dispatch"
-        title="Plan customer stops, hand off the manifest, close the cash"
-        description="This is the private-fleet loop: a customer stop with a time window, a signed driver link, proof of delivery, and a day-end cash position."
+        title="Customer dispatch"
+        description="Plan customer stops, hand off the driver manifest, and close the day's cash."
       />
 
-      {error ? <p className="rounded-lg border border-rose-500/25 bg-rose-950/25 p-3 text-sm text-rose-200">{error}</p> : null}
-      {notice ? <p className="rounded-lg border border-emerald-500/25 bg-emerald-950/25 p-3 text-sm text-emerald-200">{notice}</p> : null}
+      {error ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm text-[#8f302a]">{error}</p> : null}
+      {notice ? <p role="status" className="border border-[#b9dcd1] bg-[#f3faf7] p-3 text-sm text-[#14745f]">{notice}</p> : null}
       {driverLink ? (
-        <div className="rounded-lg border border-sky-500/25 bg-sky-950/25 p-4">
-          <p className="text-sm font-semibold text-sky-100">Driver link created</p>
-          <code className="mt-2 block break-all rounded bg-slate-950/60 p-3 text-xs text-sky-100">{driverLink}</code>
+        <div className="border border-[#bfd8e5] bg-[#f3f9fc] p-3">
+          <p className="text-xs font-semibold text-[#17679b]">Driver link created</p>
+          <code className="mt-2 block break-all border border-[#d7dfdc] bg-white p-2 text-[11px] text-[#25483f]">{driverLink}</code>
         </div>
       ) : null}
       {customerTrackingLink ? (
-        <div className="rounded-lg border border-emerald-500/25 bg-emerald-950/25 p-4">
-          <p className="text-sm font-semibold text-emerald-100">Customer tracking link created</p>
-          <code className="mt-2 block break-all rounded bg-slate-950/60 p-3 text-xs text-emerald-100">{customerTrackingLink}</code>
+        <div className="border border-[#b9dcd1] bg-[#f3faf7] p-3">
+          <p className="text-xs font-semibold text-[#14745f]">Customer tracking link created</p>
+          <code className="mt-2 block break-all border border-[#d7dfdc] bg-white p-2 text-[11px] text-[#25483f]">{customerTrackingLink}</code>
         </div>
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-3">
         <Panel eyebrow="Customers" title="Customer" description="A customer is a named, mapped delivery location.">
           <form className="grid gap-3" onSubmit={onCreateCustomer}>
             <input className={FIELD} placeholder="Customer code" required value={customerForm.code} onChange={(event) => setCustomerForm({ ...customerForm, code: event.target.value })} />
@@ -395,7 +394,7 @@ export function DispatchPage() {
               <input className={FIELD} aria-label="Latitude" value={customerForm.latitude} onChange={(event) => setCustomerForm({ ...customerForm, latitude: event.target.value })} />
               <input className={FIELD} aria-label="Longitude" value={customerForm.longitude} onChange={(event) => setCustomerForm({ ...customerForm, longitude: event.target.value })} />
             </div>
-            <button className="rounded-lg bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400">Add customer</button>
+            <button className="min-h-9 bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">Add customer</button>
           </form>
         </Panel>
 
@@ -415,12 +414,12 @@ export function DispatchPage() {
               <input className={FIELD} aria-label="Service minutes" type="number" min="0" value={orderForm.service_minutes} onChange={(event) => setOrderForm({ ...orderForm, service_minutes: event.target.value })} />
             </div>
             <div className="grid gap-2">
-              <label className="text-xs text-slate-400">Window starts</label>
+              <label className="text-xs text-[#63766f]">Window starts</label>
               <input className={FIELD} type="datetime-local" value={orderForm.window_start} onChange={(event) => setOrderForm({ ...orderForm, window_start: event.target.value })} />
-              <label className="text-xs text-slate-400">Window ends</label>
+              <label className="text-xs text-[#63766f]">Window ends</label>
               <input className={FIELD} type="datetime-local" value={orderForm.window_end} onChange={(event) => setOrderForm({ ...orderForm, window_end: event.target.value })} />
             </div>
-            <button className="rounded-lg bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400">Add delivery order</button>
+            <button className="min-h-9 bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">Add delivery order</button>
           </form>
         </Panel>
 
@@ -429,7 +428,7 @@ export function DispatchPage() {
             <input className={FIELD} placeholder="Driver full name" required value={driverForm.full_name} onChange={(event) => setDriverForm({ ...driverForm, full_name: event.target.value })} />
             <input className={FIELD} placeholder="Phone" required value={driverForm.phone} onChange={(event) => setDriverForm({ ...driverForm, phone: event.target.value })} />
             <input className={FIELD} placeholder="Vehicle plate (optional)" value={driverForm.vehicle_plate} onChange={(event) => setDriverForm({ ...driverForm, vehicle_plate: event.target.value })} />
-            <button className="rounded-lg bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400">Add driver</button>
+            <button className="min-h-9 bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">Add driver</button>
           </form>
         </Panel>
       </div>
@@ -440,12 +439,12 @@ export function DispatchPage() {
         description="Select planned orders. The planner is a transparent time-window heuristic, not a promise of global optimality."
       >
         <form className="grid gap-4" onSubmit={onPlan}>
-          <div className="inline-flex w-fit rounded-lg border border-slate-700 p-1" role="group" aria-label="Planning mode">
+          <div className="inline-flex w-fit border border-[#d7dfdc] bg-[#f5f8f6] p-0.5" role="group" aria-label="Planning mode">
             <button
               type="button"
               aria-pressed={planMode === 'single'}
               onClick={() => setPlanMode('single')}
-              className={`rounded-md px-3 py-2 text-xs font-semibold ${planMode === 'single' ? 'bg-sky-500 text-slate-950' : 'text-slate-300'}`}
+              className={`min-h-8 px-3 text-xs font-semibold ${planMode === 'single' ? 'bg-white text-[#087f72] shadow-sm' : 'text-[#63766f]'}`}
             >
               Single vehicle
             </button>
@@ -453,7 +452,7 @@ export function DispatchPage() {
               type="button"
               aria-pressed={planMode === 'fleet'}
               onClick={() => setPlanMode('fleet')}
-              className={`rounded-md px-3 py-2 text-xs font-semibold ${planMode === 'fleet' ? 'bg-sky-500 text-slate-950' : 'text-slate-300'}`}
+              className={`min-h-8 px-3 text-xs font-semibold ${planMode === 'fleet' ? 'bg-white text-[#087f72] shadow-sm' : 'text-[#63766f]'}`}
             >
               Fleet plan
             </button>
@@ -477,16 +476,16 @@ export function DispatchPage() {
             <input className={FIELD} aria-label={planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'} type="number" min="1" max="100" value={planForm.max_stops} onChange={(event) => setPlanForm({ ...planForm, max_stops: event.target.value })} />
           </div>
           {planMode === 'fleet' ? (
-            <div className="space-y-2 rounded-lg border border-slate-800 p-3">
-              <p className="text-sm font-semibold text-slate-200">Drivers and vehicle capacity</p>
+            <div className="space-y-2 border border-[#d7dfdc] p-3">
+              <p className="text-xs font-semibold text-[#20372f]">Drivers and vehicle capacity</p>
               {drivers.length === 0 ? (
-                <p className="text-sm text-slate-500">No active drivers available.</p>
+                <p className="text-xs text-[#63766f]">No active drivers available.</p>
               ) : null}
               {drivers.map((driver) => {
                 const selected = fleetVehicleIds.includes(driver.id);
                 return (
-                  <div key={driver.id} className="grid items-center gap-3 rounded-lg border border-slate-800/70 px-3 py-2 sm:grid-cols-[1fr_160px]">
-                    <label className="flex items-center gap-3 text-sm text-slate-300">
+                  <div key={driver.id} className="grid items-center gap-3 border-t border-[#e6ebe8] px-1 py-2 first:border-t-0 sm:grid-cols-[1fr_160px]">
+                    <label className="flex items-center gap-3 text-xs text-[#40534c]">
                       <input
                         type="checkbox"
                         checked={selected}
@@ -519,12 +518,12 @@ export function DispatchPage() {
               })}
             </div>
           ) : null}
-          <div className="rounded-lg border border-slate-800 p-3">
-            <p className="text-sm font-semibold text-slate-200">Planned orders</p>
-            {plannedOrders.length === 0 ? <p className="mt-2 text-sm text-slate-500">No planned orders yet.</p> : null}
+          <div className="border border-[#d7dfdc] p-3">
+            <p className="text-xs font-semibold text-[#20372f]">Planned orders</p>
+            {plannedOrders.length === 0 ? <p className="mt-2 text-xs text-[#63766f]">No planned orders yet.</p> : null}
             <div className="mt-2 grid gap-2">
               {plannedOrders.map((order) => (
-                <label key={order.id} className="flex items-center gap-3 rounded border border-slate-800/70 px-3 py-2 text-sm text-slate-300">
+                <label key={order.id} className="flex items-center gap-3 border-t border-[#e6ebe8] px-1 py-2 text-xs text-[#40534c] first:border-t-0">
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(order.id)}
@@ -535,7 +534,7 @@ export function DispatchPage() {
               ))}
             </div>
           </div>
-          <button className="w-fit rounded-lg bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400">
+          <button className="min-h-9 w-fit bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">
             {planMode === 'fleet' ? 'Plan across selected vehicles' : 'Plan selected orders'}
           </button>
         </form>
@@ -544,45 +543,45 @@ export function DispatchPage() {
       <Panel eyebrow="Runs" title="Dispatch runs" description="Open a driver link, monitor stop status, or close the day’s cash.">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 text-xs" aria-live="polite">
-            <span className="flex items-center gap-2 text-slate-400">
-              <span className={`h-2 w-2 rounded-full ${liveUpdatedAt ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+            <span className="flex items-center gap-2 text-[#63766f]">
+              <span className={`h-2 w-2 rounded-full ${liveUpdatedAt ? 'bg-[#16856b]' : 'bg-[#a9bbb4]'}`} />
               {liveUpdatedAt ? 'Live dispatch sync' : 'Waiting for live dispatch updates'}
             </span>
             {liveUpdatedAt ? (
-              <span className="text-slate-500">
+              <span className="text-[#63766f]">
                 {new Date(liveUpdatedAt).toLocaleTimeString()}
               </span>
             ) : null}
           </div>
-          {runs.length === 0 ? <p className="text-sm text-slate-500">No dispatch runs yet.</p> : null}
+          {runs.length === 0 ? <p className="text-xs text-[#63766f]">No dispatch runs yet.</p> : null}
           {runs.map((run) => (
-            <article key={run.id} className="rounded-xl border border-slate-800 p-4">
+            <article key={run.id} className="border border-[#d7dfdc] p-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-slate-100">{run.route_name}</h3>
+                    <h3 className="text-sm font-semibold text-[#20372f]">{run.route_name}</h3>
                     <StatusBadge label={run.status} tone={run.status === 'closed' ? 'success' : 'info'} />
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-0.5 text-[11px] text-[#63766f]">
                     {run.plan_date} · {run.total_distance_km} km · {run.estimated_duration_min} min · {run.expected_cash_etb} ETB expected
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void onToggleRun(run.id)} className="rounded-full border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-300">
+                  <button type="button" onClick={() => void onToggleRun(run.id)} className="min-h-8 border border-[#cfd9d5] bg-white px-2.5 text-[11px] font-semibold text-[#40534c]">
                     {expandedRunId === run.id ? 'Hide stops' : 'View stops'}
                   </button>
-                  {run.driver_id ? <button type="button" onClick={() => void onDriverLink(run.id)} className="rounded-full border border-sky-500/30 px-3 py-2 text-xs font-semibold text-sky-200">Create driver link</button> : null}
-                  {run.status !== 'closed' && user?.role === 'admin' ? <button type="button" onClick={() => openCashClose(run)} className="rounded-full border border-emerald-500/30 px-3 py-2 text-xs font-semibold text-emerald-200">Close cash</button> : null}
+                  {run.driver_id ? <button type="button" onClick={() => void onDriverLink(run.id)} className="min-h-8 border border-[#bfd8e5] bg-white px-2.5 text-[11px] font-semibold text-[#17679b]">Create driver link</button> : null}
+                  {run.status !== 'closed' && user?.role === 'admin' ? <button type="button" onClick={() => openCashClose(run)} className="min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f]">Close cash</button> : null}
                 </div>
               </div>
               {expandedRunId === run.id ? (
-                <div className="mt-3 space-y-2 border-t border-slate-800/70 pt-3">
-                  {expandedLoading ? <p className="text-sm text-slate-500">Loading stops…</p> : null}
+                <div className="mt-3 space-y-2 border-t border-[#e6ebe8] pt-3">
+                  {expandedLoading ? <p className="text-xs text-[#63766f]">Loading stops…</p> : null}
                   {expandedRun?.stops?.map((stop) => (
-                    <div key={stop.order_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800/60 px-3 py-2">
+                    <div key={stop.order_id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e6ebe8] px-1 py-2 first:border-t-0">
                       <div>
-                        <p className="text-sm text-slate-200">#{stop.sequence} · {stop.order_no} · {stop.customer_name}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-[#20372f]">#{stop.sequence} · {stop.order_no} · {stop.customer_name}</p>
+                        <p className="text-[11px] text-[#63766f]">
                           {stop.status} · {stop.collected_cash_etb} ETB collected · window{' '}
                           {stop.window_start ? new Date(stop.window_start).toLocaleTimeString() : '—'}
                           {' – '}
@@ -590,24 +589,24 @@ export function DispatchPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => void onCustomerTrackingLink(stop.order_id)} className="rounded-full border border-emerald-500/30 px-3 py-1.5 text-xs font-semibold text-emerald-200">
+                        <button type="button" onClick={() => void onCustomerTrackingLink(stop.order_id)} className="min-h-7 border border-[#b9dcd1] bg-white px-2 text-[10px] font-semibold text-[#14745f]">
                           Customer link
                         </button>
                         {stop.proof_id ? (
-                          <button type="button" onClick={() => void onViewProof(stop.order_id, stop.proof_id!)} className="rounded-full border border-sky-500/30 px-3 py-1.5 text-xs font-semibold text-sky-200">
+                          <button type="button" onClick={() => void onViewProof(stop.order_id, stop.proof_id!)} className="min-h-7 border border-[#bfd8e5] bg-white px-2 text-[10px] font-semibold text-[#17679b]">
                             View proof
                           </button>
-                        ) : <span className="text-xs text-slate-600">No proof</span>}
+                        ) : <span className="text-[10px] text-[#6b7d76]">No proof</span>}
                       </div>
                     </div>
                   ))}
-                  {expandedRun && expandedRun.stops?.length === 0 ? <p className="text-sm text-slate-500">No stops recorded.</p> : null}
+                  {expandedRun && expandedRun.stops?.length === 0 ? <p className="text-xs text-[#63766f]">No stops recorded.</p> : null}
                   {expandedRun?.unassigned && expandedRun.unassigned.length > 0 ? (
-                    <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">
+                    <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#885100]">
                         Unassigned to this run
                       </p>
-                      <ul className="mt-1 space-y-1 text-xs text-amber-100/80">
+                      <ul className="mt-1 space-y-1 text-[11px] text-[#704500]">
                         {expandedRun.unassigned.map((item) => (
                           <li key={item.order_id}>{item.order_no}: {item.reason}</li>
                         ))}
@@ -628,13 +627,13 @@ export function DispatchPage() {
           description="Record what the office actually received and attach the bank deposit reference when available."
         >
           <form className="grid gap-3" onSubmit={onCloseCash}>
-            <div className="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
-              Expected: <span className="font-semibold text-slate-100">{cashCloseTarget.expected_cash_etb} ETB</span>
+            <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2 text-xs text-[#40534c]">
+              Expected: <span className="font-semibold text-[#20372f]">{cashCloseTarget.expected_cash_etb} ETB</span>
               {cashCloseTarget.cash_declared_etb ? (
-                <span className="ml-3 text-slate-400">Declared: {cashCloseTarget.cash_declared_etb} ETB</span>
+                <span className="ml-3 text-[#63766f]">Declared: {cashCloseTarget.cash_declared_etb} ETB</span>
               ) : null}
             </div>
-            <label className="text-xs text-slate-400">
+            <label className="text-xs text-[#63766f]">
               Cash handed over
               <input
                 className={FIELD}
@@ -652,7 +651,7 @@ export function DispatchPage() {
               />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-xs text-slate-400">
+              <label className="text-xs text-[#63766f]">
                 Deposit bank
                 <select
                   className={FIELD}
@@ -669,7 +668,7 @@ export function DispatchPage() {
                   <option value="dashen">Dashen</option>
                 </select>
               </label>
-              <label className="text-xs text-slate-400">
+              <label className="text-xs text-[#63766f]">
                 Deposit reference
                 <input
                   className={FIELD}
@@ -685,7 +684,7 @@ export function DispatchPage() {
                 />
               </label>
             </div>
-            <label className="text-xs text-slate-400">
+            <label className="text-xs text-[#63766f]">
               Close note
               <textarea
                 className={`${FIELD} min-h-24 py-3`}
@@ -703,13 +702,13 @@ export function DispatchPage() {
               <button
                 type="button"
                 onClick={() => setCashCloseTarget(null)}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300"
+                className="min-h-8 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950"
+                className="min-h-9 bg-[#087f72] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#06675d]"
               >
                 Close cash
               </button>

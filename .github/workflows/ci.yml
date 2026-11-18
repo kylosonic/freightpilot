@@ -1,8 +1,7 @@
 name: CI
 
-# these gates are the release gate. A red run must block the
-# Vercel deploy for the affected project — wire that with the Vercel "Ignored
-# Build Step" / deployment-check setting documented in docs/release-gates.md.
+# These gates are the release gate. A red run must block the Cloudflare
+# deployment for the affected project, as documented in docs/release-gates.md.
 # This workflow deliberately runs the SAME commands a release depends on: full
 # backend tests, console tests + typecheck + lint + production build, site tests
 # + bundle-weight budget + production build, plus dependency vulnerability

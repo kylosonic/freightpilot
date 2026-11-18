@@ -13,8 +13,8 @@ DEFAULT_CORS_ORIGINS = [
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5174',
     'http://127.0.0.1:8081',
-    'https://product-web-chi.vercel.app',
-    'https://ops-console-azure.vercel.app',
+    'https://freightpilot.pages.dev',
+    'https://freightpilot-ops.freightpilot.workers.dev',
 ]
 
 # every committed placeholder value that is long enough
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
         # never reachable in production — see the non-dev guard in
         # ``effective_allowed_hosts``.
         'testserver',
-        'platform-api-smoky.vercel.app',
+        'freightpilot-api.freightpilot.workers.dev',
     ]
     cbe_account_holder: str = ''
     cbe_account_number: str = ''
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     smtp_use_ssl: bool = False
     smtp_timeout_seconds: float = 10.0
     sample_data_dir: str = 'sample-data'
-    console_url: str = 'https://ops-console-azure.vercel.app'
+    console_url: str = 'https://freightpilot-ops.freightpilot.workers.dev'
 
     @property
     def effective_database_url(self) -> str:

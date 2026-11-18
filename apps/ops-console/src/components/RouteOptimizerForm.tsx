@@ -72,7 +72,7 @@ export function RouteOptimizerForm({
     }
   }
 
-  const fieldClassName = 'fp-input min-h-12';
+  const fieldClassName = 'fp-input min-h-10';
   const previousDistanceDelta = previousResult && result ? result.total_distance_km - previousResult.total_distance_km : null;
   const previousCostDelta = previousResult && result ? result.total_cost - previousResult.total_cost : null;
 
@@ -84,57 +84,57 @@ export function RouteOptimizerForm({
     >
       <form onSubmit={onSubmit} className="space-y-6">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[11px] font-medium tracking-[0.18em] text-slate-500">Scenario identity</p>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Scenario identity</p>
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Route name
             <input className={fieldClassName} value={payload.route_name} onChange={(e) => setPayload({ ...payload, route_name: e.target.value })} />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Schedule date
             <input className={fieldClassName} type="date" value={payload.schedule_date} onChange={(e) => setPayload({ ...payload, schedule_date: e.target.value })} />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Start warehouse code
             <input className={fieldClassName} value={payload.start_warehouse_code} onChange={(e) => setPayload({ ...payload, start_warehouse_code: e.target.value })} />
           </label>
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[11px] font-medium tracking-[0.18em] text-slate-500">Route shape</p>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Route shape</p>
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Deliveries
             <input className={fieldClassName} value={payload.deliveries} onChange={(e) => setPayload({ ...payload, deliveries: e.target.value })} placeholder="WH-002:80,WH-003:60" />
-            <span className="text-xs font-normal text-slate-500">Up to 200 comma-separated warehouse demand entries.</span>
+            <span className="text-[11px] font-normal text-[#63766f]">Up to 200 comma-separated warehouse demand entries.</span>
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Vehicle capacity
             <input className={fieldClassName} type="number" min={1} value={payload.vehicle_capacity_units} onChange={(e) => setPayload({ ...payload, vehicle_capacity_units: Number(e.target.value) })} />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Max stops
             <input className={fieldClassName} type="number" min={1} max={100} value={payload.max_stops} onChange={(e) => setPayload({ ...payload, max_stops: Number(e.target.value) })} />
           </label>
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[11px] font-medium tracking-[0.18em] text-slate-500">Operating constraints</p>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Operating constraints</p>
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Speed km/h
             <input className={fieldClassName} type="number" step="0.1" value={payload.speed_kmh} onChange={(e) => setPayload({ ...payload, speed_kmh: Number(e.target.value) })} />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Cost per km
             <input className={fieldClassName} type="number" step="0.1" value={payload.cost_per_km} onChange={(e) => setPayload({ ...payload, cost_per_km: Number(e.target.value) })} />
           </label>
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[11px] font-medium tracking-[0.18em] text-slate-500">Persistence options</p>
-          <label className="col-span-1 flex items-center gap-3 fp-nested-surface px-4 py-4 text-sm text-slate-300">
+          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Persistence options</p>
+          <label className="col-span-1 flex items-center gap-3 border border-[#d7dfdc] bg-[#f8faf9] px-3 py-3 text-xs text-[#40534c]">
             <input type="checkbox" checked={payload.persist_schedule} onChange={(e) => setPayload({ ...payload, persist_schedule: e.target.checked })} />
             Persist the optimized route as a saved schedule for the wider team.
           </label>
-          <label className="col-span-1 flex items-center gap-3 fp-nested-surface px-4 py-4 text-sm text-slate-300">
+          <label className="col-span-1 flex items-center gap-3 border border-[#d7dfdc] bg-[#f8faf9] px-3 py-3 text-xs text-[#40534c]">
             <input type="checkbox" checked={payload.minimize_carbon_footprint} onChange={(e) => setPayload({ ...payload, minimize_carbon_footprint: e.target.checked })} />
             Minimize Carbon Footprint
           </label>
@@ -142,7 +142,7 @@ export function RouteOptimizerForm({
 
         <button
           disabled={isSubmitting}
-          className="glow-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="glow-ring inline-flex min-h-10 w-full items-center justify-center gap-2 bg-[#087f72] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
@@ -151,10 +151,10 @@ export function RouteOptimizerForm({
         </button>
       </form>
 
-      {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
+      {error ? <p role="alert" className="mt-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
 
       {result ? (
-        <div className="animate-slide-up mt-5 space-y-4 fp-nested-surface p-5">
+        <div className="animate-slide-up mt-5 space-y-4 border-t border-[#d7dfdc] pt-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge label={result.objective} tone="info" />
             <StatusBadge label={result.unassigned_deliveries.length === 0 ? 'Fully assigned' : 'Review unassigned'} tone={result.unassigned_deliveries.length === 0 ? 'success' : 'warning'} />
@@ -166,26 +166,26 @@ export function RouteOptimizerForm({
           <div className="grid gap-3 md:grid-cols-4">
             {[
               { label: 'Distance', value: `${result.total_distance_km} km` },
-              { label: 'Cost', value: `$${result.total_cost}` },
+              { label: 'Cost', value: `${result.total_cost.toLocaleString()} route units` },
               { label: 'Duration', value: `${result.estimated_duration_min} min` },
               { label: 'Stops', value: String(result.stops.length) },
             ].map((stat) => (
-              <div key={stat.label} className="hover-lift fp-nested-surface p-4 transition">
-                <p className="text-xs uppercase tracking-wide text-slate-500">{stat.label}</p>
-                <p className="mt-3 font-mono text-2xl font-medium tabular-nums text-slate-50">{stat.value}</p>
+              <div key={stat.label} className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">{stat.label}</p>
+                <p className="mt-1.5 font-mono text-xl font-medium tabular-nums text-[#172a24]">{stat.value}</p>
               </div>
             ))}
           </div>
 
           {previousResult ? (
-            <div className="rounded-[var(--fp-radius-panel)] border border-slate-700/50 bg-slate-900/50 px-4 py-3.5 text-sm text-slate-400">
+            <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2.5 text-xs text-[#52665e]">
               Compared with the previous scenario:{' '}
-              <span className={`font-mono font-semibold tabular-nums ${previousDistanceDelta != null && previousDistanceDelta < 0 ? 'text-emerald-300' : 'text-slate-200'}`}>
+              <span className={`font-mono font-semibold tabular-nums ${previousDistanceDelta != null && previousDistanceDelta < 0 ? 'text-[#14745f]' : 'text-[#20372f]'}`}>
                 {previousDistanceDelta == null ? 'N/A' : `${previousDistanceDelta >= 0 ? '+' : ''}${previousDistanceDelta.toFixed(1)} km`}
               </span>
               {' | '}
-              <span className={`font-mono font-semibold tabular-nums ${previousCostDelta != null && previousCostDelta < 0 ? 'text-emerald-300' : 'text-slate-200'}`}>
-                {previousCostDelta == null ? 'N/A' : `${previousCostDelta >= 0 ? '+' : ''}$${previousCostDelta.toFixed(2)}`}
+              <span className={`font-mono font-semibold tabular-nums ${previousCostDelta != null && previousCostDelta < 0 ? 'text-[#14745f]' : 'text-[#20372f]'}`}>
+                {previousCostDelta == null ? 'N/A' : `${previousCostDelta >= 0 ? '+' : ''}${previousCostDelta.toFixed(2)} ETB`}
               </span>
             </div>
           ) : null}
@@ -193,11 +193,11 @@ export function RouteOptimizerForm({
           <RouteDecisionBrief explanation={result.decision_explanation} />
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Stop sequence</p>
-            <ul className="mt-3 grid gap-1.5 text-sm text-slate-300">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Stop sequence</p>
+            <ul className="mt-2 grid gap-1 text-xs text-[#40534c]">
               {result.stops.map((stop) => (
-                <li key={stop.sequence} className="fp-row px-4 py-2.5">
-                  <span className="font-semibold text-slate-100">#{stop.sequence}</span> {stop.warehouse_code} · {stop.demand_units} units · {stop.leg_distance_km} km leg
+                <li key={stop.sequence} className="border-b border-[#e6ebe8] px-2 py-1.5 last:border-b-0">
+                  <span className="font-mono font-semibold text-[#20372f]">#{stop.sequence}</span> {stop.warehouse_code} · {stop.demand_units} units · {stop.leg_distance_km} km leg
                 </li>
               ))}
             </ul>

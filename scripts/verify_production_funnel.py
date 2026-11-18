@@ -35,7 +35,7 @@ import urllib.error
 import urllib.request
 from datetime import UTC, datetime, timedelta
 
-DEFAULT_BASE_URL = 'https://platform-api-smoky.vercel.app'
+DEFAULT_BASE_URL = 'https://freightpilot-api.freightpilot.workers.dev'
 
 
 class Result:
@@ -46,12 +46,12 @@ class Result:
         self.ok = False
         self.detail = ''
 
-    def passed(self, detail: str) -> 'Result':
+    def passed(self, detail: str) -> Result:
         self.ok = True
         self.detail = detail
         return self
 
-    def failed(self, detail: str) -> 'Result':
+    def failed(self, detail: str) -> Result:
         self.ok = False
         self.detail = detail
         return self
@@ -78,7 +78,12 @@ class Funnel:
     ) -> tuple[int, object]:
         url = f'{self.base}{path}'
         data = json.dumps(body).encode() if body is not None else None
-        headers = {'Accept': 'application/json'}
+        # Cloudflare's default managed rules reject Python-urllib's stock
+        # User-Agent with error 1010. Identify this release probe explicitly.
+        headers = {
+            'Accept': 'application/json',
+            'User-Agent': 'FreightPilot-Release-Smoke/1.0',
+        }
         if data is not None:
             headers['Content-Type'] = 'application/json'
         auth = token if token is not None else self.token
@@ -136,7 +141,7 @@ class Funnel:
     # -- steps -------------------------------------------------------------
 
     def run(self) -> None:
-        print(f'\nFreightPilot production funnel verification')
+        print('\nFreightPilot production funnel verification')
         print(f'Target: {self.base}   (stamp {self.stamp})\n')
 
         print('1. Platform health')

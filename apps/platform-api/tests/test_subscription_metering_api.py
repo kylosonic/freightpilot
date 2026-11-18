@@ -57,6 +57,7 @@ def test_usage_metering_emits_threshold_events(client: TestClient):
     assert payload['used_units'] == 2550
     assert payload['overage_units'] == 50
     assert payload['estimated_overage_cost_usd'] == 10.0
+    assert payload['estimated_overage_cost_etb'] == '10.00'
 
 
 def test_enterprise_usage_has_no_threshold_limit(client: TestClient):
@@ -70,6 +71,7 @@ def test_enterprise_usage_has_no_threshold_limit(client: TestClient):
     assert body['usage']['included_units'] is None
     assert body['usage']['utilization_percent'] is None
     assert body['usage']['estimated_overage_cost_usd'] is None
+    assert body['usage']['estimated_overage_cost_etb'] is None
 
 
 def test_usage_metering_requires_active_org_membership(client: TestClient, orgless_token: str):

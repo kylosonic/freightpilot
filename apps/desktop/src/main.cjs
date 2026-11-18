@@ -3,9 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_CONFIG = {
-  opsConsoleUrl: process.env.OPS_CONSOLE_URL || 'https://ops-console-azure.vercel.app/login',
-  productSignupUrl: process.env.PRODUCT_SIGNUP_URL || 'https://product-web-chi.vercel.app#signup',
-  docsUrl: process.env.DOCS_URL || 'https://product-web-chi.vercel.app',
+  opsConsoleUrl:
+    process.env.OPS_CONSOLE_URL || 'https://freightpilot-ops.freightpilot.workers.dev/login',
+  productSignupUrl:
+    process.env.PRODUCT_SIGNUP_URL || 'https://freightpilot.pages.dev#signup',
+  docsUrl: process.env.DOCS_URL || 'https://freightpilot.pages.dev',
   onboarding: {
     createdAccount: false,
     connectedConsole: false,

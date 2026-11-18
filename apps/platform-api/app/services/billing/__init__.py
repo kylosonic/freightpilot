@@ -1,30 +1,48 @@
-"""Billing service package: pricing -> invoices -> lifecycle -> locks, plus
-the Phase 2 receipt-processing modules (wallet, credits, receipt_extraction,
-trusted_payers, sms, receipts).
+"""Billing service package with lazy module loading."""
 
-One-directional chain; HTTP stays out of the state engine; pricing is
-DB-free; ``services.billing`` never imports ``app.api``.
-"""
+from __future__ import annotations
 
-from app.services.billing.pricing import (  # noqa: F401
-    TIER_SPECS,
-    billing_cycle_for,
-    flat_price_etb,
-    grace_days_for,
-    included_units,
-    next_period_start_after,
-    overage_rate_etb,
-    period_for_tier,
-    tier_title,
-    trial_period,
-)
-from app.services.billing import wallet  # noqa: F401
-from app.services.billing import invoices as invoices  # noqa: F401
-from app.services.billing import lifecycle as lifecycle  # noqa: F401
-from app.services.billing import locks as locks  # noqa: F401
-from app.services.billing import credits as credits  # noqa: F401
-from app.services.billing import receipt_extraction as receipt_extraction  # noqa: F401
-from app.services.billing import trusted_payers as trusted_payers  # noqa: F401
-from app.services.billing import sms as sms  # noqa: F401
-from app.services.billing import receipts as receipts  # noqa: F401
-from app.services.billing import reversals as reversals  # noqa: F401
+from importlib import import_module
+from typing import Any
+
+_EXPORTS = {
+    'TIER_SPECS': ('pricing', 'TIER_SPECS'),
+    'billing_cycle_for': ('pricing', 'billing_cycle_for'),
+    'flat_price_etb': ('pricing', 'flat_price_etb'),
+    'grace_days_for': ('pricing', 'grace_days_for'),
+    'included_units': ('pricing', 'included_units'),
+    'next_period_start_after': ('pricing', 'next_period_start_after'),
+    'overage_rate_etb': ('pricing', 'overage_rate_etb'),
+    'period_for_tier': ('pricing', 'period_for_tier'),
+    'tier_title': ('pricing', 'tier_title'),
+    'trial_period': ('pricing', 'trial_period'),
+}
+_MODULES = {
+    'credits',
+    'invoices',
+    'lifecycle',
+    'locks',
+    'money',
+    'pricing',
+    'receipt_extraction',
+    'receipts',
+    'reversals',
+    'sms',
+    'trusted_payers',
+    'wallet',
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _MODULES:
+        value = import_module(f'{__name__}.{name}')
+    elif name in _EXPORTS:
+        module_name, attribute = _EXPORTS[name]
+        value = getattr(import_module(f'{__name__}.{module_name}'), attribute)
+    else:
+        raise AttributeError(name)
+    globals()[name] = value
+    return value
+
+
+__all__ = [*_MODULES, *_EXPORTS]

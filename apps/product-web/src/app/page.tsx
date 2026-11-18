@@ -2,27 +2,58 @@ import { HeroEntrance } from '@/components/site/hero-entrance';
 import { HowItWorks } from '@/components/site/how-it-works';
 import { MagneticLink } from '@/components/site/magnetic-link';
 import { PricingSummary } from '@/components/site/pricing-summary';
+import { WorkspacePreview } from '@/components/site/workspace-preview';
 import {
   heroHeadline,
   heroParagraph,
   startFreeCta,
   trustStripLine,
 } from '@/lib/site-content';
+import { ArrowRight, BellRing, MapPin, PackageCheck } from 'lucide-react';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
     <>
-      <section className="section-shell pt-6 sm:pt-10 lg:pt-12" data-section="hero">
-        <div className="glass-panel px-6 py-10 sm:px-10 sm:py-14">
-          <div className="max-w-[46rem] space-y-7">
-            <p className="kicker">FreightPilot</p>
+      <section className="section-shell pt-8 sm:pt-12 lg:pt-14" data-section="hero">
+        <div className="grid gap-8 border-b border-[#d7dfdc] pb-10 sm:gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12 lg:pb-14">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 border border-[#b9dcd1] bg-[#edf8f3] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#14745f]">
+                <span className="h-1.5 w-1.5 bg-[#16856b]" aria-hidden="true" />
+                Freight operations workspace
+              </span>
+              <span className="text-[11px] text-[#63766f]">Addis Ababa</span>
+            </div>
             <HeroEntrance />
-            <p className="lede text-base sm:text-lg">{heroParagraph}</p>
-            <div className="pt-2">
-              <MagneticLink href="/launch" variant="primary" className="min-h-14 px-8 text-base">
+            <p className="lede max-w-[540px] text-base sm:text-[17px]">{heroParagraph}</p>
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              <MagneticLink href="/launch" variant="primary" className="min-h-12 px-6">
                 {startFreeCta}
               </MagneticLink>
+              <Link href="/platform" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#40534c] underline-offset-4 hover:text-[#087f72] hover:underline">
+                Explore the platform
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
+            <div className="grid max-w-[560px] grid-cols-1 divide-y divide-[#d7dfdc] border-t border-[#d7dfdc] pt-2 min-[420px]:grid-cols-3 min-[420px]:divide-x min-[420px]:divide-y-0 min-[420px]:pt-4">
+              {[
+                { Icon: MapPin, label: 'Route plans' },
+                { Icon: BellRing, label: 'Exception triage' },
+                { Icon: PackageCheck, label: 'Cash close' },
+              ].map(({ Icon, label }) => (
+                <div key={label} className="flex items-center gap-2 py-2 min-[420px]:px-3 min-[420px]:py-0 min-[420px]:first:pl-0 min-[420px]:last:pr-0">
+                  <Icon className="h-4 w-4 shrink-0 text-[#087f72]" aria-hidden="true" />
+                  <span className="text-[11px] font-medium text-[#52665e]">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="min-w-0 lg:pl-2">
+            <WorkspacePreview />
+            <p className="mt-2 text-right text-[10px] text-[#63766f]">
+              Example workspace · sample data
+            </p>
           </div>
         </div>
       </section>
@@ -32,7 +63,7 @@ export default function HomePage() {
       <PricingSummary />
 
       <section className="section-shell pt-14 sm:pt-18" data-section="trust-strip">
-        <p className="mx-auto max-w-[34rem] text-balance text-center text-sm leading-6 text-white/72 sm:text-base">
+        <p className="mx-auto max-w-[34rem] text-balance text-center text-sm leading-6 text-[#52665e] sm:text-base">
           {trustStripLine}
         </p>
       </section>

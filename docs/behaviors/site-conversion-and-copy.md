@@ -237,7 +237,7 @@ The CTA on `/pricing` is the same as the home page: **"Start free."** Not "Choos
 - Accept business email + password + company name + optional tier preference (the existing signup-form component per the codebase).
 - Reject public email domains (per existing `blocked_public_email_domains` in backend config).
 - On submit, fire the company-signup API call that provisions the workspace with sample data seeding (per NB-25 activation behavior).
-- On success, redirect to the ops console (`https://ops-console-azure.vercel.app` or local equivalent per the existing env config).
+- On success, redirect to the ops console (`https://freightpilot-ops.freightpilot.workers.dev` or local equivalent per the existing env config).
 
 The signup form does NOT ask for payment at signup. Payment enters the customer's experience only after they upgrade inside the console (per the cashflow behavior).
 

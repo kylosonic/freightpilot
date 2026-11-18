@@ -19,22 +19,22 @@ export function Panel({ eyebrow, title, description, actions, className, bodyCla
   return (
     <section
       className={joinClasses(
-        'fp-nested-surface overflow-hidden',
+        'overflow-hidden border border-[#d7dfdc] bg-white',
         className,
       )}
     >
       {hasHeader ? (
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800/70 px-5 py-4">
-          <div className="max-w-3xl space-y-1.5">
-            {eyebrow ? <p className="text-[11px] font-medium tracking-[0.18em] text-slate-500">{eyebrow}</p> : null}
-            {title ? <h2 className="font-['Space_Grotesk'] text-lg font-semibold tracking-tight text-slate-100">{title}</h2> : null}
-            {description ? <p className="text-sm leading-6 text-slate-400">{description}</p> : null}
+        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[#e2e8e5] px-4 py-3">
+          <div className="max-w-3xl space-y-0.5">
+            {eyebrow ? <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">{eyebrow}</p> : null}
+            {title ? <h2 className="text-[15px] font-semibold leading-5 text-[#20372f]">{title}</h2> : null}
+            {description ? <p className="text-xs leading-5 text-[#63766f]">{description}</p> : null}
           </div>
           {actions ? <div className="flex flex-wrap items-center gap-2.5">{actions}</div> : null}
         </header>
       ) : null}
 
-      <div className={joinClasses('px-5 py-5', bodyClassName)}>{children}</div>
+      <div className={joinClasses('px-4 py-4', bodyClassName)}>{children}</div>
     </section>
   );
 }

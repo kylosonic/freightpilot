@@ -43,7 +43,7 @@ function DelayReasonDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
           >
             Cancel
           </button>
@@ -51,7 +51,7 @@ function DelayReasonDialog({
             type="button"
             onClick={() => onConfirm(reason)}
             disabled={!reason.trim()}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Confirm delay
           </button>
@@ -109,7 +109,7 @@ function DeliveryCashDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
           >
             Cancel
           </button>
@@ -117,7 +117,7 @@ function DeliveryCashDialog({
             type="button"
             onClick={() => onConfirm(hasCod ? entered : undefined, note)}
             disabled={hasCod && (!Number.isFinite(entered) || entered < 0)}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Confirm delivery
           </button>
@@ -127,7 +127,7 @@ function DeliveryCashDialog({
       <div className="grid gap-4">
         {hasCod ? (
           <>
-            <label className="grid gap-2 text-sm text-slate-300">
+            <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
               Cash collected (ETB)
               <input
                 autoFocus
@@ -139,14 +139,14 @@ function DeliveryCashDialog({
                 onChange={(e) => setCollected(e.target.value)}
               />
             </label>
-            <p className={`text-sm ${shortfall > 0 ? 'text-amber-300' : 'text-slate-400'}`}>
+            <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#63766f]'}`}>
               {shortfall > 0
                 ? `Shortfall of ${shortfall.toFixed(2)} ETB will be recorded against this delivery.`
                 : 'This clears the expected amount in full.'}
             </p>
           </>
         ) : null}
-        <label className="grid gap-2 text-sm text-slate-300">
+        <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
           Delivery note (optional)
           <textarea
             className="fp-input min-h-20 px-4 py-3"
@@ -293,7 +293,7 @@ export function ShipmentsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {delayDialog ? (
         <DelayReasonDialog
           shipmentNo={delayDialog.shipment.shipment_no}
@@ -314,14 +314,14 @@ export function ShipmentsPage() {
       <PageHeader
         eyebrow="Shipment board"
         title="Track movement health across every lane"
-        description="Create shipments, monitor lane progression, and update status without losing the context around delay pressure and throughput."
+        description="Track lane progress, exceptions, and delivery status."
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-        <MetricTile title="Planned" value={counts.planned} detail="Shipments queued but not yet in motion." tone="neutral" />
-        <MetricTile title="In transit" value={counts.inTransit} detail="Active movement currently underway across tracked lanes." tone="info" />
-        <MetricTile title="Delayed" value={counts.delayed} detail="Shipments requiring intervention or follow-up." tone={counts.delayed > 0 ? 'danger' : 'success'} />
-        <MetricTile title="Delivered" value={counts.delivered} detail="Completed movements recorded in the current board." tone="success" />
+      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile title="Planned" value={counts.planned} detail="Queued, not moving" tone="neutral" />
+        <MetricTile title="In transit" value={counts.inTransit} detail="Active movement" tone="info" />
+        <MetricTile title="Delayed" value={counts.delayed} detail="Needs intervention" tone={counts.delayed > 0 ? 'danger' : 'success'} />
+        <MetricTile title="Delivered" value={counts.delivered} detail="Completed movements" tone="success" />
       </div>
 
       <Panel
@@ -329,28 +329,28 @@ export function ShipmentsPage() {
         title="Create a shipment"
         description="Use this for direct movement creation when the order flow does not originate from a bulk CSV load."
       >
-        <form className="grid grid-cols-1 gap-4 lg:grid-cols-5" onSubmit={onCreate}>
-          <label className="grid gap-2 text-sm text-slate-300">
+        <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreate}>
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Shipment No
             <input className="fp-input" placeholder="Shipment No" value={form.shipment_no} onChange={(e) => setForm((prev) => ({ ...prev, shipment_no: e.target.value }))} required />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Origin Code
             <input className="fp-input" placeholder="Origin Code" value={form.origin_warehouse_code} onChange={(e) => setForm((prev) => ({ ...prev, origin_warehouse_code: e.target.value.toUpperCase() }))} required />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Destination Code
             <input className="fp-input" placeholder="Destination Code" value={form.destination_warehouse_code} onChange={(e) => setForm((prev) => ({ ...prev, destination_warehouse_code: e.target.value.toUpperCase() }))} required />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             SKU
             <input className="fp-input" placeholder="SKU" value={form.sku} onChange={(e) => setForm((prev) => ({ ...prev, sku: e.target.value.toUpperCase() }))} required />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Quantity
             <input className="fp-input" type="number" min={1} value={form.quantity_units} onChange={(e) => setForm((prev) => ({ ...prev, quantity_units: Number(e.target.value) }))} required />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Driver
             <select className="fp-input" value={form.driver_id} onChange={(e) => setForm((prev) => ({ ...prev, driver_id: e.target.value }))}>
               <option value="">Unassigned</option>
@@ -362,7 +362,7 @@ export function ShipmentsPage() {
               ))}
             </select>
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Cash on delivery (ETB)
             <input
               className="fp-input"
@@ -377,7 +377,7 @@ export function ShipmentsPage() {
             <button
               type="submit"
               disabled={creating}
-              className="glow-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {creating ? (
                 <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
@@ -393,7 +393,7 @@ export function ShipmentsPage() {
         title="Shipment lifecycle"
         description="Keep each lane visible and progress status deliberately when a movement changes state."
       >
-        {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+        {error ? <p role="alert" className="mb-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -409,23 +409,23 @@ export function ShipmentsPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={shipment.status} tone={statusTone(shipment.status)} />
-                    <span className="text-xs uppercase tracking-[0.18em] text-slate-500">{new Date(shipment.created_at).toLocaleString()}</span>
+                    <span className="text-[10px] text-[#63766f]">{new Date(shipment.created_at).toLocaleString()}</span>
                   </div>
-                  <h3 className="mt-1.5 font-['Space_Grotesk'] text-lg font-semibold text-slate-50">{shipment.shipment_no}</h3>
+                  <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">{shipment.shipment_no}</h3>
                 </div>
-                <div className="text-right font-mono text-sm text-slate-400 tabular-nums">
+                <div className="text-right font-mono text-xs text-[#63766f] tabular-nums">
                   <p>{shipment.origin_warehouse_code} → {shipment.destination_warehouse_code}</p>
                   <p>{shipment.sku} · {shipment.quantity_units} units</p>
-                  <p className={shipment.driver_name ? 'text-slate-300' : 'text-slate-500'}>
+                  <p className={shipment.driver_name ? 'text-[#40534c]' : 'text-[#6b7d76]'}>
                     {shipment.driver_name || 'No driver assigned'}
                   </p>
                   {Number(shipment.cod_amount_etb ?? 0) > 0 ? (
-                    <p className="text-amber-300">COD {Number(shipment.cod_amount_etb).toFixed(2)} ETB</p>
+                    <p className="text-[#885100]">COD {Number(shipment.cod_amount_etb).toFixed(2)} ETB</p>
                   ) : null}
                 </div>
               </div>
 
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-1.5 text-xs leading-5 text-[#63766f]">
                 {shipment.delay_reason ? `Delay note: ${shipment.delay_reason}` : 'No delay reason logged for this shipment.'}
               </p>
 
@@ -433,7 +433,7 @@ export function ShipmentsPage() {
                 {statusTransitions.map((status) => (
                   <button
                     key={status}
-                    className="glow-ring rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0] disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => onStatusUpdate(shipment, status)}
                     disabled={shipment.status === status}
                   >
@@ -445,9 +445,9 @@ export function ShipmentsPage() {
           ))}
 
           {!loading && shipments.length === 0 ? (
-            <div className="fp-nested-surface p-6 text-center">
-              <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">No shipments yet</p>
-              <p className="mt-1 text-sm text-slate-500">Create your first shipment using the form above.</p>
+            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+              <p className="text-sm font-semibold text-[#40534c]">No shipments yet</p>
+              <p className="mt-1 text-xs text-[#63766f]">Create your first shipment using the form above.</p>
             </div>
           ) : null}
         </div>

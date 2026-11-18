@@ -1,46 +1,38 @@
-"""Activation engine (Phase 4 blueprint).
+"""Activation engine with lazy module loading."""
 
-Package contract: derived milestones 1-5 (real-row presence per category),
-stored milestone 6 (first route optimization), lazy free-cap lock
-(decision #5), the 60/80/100 pitch ladder (decision #6), per-workspace
-sample seeding (decision #11), supersede semantics (decision #3), and the
-admin-gated workspace reset (decision #10).
+from __future__ import annotations
 
-DAG: ``activation.* -> billing.pricing`` (leaf) and ``activation.* ->
-metering`` (leaf); ``billing.locks -> activation.freecap -> pricing`` has
-no back-edge into billing — ``billing`` NEVER imports ``activation`` and
-``activation`` NEVER imports ``app.api`` (acyclic by construction).
-"""
+from importlib import import_module
+from typing import Any
 
-from app.services.activation.banner import activation_banner_payload
-from app.services.activation.freecap import (
-    FreeCapLockedError,
-    assert_free_cap_writable,
-    dismiss_pitch,
-    free_cap_state,
-    pitch_state,
-)
-from app.services.activation.reset import reset_workspace
-from app.services.activation.seeding import seed_workspace, supersede_sample_rows
-from app.services.activation.state import (
-    ActivationStateRead,
-    activation_state_read,
-    record_csv_upload,
-    record_route_optimization,
-)
+_EXPORTS = {
+    'ActivationStateRead': ('state', 'ActivationStateRead'),
+    'FreeCapLockedError': ('freecap', 'FreeCapLockedError'),
+    'activation_banner_payload': ('banner', 'activation_banner_payload'),
+    'activation_state_read': ('state', 'activation_state_read'),
+    'assert_free_cap_writable': ('freecap', 'assert_free_cap_writable'),
+    'dismiss_pitch': ('freecap', 'dismiss_pitch'),
+    'free_cap_state': ('freecap', 'free_cap_state'),
+    'pitch_state': ('freecap', 'pitch_state'),
+    'record_csv_upload': ('state', 'record_csv_upload'),
+    'record_route_optimization': ('state', 'record_route_optimization'),
+    'reset_workspace': ('reset', 'reset_workspace'),
+    'seed_workspace': ('seeding', 'seed_workspace'),
+    'supersede_sample_rows': ('seeding', 'supersede_sample_rows'),
+}
+_MODULES = {'banner', 'freecap', 'ingest', 'reset', 'seeding', 'state'}
 
-__all__ = [
-    'ActivationStateRead',
-    'FreeCapLockedError',
-    'activation_banner_payload',
-    'activation_state_read',
-    'assert_free_cap_writable',
-    'dismiss_pitch',
-    'free_cap_state',
-    'pitch_state',
-    'record_csv_upload',
-    'record_route_optimization',
-    'reset_workspace',
-    'seed_workspace',
-    'supersede_sample_rows',
-]
+
+def __getattr__(name: str) -> Any:
+    if name in _MODULES:
+        value = import_module(f'{__name__}.{name}')
+    elif name in _EXPORTS:
+        module_name, attribute = _EXPORTS[name]
+        value = getattr(import_module(f'{__name__}.{module_name}'), attribute)
+    else:
+        raise AttributeError(name)
+    globals()[name] = value
+    return value
+
+
+__all__ = [*_MODULES, *_EXPORTS]

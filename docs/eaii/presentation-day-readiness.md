@@ -63,7 +63,7 @@ be logged in before you start.
 
 The first request after idle can take several seconds (serverless cold start) — one
 `GET /billing/state` took **>60s** during today's sweep, then 1.0s on retry. Open
-`https://platform-api-smoky.vercel.app/health` a couple of times before you present,
+`https://freightpilot-api.freightpilot.workers.dev/health` a couple of times before you present,
 and click through the console once.
 
 ### 2.5 Have the fallback ready
@@ -72,9 +72,9 @@ All four URLs returned **200** today:
 
 | Surface | URL | Status |
 |---|---|---|
-| Product website | https://product-web-chi.vercel.app | 200 |
-| Operations console | https://ops-console-azure.vercel.app | 200 |
-| API (`/health`) | https://platform-api-smoky.vercel.app/health | 200 — `{"status":"ok","db":"ok"}` |
+| Product website | https://freightpilot.pages.dev | 200 |
+| Operations console | https://freightpilot-ops.freightpilot.workers.dev | 200 |
+| API (`/health`) | https://freightpilot-api.freightpilot.workers.dev/health | 200 — `{"status":"ok","db":"ok"}` |
 | EAII submission page | https://freightpilot-eaii.vercel.app | 200 |
 
 If the console misbehaves, the EAII submission page carries the pitch deck and a
@@ -92,10 +92,10 @@ Verified against production today, as a brand-new Ethiopian logistics company:
 - **Route optimisation — the centrepiece.** Real computation over the tenant's own
   warehouse coordinates: `21.07 km`, `31.61 ETB`, 2 stops, persisted to schedule
   and history. Haversine great-circle greedy nearest-neighbour; no external service.
-- **Demand forecasting is real ML.** `RandomForestRegressor` (250 trees,
-  `OneHotEncoder` over warehouse×SKU + week/month/weather), trained on the tenant's
-  own order history, cached by a training-frame hash. Live response:
-  `model=RandomForestRegressor, points=12`.
+- **Demand forecasting is a real, deterministic model.** `TrendRegressor` blends
+  a per-warehouse/SKU linear trend with recent demand and weather adjustment,
+  backtests on held-out weeks, and caches by a training-frame hash. The current
+  Worker deployment uses this model instead of the former Random Forest.
 - **Driver roster + cash-on-delivery, end to end.** Driver created (duplicate phone
   → clean `409`, not a 500) → COD shipment auto-assigned → delivery with a partial
   declaration → `2500.00 expected / 2000.00 collected / 500.00 shortfall` →
@@ -199,7 +199,7 @@ the dialog before you confirm.
 (`index-DtmxP_mN.js`) containing both the `/drivers` route and the "Fleet & Cash"
 nav label, and the `DriversPage-svPNSIDN.js` chunk returns `200`.
 **The page is on the live console now**, at
-https://ops-console-azure.vercel.app/drivers
+https://freightpilot-ops.freightpilot.workers.dev/drivers
 
 ---
 
@@ -319,7 +319,7 @@ Ethiopian logistics operation would attempt, and where the product meets or miss
 
 - *Who pays, and how?* — answered well: ETB, bank transfer, receipt verified.
 - *What happens when the connection drops?* — answered well: idempotent writes.
-- *Where does the AI actually sit?* — answer honestly: a RandomForest demand model and
+- *Where does the AI actually sit?* — answer honestly: a deterministic trend forecast and
   a greedy optimiser; the weather layer is simulated (§4). At an AI institute this
   question is close to certain, and a precise answer will land better than a broad one.
 - *Can it talk to ERCA / the Single Window?* — no. Say so, and frame it as the roadmap.

@@ -1,6 +1,5 @@
 import io
 
-import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -43,6 +42,8 @@ def upload_invoices(
     _: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
+    import pandas as pd
+
     if not file.filename or not file.filename.lower().endswith('.csv'):
         raise HTTPException(status_code=400, detail='Only CSV files are accepted')
     content = file.file.read(settings.csv_max_size_bytes + 1)

@@ -1,4 +1,5 @@
 from datetime import UTC, date, datetime
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -123,13 +124,19 @@ def _usage_read(
     counter: OrganizationUsageCounter,
     included_units: int | None,
     overage_unit_price_usd: float | None,
+    overage_unit_price_etb: Decimal | None = None,
 ) -> UsageMeterRead:
     overage_units = 0
     estimated_overage_cost_usd = None
+    estimated_overage_cost_etb = None
     if included_units is not None:
         overage_units = max(counter.used_units - included_units, 0)
         if overage_unit_price_usd is not None:
             estimated_overage_cost_usd = round(overage_units * overage_unit_price_usd, 2)
+        if overage_unit_price_etb is not None:
+            estimated_overage_cost_etb = (
+                Decimal(overage_units) * overage_unit_price_etb
+            ).quantize(Decimal('0.01'))
 
     return UsageMeterRead(
         metric=counter.metric,
@@ -140,6 +147,7 @@ def _usage_read(
         overage_units=overage_units,
         utilization_percent=_usage_utilization_percent(counter.used_units, included_units),
         estimated_overage_cost_usd=estimated_overage_cost_usd,
+        estimated_overage_cost_etb=estimated_overage_cost_etb,
     )
 
 
@@ -254,7 +262,8 @@ def get_my_usage(
         )
 
     included_units, overage_rate = _plan_quota_for_tier(organization.subscription_tier, metric)
-    return _usage_read(counter, included_units, overage_rate)
+    overage_rate_etb = pricing.TIER_SPECS[organization.subscription_tier]['overage_rate_etb'].get(metric)
+    return _usage_read(counter, included_units, overage_rate, overage_rate_etb)
 
 
 @router.post('/usage/record', response_model=UsageRecordResponse)
@@ -310,6 +319,7 @@ def record_usage(
     db.refresh(counter)
 
     included_units, overage_rate = _plan_quota_for_tier(organization.subscription_tier, payload.metric)
+    overage_rate_etb = pricing.TIER_SPECS[organization.subscription_tier]['overage_rate_etb'].get(payload.metric)
     events = _build_threshold_events(
         metric=payload.metric,
         tier=organization.subscription_tier,
@@ -319,7 +329,7 @@ def record_usage(
     )
 
     return UsageRecordResponse(
-        usage=_usage_read(counter, included_units, overage_rate),
+        usage=_usage_read(counter, included_units, overage_rate, overage_rate_etb),
         events=events,
     )
 

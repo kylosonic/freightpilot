@@ -11,21 +11,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM nginx:1.29-alpine AS runner
 
-WORKDIR /app
-ENV NODE_ENV=production
-ENV PORT=80
-
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
-
-USER node
+# Match Cloudflare Pages' static-export behavior locally.
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=build /app/out /usr/share/nginx/html
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
     CMD wget -qO- http://localhost:80/ || exit 1
 
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]

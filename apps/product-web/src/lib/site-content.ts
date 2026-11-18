@@ -169,7 +169,8 @@ export const faqItems: FaqItem[] = [
 // Site structure
 
 export const externalLinks = {
-  console: process.env.NEXT_PUBLIC_APP_CONSOLE_URL || 'https://ops-console-azure.vercel.app',
+  console:
+    process.env.NEXT_PUBLIC_APP_CONSOLE_URL || 'https://freightpilot-ops.freightpilot.workers.dev',
   docs: '/docs',
   desktop: process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL || 'https://example.com/download',
 };
@@ -281,19 +282,21 @@ export const technologyLayers: FeatureCard[] = [
   },
 ];
 
-export const codeSnippet = `const decision = await freightPilot.route.plan({
-  lane: "WH-A -> WEST-HUB",
-  objective: "margin_protection",
-  inputs: ["inventory", "shipments", "exceptions", "usage"],
-  aiProvider: workspace.preferredProvider,
-});
+export const codeSnippet = `POST /api/v1/routes/optimize
+Authorization: Bearer <workspace-token>
+X-Organization-Id: <workspace-id>
 
-if (decision.unassignedCount > 0) {
-  await ops.exceptionFeed.raise({
-    severity: "high",
-    reason: "capacity constraint",
-  });
-}`;
+{
+  "start_warehouse_code": "WH-001",
+  "deliveries": [
+    { "warehouse_code": "WH-002", "demand_units": 80 },
+    { "warehouse_code": "WH-003", "demand_units": 60 }
+  ],
+  "vehicle_capacity_units": 180
+}
+
+// Response includes route stops, cost units,
+// unassigned demand, and a decision explanation.`;
 
 /** Honest trust signals — each one maps to a verifiable product behavior. */
 export const trustSignals = [

@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 from datetime import UTC, datetime
 
-import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -31,14 +30,14 @@ from app.schemas.ingestion import (
     TelematicsPayload,
     TelematicsResult,
 )
-from app.services.activation import ingest as activation_ingest
-from app.services.activation import seeding
 from app.services.activation import state as activation_state
 
 router = APIRouter()
 
 
-def _read_csv_to_df(file: UploadFile) -> pd.DataFrame:
+def _read_csv_to_df(file: UploadFile):
+    import pandas as pd
+
     if not file.filename or not file.filename.lower().endswith('.csv'):
         raise HTTPException(status_code=400, detail='Only CSV files are accepted')
 
@@ -63,7 +62,7 @@ def _read_csv_to_df(file: UploadFile) -> pd.DataFrame:
         raise HTTPException(status_code=400, detail=f'Invalid CSV: {exc}') from exc
 
 
-def _require_columns(df: pd.DataFrame, required: set[str]) -> None:
+def _require_columns(df, required: set[str]) -> None:
     missing = required.difference(df.columns)
     if missing:
         raise HTTPException(status_code=400, detail=f'Missing required columns: {sorted(missing)}')
@@ -79,6 +78,8 @@ def _finish_csv_upload(
     """Supersede sample rows + audit the upload in the SAME transaction
     (decision #3 keep-rule; decision #4 gap-fill audit). Org-less write
     contract (no membership) skips activation concerns."""
+    from app.services.activation import seeding
+
     if writable is None:
         return
     org = db.get(Organization, writable.organization_id)
@@ -98,6 +99,8 @@ def ingest_warehouses_csv(
     actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
+    from app.services.activation import ingest as activation_ingest
+
     df = _read_csv_to_df(file)
     _require_columns(
         df, {'code', 'name', 'address', 'city', 'state', 'country', 'latitude', 'longitude', 'capacity_units'}
@@ -116,6 +119,8 @@ def ingest_items_csv(
     actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
+    from app.services.activation import ingest as activation_ingest
+
     df = _read_csv_to_df(file)
     _require_columns(df, {'sku', 'name', 'category', 'unit_cost', 'reorder_level'})
     org_id = writable.organization_id if writable else None
@@ -132,6 +137,8 @@ def ingest_fleet_assets_csv(
     actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
+    from app.services.activation import ingest as activation_ingest
+
     df = _read_csv_to_df(file)
     _require_columns(df, {'vehicle_code', 'driver_name', 'capacity_units'})
     org_id = writable.organization_id if writable else None
@@ -148,6 +155,8 @@ def ingest_inventory_csv(
     actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
+    from app.services.activation import ingest as activation_ingest
+
     df = _read_csv_to_df(file)
     _require_columns(df, {'warehouse_code', 'sku', 'quantity_on_hand'})
     org_id = writable.organization_id if writable else None
@@ -164,6 +173,8 @@ def ingest_orders_csv(
     actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
+    from app.services.activation import ingest as activation_ingest
+
     df = _read_csv_to_df(file)
     _require_columns(df, {'order_date', 'warehouse_code', 'sku', 'quantity'})
     org_id = writable.organization_id if writable else None
@@ -244,7 +255,10 @@ async def ingest_iot_telemetry(
             severity=AlertSeverity.HIGH,
             status=AlertStatus.OPEN,
             title=f'Temperature threshold exceeded for {payload.sku}',
-            message=f'Reported temperature {payload.temperature_c}°C exceeds threshold of {item.temperature_threshold}°C.',
+            message=(
+                f'Reported temperature {payload.temperature_c}°C exceeds '
+                f'threshold of {item.temperature_threshold}°C.'
+            ),
             related_entity_type='item',
             related_entity_id=item.id,
         )

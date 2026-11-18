@@ -20,9 +20,16 @@ Run the commands in [README.md](../README.md#tests-and-checks) before pushing.
 
 ## Deployment blocking
 
-Vercel deploys changes from `master`. Configure GitHub branch protection to require every CI job before a pull request can merge. Until that rule is enabled, CI is visible but does not itself prevent a direct push from deploying.
+Production is deployed with the `cloudflare:deploy` commands in
+[README.md](../README.md#deployment). Run the release from a commit whose CI
+run is green. Configure GitHub branch protection to require every CI job before
+merging, and keep deployment credentials out of pull-request workflows. A red
+CI run must block the release.
 
-Alternatively, register the CI jobs as required Vercel deployment checks. A red job must hold the deployment rather than merely notify the team.
+Apply any pending Alembic migration before deploying API code that depends on
+it. The API's `/health` endpoint compares the live revision with the migration
+head packaged in the deployed Worker. The production smoke workflow fails if
+the revision is missing, pending, or different from the expected head.
 
 ## Dependency advisories
 
@@ -40,7 +47,10 @@ Before merging:
 
 After deploying:
 
-- `GET /health` returns `{"status":"ok","db":"ok"}`.
+- `GET /health` reports `db: ok`, `schema: current`, and matching `revision` and `expected_revision`.
 - The product site and operations console load.
+- Both frontend origins pass an API CORS preflight. The product site is
+  `https://freightpilot.pages.dev`; the console is
+  `https://freightpilot-ops.freightpilot.workers.dev`.
 - The production smoke workflow passes.
 - Runtime logs show no new error spike.

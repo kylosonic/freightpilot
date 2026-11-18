@@ -18,7 +18,6 @@ from app.models.user import User
 from app.models.warehouse import Warehouse
 from app.schemas.auth import UserRole
 from app.schemas.forecast import ForecastPoint, ForecastQuality, ForecastRequest, ForecastResponse
-from app.services.forecasting import forecast_weekly_demand
 from app.services.weather import simulated_weather_features
 
 router = APIRouter()
@@ -31,6 +30,8 @@ def weekly_demand_forecast(
     actor: User = Depends(require_roles(UserRole.VIEWER, UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
+    from app.services.forecasting import forecast_weekly_demand
+
     # a forecast must be computed from the caller's own
     # order history, never from every tenant's combined demand.
     organization_id = resolve_scoped_organization(actor, writable)

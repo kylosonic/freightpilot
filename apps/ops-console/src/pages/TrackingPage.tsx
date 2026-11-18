@@ -57,66 +57,66 @@ export function TrackingPage() {
   }, [token]);
 
   return (
-    <main className="min-h-screen bg-[var(--fp-black)] px-4 py-8 text-slate-100">
+    <main className="min-h-screen bg-[#f4f6f5] px-4 py-8 text-[#202b36]">
       <div className="mx-auto max-w-xl space-y-4">
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">
             FreightPilot Tracking
           </p>
-          <h1 className="mt-2 font-['Space_Grotesk'] text-3xl font-semibold">
+          <h1 className="mt-1.5 text-2xl font-semibold text-[#172a24]">
             {tracking ? `Order ${tracking.order_no}` : 'Delivery status'}
           </h1>
         </header>
 
         {loading ? (
-          <div className="space-y-3 border border-slate-800 p-5" role="status">
+          <div className="space-y-3 border border-[#d7dfdc] bg-white p-5" role="status">
             <div className="skeleton h-6 w-1/2" />
             <div className="skeleton h-20" />
           </div>
         ) : null}
 
         {error ? (
-          <p className="rounded-lg border border-rose-500/25 bg-rose-950/30 p-4 text-sm text-rose-200">
+          <p className="border border-[#e7c2be] bg-[#fff8f7] p-4 text-sm text-[#8f302a]">
             {error}
           </p>
         ) : null}
 
         {tracking ? (
-          <section className="space-y-5 rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+          <section className="space-y-4 border border-[#d7dfdc] bg-white p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm text-slate-400">{tracking.customer_name}</p>
-                <p className="mt-1 font-['Space_Grotesk'] text-2xl font-semibold text-sky-100">
+                <p className="text-xs text-[#63766f]">{tracking.customer_name}</p>
+                <p className="mt-1 text-xl font-semibold text-[#172a24]">
                   {statusLabel[tracking.status] ?? tracking.status}
                 </p>
               </div>
-              <span className="rounded-full border border-sky-500/30 px-3 py-1 text-xs font-semibold text-sky-200">
+              <span className="border border-[#bfd8e5] bg-[#f3f9fc] px-2 py-1 text-[10px] font-semibold text-[#17679b]">
                 {tracking.proof_available ? 'Proof recorded' : 'Proof pending'}
               </span>
             </div>
 
             <div className="grid gap-4 text-sm sm:grid-cols-2">
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Estimated arrival</p>
-                <p className="mt-1 text-slate-200">{formatTime(tracking.planned_arrival)}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Estimated arrival</p>
+                <p className="mt-1 text-xs font-medium text-[#20372f]">{formatTime(tracking.planned_arrival)}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Delivery window</p>
-                <p className="mt-1 text-slate-200">
+                <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Delivery window</p>
+                <p className="mt-1 text-xs font-medium text-[#20372f]">
                   {formatTime(tracking.window_start)} to {formatTime(tracking.window_end)}
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Route</p>
-                <p className="mt-1 text-slate-200">{tracking.route_name ?? 'Not assigned'}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Route</p>
+                <p className="mt-1 text-xs font-medium text-[#20372f]">{tracking.route_name ?? 'Not assigned'}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Driver</p>
-                <p className="mt-1 text-slate-200">{tracking.driver_name ?? 'Not assigned'}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Driver</p>
+                <p className="mt-1 text-xs font-medium text-[#20372f]">{tracking.driver_name ?? 'Not assigned'}</p>
               </div>
             </div>
 
-            <p className="border-t border-slate-800 pt-4 text-xs text-slate-500">
+            <p className="border-t border-[#e6ebe8] pt-3 text-[11px] text-[#63766f]">
               Last updated {formatTime(tracking.updated_at)}
             </p>
           </section>

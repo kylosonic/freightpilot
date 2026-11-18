@@ -1,0 +1,2 @@
+# Preserve external bookmarks after moving the product site to Pages.
+https://freightpilot.freightpilot.workers.dev/* https://freightpilot.pages.dev/:splat 301

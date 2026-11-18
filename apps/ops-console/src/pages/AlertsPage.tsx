@@ -45,14 +45,14 @@ function ResolveDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(note.trim() || undefined)}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-emerald-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-400"
+            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
           >
             Resolve alert
           </button>
@@ -173,7 +173,7 @@ export function AlertsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {resolveDialog ? (
         <ResolveDialog
           alertTitle={resolveDialog.alert.title}
@@ -185,12 +185,12 @@ export function AlertsPage() {
       <PageHeader
         eyebrow="Exception center"
         title="Triage, assign, and close operational risk quickly"
-        description="Use manual alerts for coordination, run exception scans on demand, and keep the backlog visible by severity and status."
+        description="Triage open exceptions, assign ownership, and close risk."
         actions={
           <button
             onClick={onScan}
             disabled={isScanning}
-            className="glow-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:opacity-60"
+            className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:opacity-60"
           >
             {isScanning ? (
               <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
@@ -200,14 +200,14 @@ export function AlertsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-        <MetricTile title="Open" value={counts.open} detail="Alerts currently waiting for first response." tone={counts.open > 0 ? 'warning' : 'success'} />
-        <MetricTile title="Acknowledged" value={counts.acknowledged} detail="Items owned by the team but not yet closed." tone="info" />
-        <MetricTile title="Critical" value={counts.critical} detail="Incidents with the highest operating urgency." tone={counts.critical > 0 ? 'danger' : 'neutral'} />
-        <MetricTile title="High severity" value={counts.high} detail="Issues likely to impact service quality or cost if they linger." tone={counts.high > 0 ? 'warning' : 'neutral'} />
+      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile title="Open" value={counts.open} detail="Awaiting first response" tone={counts.open > 0 ? 'warning' : 'success'} />
+        <MetricTile title="Acknowledged" value={counts.acknowledged} detail="Owned, not closed" tone="info" />
+        <MetricTile title="Critical" value={counts.critical} detail="Highest urgency" tone={counts.critical > 0 ? 'danger' : 'neutral'} />
+        <MetricTile title="High severity" value={counts.high} detail="Service or cost at risk" tone={counts.high > 0 ? 'warning' : 'neutral'} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.85fr_1.15fr]">
         <Panel
           eyebrow="Manual entry"
           title="Create a manual operator alert"
@@ -239,7 +239,7 @@ export function AlertsPage() {
                 <option value="high">high</option>
                 <option value="critical">critical</option>
               </select>
-              <button className="glow-ring inline-flex min-h-12 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400">
+              <button className="glow-ring inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]">
                 Create alert
               </button>
             </div>
@@ -267,7 +267,7 @@ export function AlertsPage() {
             </select>
           }
         >
-          {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+          {error ? <p role="alert" className="mb-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
@@ -284,24 +284,24 @@ export function AlertsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge label={alert.severity} tone={severityTone(alert.severity)} />
                       <StatusBadge label={alert.status} tone={statusTone(alert.status)} />
-                      <span className="text-xs uppercase tracking-[0.18em] text-slate-500">{alert.alert_type}</span>
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-[#6b7d76]">{alert.alert_type}</span>
                     </div>
-                    <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-slate-50">{alert.title}</h3>
+                    <h3 className="text-sm font-semibold text-[#20372f]">{alert.title}</h3>
                   </div>
-                  <span className="text-xs text-slate-500">{new Date(alert.created_at).toLocaleString()}</span>
+                  <span className="text-[10px] text-[#63766f]">{new Date(alert.created_at).toLocaleString()}</span>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{alert.message}</p>
+                <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{alert.message}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     onClick={() => onAcknowledge(alert.id)}
-                    className="glow-ring rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0] disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={alert.status === 'resolved' || alert.status === 'acknowledged'}
                   >
                     Acknowledge
                   </button>
                   <button
                     onClick={() => setResolveDialog({ alert })}
-                    className="glow-ring rounded-full border border-emerald-500/30 px-3 py-2 text-xs font-semibold text-emerald-200 transition hover:border-emerald-400/50 hover:bg-emerald-950/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="glow-ring min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f] transition hover:bg-[#edf8f3] disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={alert.status === 'resolved'}
                   >
                     Resolve
@@ -309,7 +309,7 @@ export function AlertsPage() {
                   {alert.payload?.rerouting_plan ? (
                     <button
                       onClick={() => onAutoResolve(alert.id)}
-                      className="glow-ring rounded-full border border-sky-500/30 px-3 py-2 text-xs font-semibold text-sky-200 transition hover:border-sky-400/50 hover:bg-sky-950/20 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="glow-ring min-h-8 border border-[#bfd8e5] bg-white px-2.5 text-[11px] font-semibold text-[#17679b] transition hover:bg-[#edf6fa] disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={alert.status === 'resolved'}
                     >
                       Auto-Resolve
@@ -320,9 +320,9 @@ export function AlertsPage() {
             ))}
 
             {!loading && alerts.length === 0 ? (
-              <div className="fp-nested-surface p-6 text-center">
-                <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">No alerts</p>
-                <p className="mt-1 text-sm text-slate-500">No alerts for the selected filter.</p>
+              <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+                <p className="text-sm font-semibold text-[#40534c]">No alerts</p>
+                <p className="mt-1 text-xs text-[#63766f]">No alerts for the selected filter.</p>
               </div>
             ) : null}
           </div>

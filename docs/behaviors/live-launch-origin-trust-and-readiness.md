@@ -15,7 +15,7 @@ The live platform is reachable at two official web addresses: the customer-facin
 
 ## 3. Origin trust
 
-**3.1 — Both official web addresses are trusted.** When a visitor opens the customer-facing site (https://product-web-chi.vercel.app) or the operator opens the console (https://ops-console-azure.vercel.app), every request the page makes to the platform is accepted. The page never shows a browser security-blocked error.
+**3.1 — Both official web addresses are trusted.** When a visitor opens the customer-facing site (https://freightpilot.pages.dev) or the operator opens the console (https://freightpilot-ops.freightpilot.workers.dev), every request the page makes to the platform is accepted. The page never shows a browser security-blocked error.
 
 **3.2 — The trust response names the requesting address.** The security acknowledgment returned to a page echoes the address the request came from. It is never pinned to one address — both official addresses are covered by the same rule, and a change for one must never silently break the other.
 

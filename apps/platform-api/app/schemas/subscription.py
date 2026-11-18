@@ -89,6 +89,7 @@ class UsageMeterRead(BaseModel):
     overage_units: int
     utilization_percent: int | None
     estimated_overage_cost_usd: float | None
+    estimated_overage_cost_etb: Decimal | None = None
 
 
 class PlanThresholdEvent(BaseModel):

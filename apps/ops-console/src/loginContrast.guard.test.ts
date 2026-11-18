@@ -27,6 +27,8 @@ function readLoginFeedbackPanels(): string {
 }
 
 const BANNED_LOW_CONTRAST_UTILITIES = ['text-slate-500', 'text-slate-600'] as const;
+const LOGIN_MUTED = '#63766f';
+const LOGIN_ERROR = '#8f302a';
 
 const LOGIN_FILES: ReadonlyArray<{ name: string; read: () => string }> = [
   { name: 'LoginPage.tsx', read: readLoginPage },
@@ -44,11 +46,11 @@ describe('login text-color guard (TECH-78 / NB-61, NB-62 text-side seed)', () =>
     },
   );
 
-  it('LoginPage.tsx uses text-slate-400 for its small text', () => {
-    expect(readLoginPage()).toContain('text-slate-400');
+  it('LoginPage.tsx uses the light-theme muted text token for its small text', () => {
+    expect(readLoginPage()).toContain(`text-[${LOGIN_MUTED}]`);
   });
 
-  it('LoginFeedbackPanels.tsx keeps rose-300 for error states', () => {
-    expect(readLoginFeedbackPanels()).toContain('text-rose-300');
+  it('LoginFeedbackPanels.tsx uses the AA error text token for error states', () => {
+    expect(readLoginFeedbackPanels()).toContain(`text-[${LOGIN_ERROR}]`);
   });
 });

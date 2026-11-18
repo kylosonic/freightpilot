@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { PropsWithChildren } from 'react';
 import { useMemo, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
@@ -18,10 +18,10 @@ type MagneticLinkProps = PropsWithChildren<{
 
 const variantClasses: Record<NonNullable<MagneticLinkProps['variant']>, string> = {
   primary:
-    'bg-sky-500 text-slate-950 transition-colors hover:bg-sky-400',
+    'bg-[#087f72] text-white transition-colors hover:bg-[#06675d]',
   secondary:
-    'border border-white/12 bg-white/[0.04] text-white transition-colors hover:bg-white/[0.08]',
-  ghost: 'border border-white/10 bg-transparent text-white/78 hover:text-white',
+    'border border-[#cfd9d5] bg-white text-[#40534c] transition-colors hover:bg-[#eef3f0]',
+  ghost: 'bg-transparent text-[#40534c] hover:text-[#087f72]',
 };
 
 function useMagnet() {
@@ -49,7 +49,7 @@ function LinkContent({ children, showIcon = true }: Pick<MagneticLinkProps, 'sho
   return (
     <span className="relative z-10 flex items-center justify-center gap-2 text-center sm:text-left">
       {children}
-      {showIcon ? <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /> : null}
+      {showIcon ? <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /> : null}
     </span>
   );
 }
@@ -65,7 +65,7 @@ function AnchorShell({
   const { offset, handlers } = useMagnet();
   const content = <LinkContent showIcon={showIcon}>{children}</LinkContent>;
   const sharedClassName = cn(
-    'group inline-flex min-h-12 min-w-0 items-center justify-center overflow-hidden rounded-lg px-4 text-sm font-semibold transition will-change-transform sm:px-5',
+    'group inline-flex min-h-11 min-w-0 items-center justify-center overflow-hidden px-4 text-sm font-semibold transition will-change-transform sm:px-5',
     variantClasses[variant],
     className,
   );

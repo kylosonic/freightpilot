@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import math
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from itertools import pairwise
 from typing import Any
 from uuid import UUID
-
-import numpy as np
-import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
 
 from app.services.weather import simulated_weather_features
 from app.utils.geo import haversine_km
@@ -24,32 +20,92 @@ class ForecastResult:
     quality: dict[str, Any]
 
 
-def build_training_frame(orders: list[dict]) -> pd.DataFrame:
+def _as_date(value: Any) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(str(value)[:10])
+
+
+def _week_start(value: Any) -> date:
+    current = _as_date(value)
+    return current - timedelta(days=current.weekday())
+
+
+def _number(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _mean(values: list[float], default: float = 0.0) -> float:
+    return sum(values) / len(values) if values else default
+
+
+def _std(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    average = _mean(values)
+    return math.sqrt(_mean([(value - average) ** 2 for value in values]))
+
+
+def build_training_frame(orders: list[dict]) -> list[dict[str, Any]]:
+    """Aggregate historical orders into deterministic weekly training rows."""
     if not orders:
         raise ValueError('No historical orders available for forecasting.')
 
-    df = pd.DataFrame(orders)
-    df['order_date'] = pd.to_datetime(df['order_date'])
-    df['week_start'] = df['order_date'].dt.to_period('W').apply(lambda r: r.start_time.date())
+    grouped: dict[tuple[date, str, str], dict[str, list[float]]] = {}
+    for order in orders:
+        key = (
+            _week_start(order['order_date']),
+            str(order['warehouse_code']),
+            str(order['sku']),
+        )
+        values = grouped.setdefault(
+            key,
+            {
+                'quantity': [],
+                'weather_avg_temp_c': [],
+                'weather_precip_mm': [],
+                'weather_disruption_index': [],
+            },
+        )
+        values['quantity'].append(_number(order.get('quantity'), 0.0))
+        values['weather_avg_temp_c'].append(
+            _number(order.get('weather_avg_temp_c'), 20.0)
+        )
+        values['weather_precip_mm'].append(
+            _number(order.get('weather_precip_mm'), 3.0)
+        )
+        values['weather_disruption_index'].append(
+            _number(order.get('weather_disruption_index'), 0.2)
+        )
 
-    group_cols = ['week_start', 'warehouse_code', 'sku']
-    agg = df.groupby(group_cols, as_index=False).agg(
-        quantity=('quantity', 'sum'),
-        weather_avg_temp_c=('weather_avg_temp_c', 'mean'),
-        weather_precip_mm=('weather_precip_mm', 'mean'),
-        weather_disruption_index=('weather_disruption_index', 'mean'),
-    )
+    rows: list[dict[str, Any]] = []
+    for (week, warehouse_code, sku), values in sorted(grouped.items()):
+        rows.append(
+            {
+                'week_start': week,
+                'warehouse_code': warehouse_code,
+                'sku': sku,
+                'quantity': sum(values['quantity']),
+                'weather_avg_temp_c': _mean(values['weather_avg_temp_c'], 20.0),
+                'weather_precip_mm': _mean(values['weather_precip_mm'], 3.0),
+                'weather_disruption_index': _mean(
+                    values['weather_disruption_index'],
+                    0.2,
+                ),
+                'week_of_year': week.isocalendar().week,
+                'month': week.month,
+            }
+        )
+    return rows
 
-    agg['weather_avg_temp_c'] = agg['weather_avg_temp_c'].fillna(20.0)
-    agg['weather_precip_mm'] = agg['weather_precip_mm'].fillna(3.0)
-    agg['weather_disruption_index'] = agg['weather_disruption_index'].fillna(0.2)
-    agg['week_of_year'] = pd.to_datetime(agg['week_start']).dt.isocalendar().week.astype(int)
-    agg['month'] = pd.to_datetime(agg['week_start']).dt.month
-    return agg.sort_values(['week_start', 'warehouse_code', 'sku']).reset_index(drop=True)
 
-
-def _training_frame_hash(training_df: pd.DataFrame) -> str:
-    columns = [
+def _training_frame_hash(training_rows: list[dict[str, Any]]) -> str:
+    columns = (
         'week_start',
         'warehouse_code',
         'sku',
@@ -57,70 +113,125 @@ def _training_frame_hash(training_df: pd.DataFrame) -> str:
         'weather_avg_temp_c',
         'weather_precip_mm',
         'weather_disruption_index',
+    )
+    normalized = [
+        {
+            column: row[column].isoformat() if isinstance(row[column], date) else row[column]
+            for column in columns
+        }
+        for row in training_rows
     ]
-    row_hashes = pd.util.hash_pandas_object(training_df[columns], index=False).to_numpy(dtype='uint64')
-    return hashlib.sha256(row_hashes.tobytes()).hexdigest()[:16]
+    encoded = json.dumps(
+        normalized,
+        sort_keys=True,
+        separators=(',', ':'),
+    ).encode('utf-8')
+    return hashlib.sha256(encoded).hexdigest()[:16]
 
 
-_trained_model_cache: dict[str, Pipeline] = {}
+_trained_model_cache: dict[str, Any] = {}
 _quality_cache: dict[str, dict[str, Any]] = {}
 _MODEL_CACHE_LIMIT = 10
 _QUALITY_CACHE_LIMIT = 10
 
 
-def _remember_model(cache_key: str, model: Pipeline) -> None:
-    if cache_key not in _trained_model_cache and len(_trained_model_cache) >= _MODEL_CACHE_LIMIT:
-        _trained_model_cache.pop(next(iter(_trained_model_cache)))
-    _trained_model_cache[cache_key] = model
+def _remember(cache: dict[str, Any], cache_key: str, value: Any, limit: int) -> None:
+    if cache_key not in cache and len(cache) >= limit:
+        cache.pop(next(iter(cache)))
+    cache[cache_key] = value
+
+
+def _remember_model(cache_key: str, model: Any) -> None:
+    _remember(_trained_model_cache, cache_key, model, _MODEL_CACHE_LIMIT)
 
 
 def _remember_quality(cache_key: str, quality: dict[str, Any]) -> None:
-    if cache_key not in _quality_cache and len(_quality_cache) >= _QUALITY_CACHE_LIMIT:
-        _quality_cache.pop(next(iter(_quality_cache)))
-    _quality_cache[cache_key] = quality
+    _remember(_quality_cache, cache_key, quality, _QUALITY_CACHE_LIMIT)
 
 
-def _build_pipeline(n_estimators: int) -> Pipeline:
-    categorical = ['warehouse_code', 'sku']
-    numeric = ['week_of_year', 'month', 'weather_avg_temp_c', 'weather_precip_mm', 'weather_disruption_index']
+def _get_or_train_model(training_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    cache_key = _training_frame_hash(training_rows)
+    cached = _trained_model_cache.get(cache_key)
+    if isinstance(cached, list):
+        return cached
+    _remember_model(cache_key, training_rows)
+    return training_rows
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical),
-            ('num', 'passthrough', numeric),
-        ]
+
+def _series(
+    training_rows: list[dict[str, Any]],
+    warehouse_code: str,
+    sku: str,
+) -> list[dict[str, Any]]:
+    return sorted(
+        (
+            row
+            for row in training_rows
+            if row['warehouse_code'] == warehouse_code and row['sku'] == sku
+        ),
+        key=lambda row: row['week_start'],
     )
-    model = RandomForestRegressor(n_estimators=n_estimators, random_state=42, n_jobs=-1)
-    return Pipeline([
-        ('preprocessor', preprocessor),
-        ('model', model),
-    ])
 
 
-def _get_or_train_model(training_df: pd.DataFrame) -> Pipeline:
-    cache_key = _training_frame_hash(training_df)
-    if cache_key in _trained_model_cache:
-        return _trained_model_cache[cache_key]
-
-    categorical = ['warehouse_code', 'sku']
-    numeric = ['week_of_year', 'month', 'weather_avg_temp_c', 'weather_precip_mm', 'weather_disruption_index']
-    pipeline = _build_pipeline(n_estimators=250)
-
-    x = training_df[categorical + numeric]
-    y = training_df['quantity']
-    pipeline.fit(x, y)
-
-    _remember_model(cache_key, pipeline)
-
-    return pipeline
+def _linear_trend(x_values: list[float], y_values: list[float], future_x: float) -> float:
+    if len(y_values) < 2 or max(x_values) == min(x_values):
+        return y_values[-1]
+    mean_x = _mean(x_values)
+    mean_y = _mean(y_values)
+    denominator = sum((value - mean_x) ** 2 for value in x_values)
+    slope = (
+        sum((x - mean_x) * (y - mean_y) for x, y in zip(x_values, y_values, strict=True))
+        / denominator
+    )
+    intercept = mean_y - (slope * mean_x)
+    return intercept + (slope * future_x)
 
 
-def _evaluate_quality(training_df: pd.DataFrame, cache_key: str) -> dict[str, Any]:
+def _predict_row(
+    training_rows: list[dict[str, Any]],
+    warehouse_code: str,
+    sku: str,
+    target_date: date,
+    weather: dict[str, float],
+) -> float:
+    series = _series(training_rows, warehouse_code, sku)
+    if not series:
+        return 0.0
+
+    all_weeks = sorted({row['week_start'] for row in training_rows})
+    origin = all_weeks[0]
+    x_values = [float((row['week_start'] - origin).days // 7) for row in series]
+    y_values = [float(row['quantity']) for row in series]
+    future_x = float((target_date - origin).days // 7)
+    linear = max(0.0, _linear_trend(x_values, y_values, future_x))
+
+    recent = _mean(y_values[-min(4, len(y_values)) :])
+    prediction = (linear * 0.65) + (recent * 0.35)
+
+    baseline_disruption = _mean(
+        [float(row['weather_disruption_index']) for row in series],
+        0.2,
+    )
+    baseline_temp = _mean([float(row['weather_avg_temp_c']) for row in series], 20.0)
+    target_disruption = _number(weather.get('weather_disruption_index'), 0.2)
+    target_temp = _number(weather.get('weather_avg_temp_c'), 20.0)
+    disruption_factor = max(
+        0.65,
+        1.0 - (max(0.0, target_disruption - baseline_disruption) * 1.5),
+    )
+    temperature_factor = 1.0 - min(0.15, abs(target_temp - baseline_temp) / 200)
+    return max(0.0, prediction * disruption_factor * temperature_factor)
+
+
+def _evaluate_quality(
+    training_rows: list[dict[str, Any]],
+    cache_key: str,
+) -> dict[str, Any]:
     cached = _quality_cache.get(cache_key)
     if cached is not None:
         return cached
 
-    weeks = sorted(training_df['week_start'].unique().tolist())
+    weeks = sorted({row['week_start'] for row in training_rows})
     history_weeks = len(weeks)
     result: dict[str, Any] = {
         'status': 'insufficient_history',
@@ -129,40 +240,54 @@ def _evaluate_quality(training_df: pd.DataFrame, cache_key: str) -> dict[str, An
         'evaluated_rows': 0,
         'mae': None,
         'wape_percent': None,
-        'range_basis': 'ensemble_p10_p90',
+        'range_basis': 'trend_residual_band',
         'interpretation': 'Treat this forecast as directional until more demand history is available.',
         'caveat': (
             f'Only {history_weeks} week(s) of demand history are available. '
             'No held-out backtest can be reported.'
         ),
     }
-
     if history_weeks < 3:
         _remember_quality(cache_key, result)
         return result
 
     holdout_weeks = min(4, max(1, history_weeks // 4))
     cutoff = weeks[-holdout_weeks]
-    train_df = training_df[training_df['week_start'] < cutoff]
-    test_df = training_df[training_df['week_start'] >= cutoff]
-    if len(train_df) == 0 or len(test_df) == 0:
+    train_rows = [row for row in training_rows if row['week_start'] < cutoff]
+    test_rows = [row for row in training_rows if row['week_start'] >= cutoff]
+    if not train_rows or not test_rows:
         _remember_quality(cache_key, result)
         return result
 
-    categorical = ['warehouse_code', 'sku']
-    numeric = ['week_of_year', 'month', 'weather_avg_temp_c', 'weather_precip_mm', 'weather_disruption_index']
-    pipeline = _build_pipeline(n_estimators=150)
-    pipeline.fit(train_df[categorical + numeric], train_df['quantity'])
-    predictions = np.maximum(pipeline.predict(test_df[categorical + numeric]), 0)
-    actuals = test_df['quantity'].to_numpy(dtype=float)
+    predictions: list[float] = []
+    actuals: list[float] = []
+    for row in test_rows:
+        weather = {
+            'weather_avg_temp_c': float(row['weather_avg_temp_c']),
+            'weather_precip_mm': float(row['weather_precip_mm']),
+            'weather_disruption_index': float(row['weather_disruption_index']),
+        }
+        predictions.append(
+            _predict_row(
+                train_rows,
+                row['warehouse_code'],
+                row['sku'],
+                row['week_start'],
+                weather,
+            )
+        )
+        actuals.append(float(row['quantity']))
 
-    absolute_error = np.abs(predictions - actuals)
-    mae = float(np.mean(absolute_error))
-    actual_total = float(np.sum(actuals))
-    wape = (float(np.sum(absolute_error)) / actual_total * 100) if actual_total > 0 else None
+    absolute_errors = [
+        abs(predicted - actual)
+        for predicted, actual in zip(predictions, actuals, strict=True)
+    ]
+    mae = _mean(absolute_errors)
+    actual_total = sum(actuals)
+    wape = (sum(absolute_errors) / actual_total * 100) if actual_total > 0 else None
     status = (
         'validated'
-        if history_weeks >= 6 and len(test_df) >= 4 and wape is not None
+        if history_weeks >= 6 and len(test_rows) >= 4 and wape is not None
         else 'limited'
     )
 
@@ -175,27 +300,46 @@ def _evaluate_quality(training_df: pd.DataFrame, cache_key: str) -> dict[str, An
     else:
         interpretation = 'Held-out error is high; treat the forecast as directional and review assumptions.'
 
-    result.update({
-        'status': status,
-        'holdout_weeks': holdout_weeks,
-        'evaluated_rows': int(len(test_df)),
-        'mae': round(mae, 2),
-        'wape_percent': round(wape, 1) if wape is not None else None,
-        'range_basis': (
-            'ensemble_p10_p90_widened_by_holdout_error'
-            if wape is not None
-            else 'ensemble_p10_p90'
-        ),
-        'interpretation': interpretation,
-        'caveat': (
-            f'Backtested on the most recent {holdout_weeks} week(s), held out from training. '
-            'This measures error on known demand; it is not a guarantee of future demand. '
-            'WAPE is aggregated across all warehouse/SKU rows, so one sparse or volatile '
-            'series can have much higher error than the aggregate suggests.'
-        ),
-    })
+    result.update(
+        {
+            'status': status,
+            'holdout_weeks': holdout_weeks,
+            'evaluated_rows': len(test_rows),
+            'mae': round(mae, 2),
+            'wape_percent': round(wape, 1) if wape is not None else None,
+            'range_basis': (
+                'trend_residual_band_widened_by_holdout_error'
+                if wape is not None
+                else 'trend_residual_band'
+            ),
+            'interpretation': interpretation,
+            'caveat': (
+                f'Backtested on the most recent {holdout_weeks} week(s), held out from training. '
+                'This measures error on known demand; it is not a guarantee of future demand. '
+                'WAPE is aggregated across all warehouse/SKU rows, so one sparse or volatile '
+                'series can have much higher error than the aggregate suggests.'
+            ),
+        }
+    )
     _remember_quality(cache_key, result)
     return result
+
+
+def _uncertainty(
+    training_rows: list[dict[str, Any]],
+    warehouse_code: str,
+    sku: str,
+    predicted: float,
+) -> float:
+    quantities = [float(row['quantity']) for row in _series(training_rows, warehouse_code, sku)]
+    if len(quantities) < 2:
+        return abs(predicted) * 0.15
+    differences = [
+        later - earlier
+        for earlier, later in pairwise(quantities)
+    ]
+    residual_scale = _std(differences) if len(quantities) > 2 else _std(quantities)
+    return max(residual_scale, abs(predicted) * 0.15)
 
 
 def forecast_weekly_demand(
@@ -203,68 +347,66 @@ def forecast_weekly_demand(
     warehouse_weather_lookup: dict[str, dict[str, float]],
     horizon_weeks: int = 4,
 ) -> ForecastResult:
-    training_df = build_training_frame(orders)
-    cache_key = _training_frame_hash(training_df)
-    model = _get_or_train_model(training_df)
-    quality = _evaluate_quality(training_df, cache_key)
+    training_rows = build_training_frame(orders)
+    cache_key = _training_frame_hash(training_rows)
+    _get_or_train_model(training_rows)
+    quality = _evaluate_quality(training_rows, cache_key)
     wape = quality.get('wape_percent')
 
-    latest_week = max(training_df['week_start'])
-    combos = training_df[['warehouse_code', 'sku']].drop_duplicates()
-
+    latest_week = max(row['week_start'] for row in training_rows)
+    combos = sorted(
+        {(row['warehouse_code'], row['sku']) for row in training_rows},
+    )
     predictions: list[dict] = []
+
     for step in range(1, horizon_weeks + 1):
         future_week = latest_week + timedelta(days=7 * step)
-        week_of_year = future_week.isocalendar()[1]
-        month = future_week.month
-
-        rows = []
-        for _, combo in combos.iterrows():
-            w_code = combo['warehouse_code']
-            sku = combo['sku']
-            weather = warehouse_weather_lookup.get(w_code, {
-                'weather_avg_temp_c': 20.0,
-                'weather_precip_mm': 3.0,
-                'weather_disruption_index': 0.2,
-            })
-            rows.append({
-                'warehouse_code': w_code,
-                'sku': sku,
-                'week_of_year': week_of_year,
-                'month': month,
-                'weather_avg_temp_c': weather['weather_avg_temp_c'],
-                'weather_precip_mm': weather['weather_precip_mm'],
-                'weather_disruption_index': weather['weather_disruption_index'],
-            })
-
-        future_df = pd.DataFrame(rows)
-        y_pred = model.predict(future_df)
-        y_pred = np.maximum(y_pred, 0)
-        forest = model.named_steps['model']
-        transformed = model.named_steps['preprocessor'].transform(future_df)
-        tree_predictions = np.vstack([tree.predict(transformed) for tree in forest.estimators_])
-        tree_low = np.maximum(np.percentile(tree_predictions, 10, axis=0), 0)
-        tree_high = np.maximum(np.percentile(tree_predictions, 90, axis=0), tree_low)
-
-        if wape is not None:
-            planning_low = np.minimum(tree_low, np.maximum(y_pred * (1 - wape / 100), 0))
-            planning_high = np.maximum(tree_high, y_pred * (1 + wape / 100))
-        else:
-            planning_low = tree_low
-            planning_high = tree_high
-
-        for i, row in future_df.iterrows():
-            predictions.append({
-                'week_start': future_week,
-                'warehouse_code': row['warehouse_code'],
-                'sku': row['sku'],
-                'predicted_demand': float(round(y_pred[i], 2)),
-                'planning_low': float(round(planning_low[i], 2)),
-                'planning_high': float(round(planning_high[i], 2)),
-            })
+        for warehouse_code, sku in combos:
+            weather = warehouse_weather_lookup.get(
+                warehouse_code,
+                {
+                    'weather_avg_temp_c': 20.0,
+                    'weather_precip_mm': 3.0,
+                    'weather_disruption_index': 0.2,
+                },
+            )
+            predicted = _predict_row(
+                training_rows,
+                warehouse_code,
+                sku,
+                future_week,
+                weather,
+            )
+            spread = _uncertainty(
+                training_rows,
+                warehouse_code,
+                sku,
+                predicted,
+            )
+            planning_low = max(0.0, predicted - 1.28 * spread)
+            planning_high = predicted + 1.28 * spread
+            if wape is not None:
+                planning_low = min(
+                    planning_low,
+                    max(predicted * (1 - wape / 100), 0.0),
+                )
+                planning_high = max(
+                    planning_high,
+                    predicted * (1 + wape / 100),
+                )
+            predictions.append(
+                {
+                    'week_start': future_week,
+                    'warehouse_code': warehouse_code,
+                    'sku': sku,
+                    'predicted_demand': float(round(predicted, 2)),
+                    'planning_low': float(round(planning_low, 2)),
+                    'planning_high': float(round(planning_high, 2)),
+                }
+            )
 
     return ForecastResult(
-        model_name='RandomForestRegressor',
+        model_name='TrendRegressor',
         predictions=predictions,
         quality=quality,
     )
@@ -277,81 +419,56 @@ def calculate_arrival_probability(
     historical_runs: list[dict],
     route_destination: dict[str, float] | None = None,
 ) -> dict:
+    del route_id
     now = datetime.now(tz=UTC)
-
-    min_history = 10
-    if len(historical_runs) < min_history:
+    if len(historical_runs) < 10:
         fallback_minutes = 60.0
         if historical_runs:
-            avg_duration = sum(
-                float(run.get('estimated_duration_min', 60)) for run in historical_runs
-            ) / len(historical_runs)
-            fallback_minutes = avg_duration
+            fallback_minutes = _mean(
+                [
+                    _number(run.get('estimated_duration_min'), 60.0)
+                    for run in historical_runs
+                ],
+                60.0,
+            )
         return {
             'predicted_eta': (now + timedelta(minutes=fallback_minutes)).isoformat(),
             'confidence_score': 0.1,
         }
 
-    records: list[dict] = []
-    for run in historical_runs:
-        sched_date = run.get('schedule_date', now.date())
-        if isinstance(sched_date, str):
-            sched_date = datetime.fromisoformat(sched_date).date()
-        weather = simulated_weather_features(sched_date, current_lat, current_lon)
-        records.append({
-            'total_distance_km': float(run.get('total_distance_km', 0)),
-            'speed_kmh': float(run.get('speed_kmh', 50)),
-            'stops_count': int(run.get('stops_count', 1)),
-            'day_of_week': sched_date.weekday(),
-            'weather_disruption_index': weather['weather_disruption_index'],
-            'duration_min': float(run.get('estimated_duration_min', 60)),
-        })
-
-    train_df = pd.DataFrame(records)
-    feature_cols = [
-        'total_distance_km',
-        'speed_kmh',
-        'stops_count',
-        'day_of_week',
-        'weather_disruption_index',
+    durations = [
+        _number(run.get('estimated_duration_min'), 60.0) for run in historical_runs
     ]
+    speeds = [_number(run.get('speed_kmh'), 50.0) for run in historical_runs]
+    stops = [_number(run.get('stops_count'), 1.0) for run in historical_runs]
 
-    model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-    model.fit(train_df[feature_cols], train_df['duration_min'])
-
-    remaining_distance_km: float
     if route_destination:
         remaining_distance_km = haversine_km(
-            current_lat, current_lon,
-            route_destination['latitude'], route_destination['longitude'],
+            current_lat,
+            current_lon,
+            route_destination['latitude'],
+            route_destination['longitude'],
         )
     else:
-        remaining_distance_km = float(train_df['total_distance_km'].mean()) * 0.5
+        remaining_distance_km = (
+            _mean([_number(run.get('total_distance_km'), 0.0) for run in historical_runs])
+            * 0.5
+        )
 
-    live_weather = simulated_weather_features(now.date(), current_lat, current_lon)
-    avg_speed = float(train_df['speed_kmh'].mean()) or 50.0
-    avg_stops = int(train_df['stops_count'].mean()) or 1
+    weather = simulated_weather_features(now.date(), current_lat, current_lon)
+    effective_speed = max(_mean(speeds), 10.0)
+    travel_minutes = remaining_distance_km / effective_speed * 60
+    stop_minutes = _mean(stops) * 5
+    disruption_minutes = _number(weather['weather_disruption_index'], 0.2) * 15
+    predicted_minutes = max(0.0, travel_minutes + stop_minutes + disruption_minutes)
 
-    pred_input = pd.DataFrame([{
-        'total_distance_km': remaining_distance_km,
-        'speed_kmh': avg_speed,
-        'stops_count': avg_stops,
-        'day_of_week': now.weekday(),
-        'weather_disruption_index': live_weather['weather_disruption_index'],
-    }])
-
-    predicted_minutes = float(model.predict(pred_input)[0])
-    predicted_minutes = max(predicted_minutes, 0.0)
-
-    tree_preds = np.array([t.predict(pred_input) for t in model.estimators_]).flatten()
-    std_dev = float(np.std(tree_preds))
-    mean_pred = float(np.mean(tree_preds)) or 1.0
-    cv = std_dev / mean_pred
-    confidence = round(max(0.0, min(1.0, 1.0 - cv)), 2)
-
-    predicted_eta = now + timedelta(minutes=predicted_minutes)
+    mean_duration = _mean(durations)
+    multiplier = (mean_duration / max(mean_duration, 1.0)) if mean_duration else 1.0
+    predicted_minutes *= multiplier
+    coefficient_of_variation = _std(durations) / mean_duration if mean_duration else 1.0
+    confidence = round(max(0.0, min(1.0, 1.0 - coefficient_of_variation)), 2)
 
     return {
-        'predicted_eta': predicted_eta.isoformat(),
+        'predicted_eta': (now + timedelta(minutes=predicted_minutes)).isoformat(),
         'confidence_score': confidence,
     }

@@ -26,9 +26,9 @@ export function Dialog({ eyebrow, title, description, actions, className, bodyCl
   return (
     <div className="fp-dialog-overlay">
       <div role="dialog" aria-modal="true" className={joinClasses('fp-dialog-surface', className)}>
-        {eyebrow ? <p className="text-xs font-medium uppercase tracking-wide text-sky-300/70">{eyebrow}</p> : null}
-        {title ? <h3 className="mt-2 font-['Space_Grotesk'] text-xl font-semibold text-slate-50">{title}</h3> : null}
-        {description ? <p className="mt-2 text-sm text-slate-400">{description}</p> : null}
+        {eyebrow ? <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#087f72]">{eyebrow}</p> : null}
+        {title ? <h3 className="mt-1.5 text-lg font-semibold text-[#172a24]">{title}</h3> : null}
+        {description ? <p className="mt-1.5 text-xs leading-5 text-[#5b6d66]">{description}</p> : null}
         <div className={joinClasses(title || description ? 'mt-4' : '', bodyClassName)}>{children}</div>
         {actions ? <div className="mt-4 flex flex-wrap justify-end gap-2">{actions}</div> : null}
       </div>

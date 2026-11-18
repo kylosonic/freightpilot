@@ -13,8 +13,7 @@ import {
 import { apiErrorMessage } from '../services/authErrors';
 import type { OrganizationInvitation, OrganizationMember } from '../types/api';
 
-const FIELD =
-  'min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400';
+const FIELD = 'fp-input min-h-9';
 
 export function TeamPanel() {
   const { user } = useAuth();
@@ -49,8 +48,8 @@ export function TeamPanel() {
 
   if (user?.role !== 'admin') {
     return (
-      <section className="fp-shell-surface p-5">
-        <p className="text-sm text-slate-400">
+      <section className="border border-[#d7dfdc] bg-white p-4">
+        <p className="text-xs text-[#63766f]">
           Workspace owners and admins can manage teammates. Ask an admin if you need access.
         </p>
       </section>
@@ -104,14 +103,14 @@ export function TeamPanel() {
   }
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-4 border border-[#d7dfdc] bg-white p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">Workspace team</p>
-          <h2 className="mt-2 font-['Space_Grotesk'] text-2xl font-semibold text-slate-50">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#087f72]">Workspace team</p>
+          <h2 className="mt-1.5 text-base font-semibold text-[#20372f]">
             Invite the people who run the operation
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-[#63766f]">
             Invitations are attached to this workspace only. The invite link expires after 72 hours.
             An existing account must use its current password.
           </p>
@@ -119,16 +118,16 @@ export function TeamPanel() {
         <button
           type="button"
           onClick={() => void refresh()}
-          className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:border-slate-500"
+          className="min-h-8 border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] hover:bg-[#eef3f0]"
         >
           Refresh
         </button>
       </div>
 
-      {error ? <p className="rounded-lg border border-rose-500/25 bg-rose-950/25 p-3 text-sm text-rose-200">{error}</p> : null}
+      {error ? <p className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]">{error}</p> : null}
 
-      <form onSubmit={onInvite} className="fp-nested-surface grid gap-3 p-4 md:grid-cols-[1fr_180px_auto]">
-        <label className="grid gap-1.5 text-xs text-slate-400">
+      <form onSubmit={onInvite} className="grid gap-3 border border-[#d7dfdc] bg-[#f8faf9] p-3 md:grid-cols-[1fr_180px_auto]">
+        <label className="grid gap-1.5 text-xs text-[#63766f]">
           Email
           <input
             className={FIELD}
@@ -139,7 +138,7 @@ export function TeamPanel() {
             placeholder="teammate@company.com"
           />
         </label>
-        <label className="grid gap-1.5 text-xs text-slate-400">
+        <label className="grid gap-1.5 text-xs text-[#63766f]">
           Role
           <select className={FIELD} value={role} onChange={(event) => setRole(event.target.value as InviteRole)}>
             <option value="viewer">Viewer</option>
@@ -147,41 +146,41 @@ export function TeamPanel() {
             <option value="admin">Admin</option>
           </select>
         </label>
-        <button className="self-end rounded-lg bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400">
+        <button className="min-h-9 self-end bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">
           Create invitation
         </button>
       </form>
 
       {inviteLink ? (
-        <div className="rounded-lg border border-emerald-500/25 bg-emerald-950/25 p-4">
-          <p className="text-sm font-semibold text-emerald-100">Invitation created</p>
-          <p className="mt-1 text-xs text-emerald-200/70">
+        <div className="border border-[#b9dcd1] bg-[#f3faf7] p-3">
+          <p className="text-xs font-semibold text-[#14745f]">Invitation created</p>
+          <p className="mt-1 text-[11px] text-[#4f6e63]">
             {inviteEmailStatus?.sent
               ? 'The invitation email was sent. The one-time link is also available below.'
               : `${inviteEmailStatus?.error || 'Email delivery is unavailable.'} Copy the one-time link and share it securely.`}
           </p>
-          <code className="mt-3 block break-all rounded bg-slate-950/60 p-3 text-xs text-emerald-100">{inviteLink}</code>
+          <code className="mt-2 block break-all border border-[#d7dfdc] bg-white p-2 text-[11px] text-[#25483f]">{inviteLink}</code>
         </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="fp-nested-surface p-4">
-          <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-slate-100">Members</h3>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="border border-[#d7dfdc] p-3">
+          <h3 className="text-xs font-semibold text-[#20372f]">Members</h3>
           <div className="mt-3 space-y-2">
-            {loading ? <p className="text-sm text-slate-500">Loading members…</p> : null}
+            {loading ? <p className="text-xs text-[#63766f]">Loading members…</p> : null}
             {members.map((member) => (
-              <div key={member.membership_id} className="rounded-lg border border-slate-800 p-3">
+              <div key={member.membership_id} className="border-t border-[#e6ebe8] py-2 first:border-t-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-slate-100">{member.full_name || member.username}</p>
-                    <p className="text-xs text-slate-500">{member.email || member.username}</p>
+                    <p className="text-xs font-semibold text-[#20372f]">{member.full_name || member.username}</p>
+                    <p className="text-[11px] text-[#63766f]">{member.email || member.username}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {member.role === 'owner' ? (
-                      <span className="text-xs font-semibold text-amber-200">Owner</span>
+                      <span className="text-xs font-semibold text-[#885100]">Owner</span>
                     ) : (
                       <select
-                        className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200"
+                        className="border border-[#d7dfdc] bg-white px-2 py-1 text-xs text-[#40534c]"
                         value={member.role}
                         onChange={(event) => void onRoleChange(member, event.target.value as InviteRole)}
                       >
@@ -194,7 +193,7 @@ export function TeamPanel() {
                       <button
                         type="button"
                         onClick={() => void onRemove(member)}
-                        className="text-xs text-rose-300 hover:text-rose-200"
+                        className="text-xs text-[#a3342f] hover:text-[#7d2924]"
                       >
                         Remove
                       </button>
@@ -206,29 +205,29 @@ export function TeamPanel() {
           </div>
         </div>
 
-        <div className="fp-nested-surface p-4">
-          <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-slate-100">Pending invitations</h3>
+        <div className="border border-[#d7dfdc] p-3">
+          <h3 className="text-xs font-semibold text-[#20372f]">Pending invitations</h3>
           <div className="mt-3 space-y-2">
             {invitations.filter((item) => item.status === 'pending').length === 0 ? (
-              <p className="text-sm text-slate-500">No pending invitations.</p>
+              <p className="text-xs text-[#63766f]">No pending invitations.</p>
             ) : null}
             {invitations
               .filter((item) => item.status === 'pending')
               .map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 p-3"
+                  className="flex items-center justify-between gap-3 border-t border-[#e6ebe8] py-2 first:border-t-0"
                 >
                   <div>
-                    <p className="text-sm text-slate-100">{invitation.email}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-[#20372f]">{invitation.email}</p>
+                    <p className="text-[11px] text-[#63766f]">
                       {invitation.role} · expires {new Date(invitation.expires_at).toLocaleString()}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => void onRevoke(invitation)}
-                    className="text-xs text-rose-300 hover:text-rose-200"
+                    className="text-xs text-[#a3342f] hover:text-[#7d2924]"
                   >
                     Revoke
                   </button>

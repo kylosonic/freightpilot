@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 
 import { ActivationBanner } from '../components/ActivationBanner';
 import { DecisionBriefPanel } from '../components/DecisionBriefPanel';
@@ -37,7 +38,7 @@ function severityTone(severity: string) {
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-[var(--fp-radius-panel)] bg-slate-800/40 ${className ?? ''}`} />;
+  return <div className={`skeleton animate-pulse ${className ?? ''}`} />;
 }
 
 // NB-29.3 panel gate map: hidden vs placeholder per surface, milestone
@@ -60,13 +61,14 @@ export { PANEL_GATES };
 
 function GatePlaceholder({ milestone }: { milestone: number }) {
   return (
-    <div className="grid h-full min-h-[160px] place-items-center rounded-[var(--fp-radius-panel)] border border-dashed border-slate-700/60 bg-slate-900/30 p-6 text-center">
+    <div className="grid h-full min-h-[130px] place-items-center border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-5 text-center">
       <div>
-        <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">
+        <p className="text-sm font-semibold text-[#40534c]">
           Unlocks after Milestone {milestone}
         </p>
-        <Link to="/upload" className="mt-2 inline-block text-sm font-semibold text-sky-300 underline-offset-4 hover:underline">
-          Continue onboarding →
+        <Link to="/upload" className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
+          Continue onboarding
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
       </div>
     </div>
@@ -75,21 +77,21 @@ function GatePlaceholder({ milestone }: { milestone: number }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
-      <SkeletonBlock className="h-[120px] rounded-[var(--fp-radius-hero)]" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="space-y-4">
+      <SkeletonBlock className="h-[80px]" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {[1, 2].map((i) => (
           <SkeletonBlock key={i} className="h-[110px] rounded-[var(--fp-radius-panel)]" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <SkeletonBlock key={i} className="h-[110px] rounded-[var(--fp-radius-panel)]" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-        <SkeletonBlock className="h-[300px] rounded-[var(--fp-radius-hero)]" />
-        <SkeletonBlock className="h-[300px] rounded-[var(--fp-radius-hero)]" />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+        <SkeletonBlock className="h-[300px]" />
+        <SkeletonBlock className="h-[300px]" />
       </div>
     </div>
   );
@@ -190,30 +192,28 @@ export function DashboardPage() {
   const feedItems = exceptionFeed?.items ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Control tower"
-        title="Operations command surface"
-        description="Monitor stock position, route status, open exceptions, approval pressure, and usage posture without leaving the operator frame."
+        title="Today's operation"
+        description="Exceptions, movement, and decisions that need attention now."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {livePayload ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-950/30 px-3 py-2 text-xs font-medium uppercase tracking-wide text-emerald-200">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Live sync {new Date(livePayload.server_time).toLocaleTimeString()}
+              <span className="inline-flex items-center gap-1.5 text-xs text-[#5b6d66]">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#16856b]" aria-hidden="true" />
+                Live sync {new Date(livePayload.server_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             ) : null}
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="glow-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+              className="glow-ring inline-flex h-9 w-9 items-center justify-center border border-[#cfd9d5] bg-white text-[#40534c] transition-colors hover:bg-[#eef3f0] disabled:opacity-60"
+              aria-label={isRefreshing ? 'Refreshing data' : 'Refresh data'}
+              title={isRefreshing ? 'Refreshing data' : 'Refresh data'}
             >
-              {isRefreshing ? (
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" />
-                </svg>
-              ) : null}
-              {isRefreshing ? 'Refreshing...' : 'Refresh data'}
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
             </button>
           </div>
         }
@@ -221,29 +221,27 @@ export function DashboardPage() {
 
       <ActivationBanner mode="compact" />
 
-      {/* Layer C — two-tier metric hierarchy: the primary pair spans the
-          framed primary strip; the secondary trio reads quieter on canvas. */}
-      <div className="fp-shell-surface grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-        <MetricTile
-          title="Open exceptions"
-          value={feedSummary?.open_alerts ?? 0}
-          detail={`${feedSummary?.delayed_shipments ?? summary.delayedShipments.length} delayed shipment${(feedSummary?.delayed_shipments ?? summary.delayedShipments.length) === 1 ? '' : 's'}.`}
-          tone={(feedSummary?.open_alerts ?? 0) > 0 ? 'warning' : 'success'}
-        />
-        <MetricTile
-          title="In-transit"
-          value={summary.inTransitShipments.length}
-          detail="Live movement across exception lanes."
-          tone="info"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section aria-label="Operational summary" className="grid grid-cols-2 overflow-hidden border border-[#d7dfdc] bg-white lg:grid-cols-5">
+        <div className="col-span-2 border-b border-[#e2e8e5] bg-[#fffaf0] px-4 py-3 lg:col-span-1 lg:border-b-0 lg:border-r">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a5b09]">Needs attention</p>
+          <p className="mt-1 font-mono text-[25px] leading-7 text-[#5f3c00]">{feedSummary?.open_alerts ?? 0}</p>
+          <p className="mt-1 text-xs text-[#6f5b3c]">Open exceptions</p>
+        </div>
+        <div className="border-b border-r border-[#e2e8e5] px-4 py-3 lg:border-b-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#63766f]">In-transit</p>
+          <p className="mt-1 font-mono text-[25px] leading-7 text-[#172a24]">{summary.inTransitShipments.length}</p>
+          <p className="mt-1 text-xs text-[#63766f]">Active shipments</p>
+        </div>
+        <div className="border-b border-[#e2e8e5] px-4 py-3 lg:border-b-0 lg:border-r">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#63766f]">Delayed</p>
+          <p className="mt-1 font-mono text-[25px] leading-7 text-[#172a24]">{feedSummary?.delayed_shipments ?? summary.delayedShipments.length}</p>
+          <p className="mt-1 text-xs text-[#63766f]">Shipments past plan</p>
+        </div>
         {milestone >= gateMilestone('forecast-demand') ? (
           <MetricTile
             title="Forecast demand"
             value={summary.forecastDemand.toLocaleString()}
-            detail="4-week projection horizon."
+            detail="Next 4 weeks"
             tone="neutral"
           />
         ) : (
@@ -259,14 +257,14 @@ export function DashboardPage() {
           <MetricTile
             title="Simulated weather risk"
             value={summary.maxRiskScore > 0 ? `${summary.maxRiskScore}/10` : 'None'}
-            detail="Deterministic simulation; not live weather data."
+            detail="Simulation, not live weather"
             tone={summary.maxRiskScore >= 8 ? 'danger' : summary.maxRiskScore >= 5 ? 'warning' : 'success'}
           />
         ) : (
           <MetricTile
             title="Simulated weather risk"
             value="Locked"
-            detail="Unlocks after Milestone 5."
+            detail="After Milestone 5"
             tone="neutral"
             cta={{ label: 'Continue onboarding', href: '/upload' }}
           />
@@ -274,14 +272,14 @@ export function DashboardPage() {
         <MetricTile
           title="Usage posture"
           value={summary.usagePercent == null ? 'N/A' : `${summary.usagePercent}%`}
-          detail={summary.usagePercent == null ? 'Usage endpoint unavailable.' : 'Monthly task volume utilization.'}
+          detail={summary.usagePercent == null ? 'Usage unavailable' : 'Monthly task volume'}
           tone={summary.usagePercent != null && summary.usagePercent >= 100 ? 'danger' : summary.usagePercent != null && summary.usagePercent >= 80 ? 'warning' : 'success'}
         />
-      </div>
+      </section>
 
       {firstError ? (
-        <Panel className="border-rose-500/20 bg-rose-950/20">
-          <p className="text-sm text-rose-200">
+        <Panel className="border-[#e7c2be] bg-[#fff8f7]">
+          <p className="text-sm text-[#8f302a]">
             Some data surfaces could not load. {(firstError as Error)?.message || 'Try refreshing.'}
           </p>
         </Panel>
@@ -289,70 +287,71 @@ export function DashboardPage() {
 
       <DecisionBriefPanel />
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
         <Panel
           eyebrow="Exception queue"
           title="What needs operator action"
           description="Unified feed: alerts, pending approvals, and route interventions."
         >
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-[#e6ebe8]">
             {feedItems.slice(0, 6).map((item) => (
               <article
                 key={`${item.source_type}:${item.source_id}`}
-                className="py-3 transition-colors hover:bg-slate-900/40"
+                className="py-3 transition-colors hover:bg-[#f8faf9]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={item.severity} tone={severityTone(item.severity)} />
-                    <span className="text-xs uppercase tracking-wide text-slate-500">{item.source_type}</span>
-                    <h3 className="font-['Space_Grotesk'] text-sm font-semibold text-slate-100">{item.title}</h3>
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-[#6b7d76]">{item.source_type}</span>
+                    <h3 className="text-sm font-semibold text-[#20372f]">{item.title}</h3>
                   </div>
-                  <span className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-[#6b7d76]">{new Date(item.created_at).toLocaleString()}</span>
                 </div>
-                <p className="mt-1 text-sm leading-6 text-slate-400">{item.message}</p>
+                <p className="mt-1 text-sm leading-6 text-[#5b6d66]">{item.message}</p>
               </article>
             ))}
             {feedItems.length === 0 ? (
-              <div className="rounded-[var(--fp-radius-panel)] border border-emerald-500/20 bg-emerald-950/20 p-5 text-center">
-                <p className="font-['Space_Grotesk'] text-lg font-semibold text-emerald-200">Queue clear</p>
-                <p className="mt-1 text-sm text-emerald-300/60">No open alerts requiring operator attention.</p>
+              <div className="border border-[#b9dcd1] bg-[#f3faf7] p-5 text-center">
+                <p className="text-sm font-semibold text-[#14745f]">Queue clear</p>
+                <p className="mt-1 text-xs text-[#4f6e63]">No open alerts requiring operator attention.</p>
               </div>
             ) : null}
           </div>
         </Panel>
 
-        <div className="grid gap-5">
+        <div className="grid gap-4">
           <Panel eyebrow="Execution posture" title="Workspace readiness">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <div className="hover-lift fp-nested-surface p-3.5 transition">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Inventory position</p>
-                <p className="mt-2.5 font-['Space_Grotesk'] text-2xl font-semibold tabular-nums text-slate-50">{summary.stock.toLocaleString()}</p>
-                <p className="mt-1.5 text-sm text-slate-400">Safety stock: {summary.safety.toLocaleString()} units</p>
+              <div className="border-t border-[#e2e8e5] pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Inventory on hand</p>
+                <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{summary.stock.toLocaleString()}</p>
+                <p className="mt-0.5 text-xs text-[#63766f]">Safety stock: {summary.safety.toLocaleString()} units</p>
               </div>
               {milestone >= gateMilestone('utilization') ? (
-                <div className="hover-lift fp-nested-surface p-3.5 transition">
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Utilization</p>
-                  <p className="mt-2.5 font-['Space_Grotesk'] text-2xl font-semibold tabular-nums text-slate-50">{summary.avgUtil}%</p>
-                  <p className="mt-1.5 text-sm text-slate-400">Average capacity pressure.</p>
+                <div className="border-t border-[#e2e8e5] pt-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Capacity utilization</p>
+                  <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{summary.avgUtil}%</p>
+                  <p className="mt-0.5 text-xs text-[#63766f]">Average across inventory.</p>
                 </div>
               ) : (
-                <div className="rounded-[var(--fp-radius-panel)] border border-dashed border-slate-700/60 bg-slate-900/30 p-3.5">
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Utilization</p>
-                  <p className="mt-2 text-sm text-slate-400">Unlocks after Milestone 4.</p>
-                  <Link to="/upload" className="mt-2 inline-block text-sm font-semibold text-sky-300 underline-offset-4 hover:underline">
-                    Continue onboarding →
+                <div className="border-t border-dashed border-[#c8d4cf] pt-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Capacity utilization</p>
+                  <p className="mt-1 text-xs text-[#63766f]">After Milestone 4.</p>
+                  <Link to="/upload" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
+                    Continue onboarding
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
                 </div>
               )}
-              <div className="hover-lift fp-nested-surface p-3.5 transition">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Pending approvals</p>
-                <p className="mt-2.5 font-['Space_Grotesk'] text-2xl font-semibold tabular-nums text-slate-50">{summary.pendingPlans.length}</p>
-                <p className="mt-1.5 text-sm text-slate-400">Replenishment plans awaiting sign-off.</p>
+              <div className="border-t border-[#e2e8e5] pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Pending approvals</p>
+                <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{summary.pendingPlans.length}</p>
+                <p className="mt-0.5 text-xs text-[#63766f]">Plans awaiting sign-off.</p>
               </div>
-              <div className="hover-lift fp-nested-surface p-3.5 transition">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Route schedules</p>
-                <p className="mt-2.5 font-['Space_Grotesk'] text-2xl font-semibold tabular-nums text-slate-50">{schedules.length}</p>
-                <p className="mt-1.5 text-sm text-slate-400">Saved optimization output.</p>
+              <div className="border-t border-[#e2e8e5] pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Route schedules</p>
+                <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{schedules.length}</p>
+                <p className="mt-0.5 text-xs text-[#63766f]">Saved optimization output.</p>
               </div>
             </div>
           </Panel>
@@ -360,24 +359,24 @@ export function DashboardPage() {
           <Panel eyebrow="Audit timeline" title="Latest workspace actions">
             <div className="space-y-3">
               {auditEvents.slice(0, 4).map((event) => (
-                <article key={event.id} className="hover-lift fp-nested-surface p-4">
+                <article key={event.id} className="border-t border-[#e2e8e5] pt-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-slate-50">{event.description}</h3>
-                      <p className="mt-1 text-sm text-slate-400">{event.event_type}</p>
+                      <h3 className="text-xs font-semibold text-[#20372f]">{event.description}</h3>
+                      <p className="mt-0.5 font-mono text-[10px] text-[#63766f]">{event.event_type}</p>
                     </div>
-                    <span className="text-xs text-slate-500">{new Date(event.created_at).toLocaleString()}</span>
+                    <span className="text-[11px] text-[#6b7d76]">{new Date(event.created_at).toLocaleString()}</span>
                   </div>
                 </article>
               ))}
-              {auditEvents.length === 0 ? <p className="text-sm text-slate-400">No audit events yet.</p> : null}
+              {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No audit events yet.</p> : null}
             </div>
           </Panel>
         </div>
       </div>
 
       {milestone >= gateMilestone('dock-gantt') ? (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <Panel eyebrow="Dock Management" title="Live Capacity Setup">
             <div className="h-[400px]">
               <DockGanttChart appointments={appointments} />
@@ -391,11 +390,11 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="xl:col-span-1">
           <FeedbackForm />
         </div>
-        <div className="xl:col-span-2 space-y-5">
+        <div className="xl:col-span-2 space-y-4">
           {milestone >= gateMilestone('inventory-charts') ? (
             <InventoryCharts data={inventory} />
           ) : (

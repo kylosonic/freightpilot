@@ -26,14 +26,14 @@ export function CapPitchBanner() {
       <div
         role="banner"
         data-testid="cap-pitch-banner"
-        className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-500/20 bg-rose-950/25 px-5 py-4"
+        className="mb-2 flex flex-wrap items-center justify-between gap-3 border border-[#e7c2be] border-l-4 border-l-[#b93a36] bg-[#fff8f7] px-4 py-2.5"
       >
-        <p className="text-sm font-semibold leading-6 text-rose-100">
+        <p className="text-sm font-semibold leading-6 text-[#7d2924]">
           {state.free_cap?.message ?? P100_MESSAGE}
         </p>
         <Link
           to="/account"
-          className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-rose-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
+          className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#b93a36] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#9f2f2b]"
         >
           Upgrade now
         </Link>
@@ -46,14 +46,14 @@ export function CapPitchBanner() {
       <div
         role="banner"
         data-testid="cap-pitch-banner"
-        className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-950/25 px-5 py-4"
+        className="mb-2 flex flex-wrap items-center justify-between gap-3 border border-[#e7d1a8] border-l-4 border-l-[#a15b00] bg-[#fffaf0] px-4 py-2.5"
       >
-        <p className="text-sm font-semibold leading-6 text-amber-100">
+        <p className="text-sm font-semibold leading-6 text-[#704500]">
           You&apos;ve used 80% of your Free tier tasks. Consider upgrading before writes lock.
         </p>
         <Link
           to="/account"
-          className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-amber-500/40 px-4 text-sm font-semibold text-amber-100 transition hover:border-amber-400/60 hover:bg-amber-950/40"
+          className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#c89743] bg-white px-3 text-xs font-semibold text-[#704500] transition hover:bg-[#fcf3df]"
         >
           See pricing
         </Link>
@@ -65,15 +65,15 @@ export function CapPitchBanner() {
     <div
       role="banner"
       data-testid="cap-pitch-banner"
-      className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800/60 bg-slate-900/35 px-5 py-4"
+      className="mb-2 flex flex-wrap items-center justify-between gap-3 border border-[#d7dfdc] border-l-4 border-l-[#087f72] bg-white px-4 py-2.5"
     >
-      <p className="text-sm font-semibold leading-6 text-slate-200">
+      <p className="text-sm font-medium leading-6 text-[#40534c]">
         You&apos;ve used 60% of your Free tier tasks this month.
       </p>
       <button
         type="button"
         onClick={() => dismiss.mutate('p60')}
-        className="rounded-full border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-400 hover:bg-slate-800"
+        className="border border-[#cfd9d5] bg-white px-3 py-1 text-xs font-semibold text-[#52665e] transition hover:bg-[#eef3f0]"
       >
         Dismiss
       </button>
@@ -100,31 +100,31 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
       <div
         role="banner"
         data-testid="activation-banner"
-        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800/60 bg-slate-900/35 px-5 py-4"
+        className="flex flex-wrap items-center justify-between gap-3 border border-[#c8ddd5] border-l-4 border-l-[#087f72] bg-[#f7fbf9] px-4 py-3"
       >
         <div>
           {n < 5 ? (
-            <p className="text-sm font-semibold leading-6 text-sky-100">
+            <p className="text-sm font-semibold leading-6 text-[#25483f]">
               Welcome back. You&apos;re {pct}% through onboarding — {5 - n} step
               {5 - n === 1 ? '' : 's'} remaining ({CATEGORY_ORDER.slice(n).join(', ')}). Continue
               setup.
             </p>
           ) : (
-            <p className="text-sm font-semibold leading-6 text-sky-100">
+            <p className="text-sm font-semibold leading-6 text-[#25483f]">
               Welcome back. You&apos;re 80% through onboarding — run your first route optimization
               to complete setup.
             </p>
           )}
-          <div className="mt-2 h-1.5 w-full max-w-[420px] overflow-hidden rounded-full bg-slate-800">
+          <div className="mt-2 h-1 w-full max-w-[420px] overflow-hidden bg-[#dce8e3]">
             <div
-              className="h-full rounded-lg bg-sky-500"
+              className="h-full bg-[#087f72]"
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
         <Link
           to={state.banner.cta ?? '/upload'}
-          className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
+          className="glow-ring inline-flex min-h-9 items-center justify-center bg-[#087f72] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
         >
           {n < 5 ? 'Continue setup' : 'Run your first route'}
         </Link>
@@ -136,22 +136,22 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
     <div
       role="banner"
       data-testid="activation-checklist"
-      className="rounded-2xl border border-slate-800/60 bg-slate-900/35 p-5"
+      className="border border-[#c8ddd5] bg-[#f7fbf9] p-4"
     >
       {n < 5 ? (
-        <p className="text-sm font-semibold leading-6 text-sky-100">
+        <p className="text-sm font-semibold leading-6 text-[#25483f]">
           You&apos;re viewing a demo workspace with sample data. Upload your real CSVs to start
           replacing the demo with your operation — {n} of 5 categories is yours.
         </p>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-semibold leading-6 text-sky-100">
+          <p className="text-sm font-semibold leading-6 text-[#25483f]">
             Welcome back. You&apos;re 80% through onboarding — run your first route optimization to
             complete setup.
           </p>
           <Link
             to="/routes"
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
+            className="glow-ring inline-flex min-h-9 items-center justify-center bg-[#087f72] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
           >
             Run your first route
           </Link>
@@ -162,40 +162,40 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
         {state.milestones.map((milestone, index) => {
           const chipTone =
             milestone.status === 'real'
-              ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-200'
+              ? 'border-[#b9dcd1] bg-[#edf8f3] text-[#14745f]'
               : milestone.status === 'sample'
-                ? 'border-amber-500/30 bg-amber-950/20 text-amber-200'
-                : 'border-slate-700 bg-slate-900/60 text-slate-400';
+                ? 'border-[#e7d1a8] bg-[#fcf6e9] text-[#885100]'
+                : 'border-[#d7dfdc] bg-white text-[#63766f]';
           return (
             <div
               key={milestone.category}
               data-testid={`milestone-chip-${milestone.category}`}
-              className={`rounded-xl border px-3 py-3 ${chipTone}`}
+              className={`border px-3 py-2.5 ${chipTone}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wide">
                   Step {index + 1}
                 </p>
-                <span className="rounded-full border border-slate-700/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                <span className="border border-current/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">
                   {milestone.status}
                 </span>
               </div>
               <p className="mt-2 text-sm font-semibold">{milestone.label}</p>
               {index === n && !state.m6_completed ? (
-                <p className="mt-1 text-[11px] font-semibold text-sky-400">next step →</p>
+                <p className="mt-1 text-[11px] font-semibold text-[#087f72]">next step</p>
               ) : null}
             </div>
           );
         })}
       </div>
 
-      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800">
+      <div className="mt-4 h-1 overflow-hidden bg-[#dce8e3]">
         <div
-          className="h-full rounded-lg bg-sky-500"
+          className="h-full bg-[#087f72]"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-slate-400">
+      <p className="mt-2 text-xs text-[#5b6d66]">
         {n < 5 ? `${5 - n} step${5 - n === 1 ? '' : 's'} remaining.` : 'Run your first route optimization to complete setup.'}
       </p>
     </div>

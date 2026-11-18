@@ -48,7 +48,7 @@ export function FreightReconciliationPanel() {
   return (
     <div className="flex h-full flex-col">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-100">Freight Invoice Reconciliation</h3>
+        <h3 className="text-xs font-semibold text-[#20372f]">Freight invoice reconciliation</h3>
         <div>
           <input
             type="file"
@@ -58,7 +58,7 @@ export function FreightReconciliationPanel() {
             onChange={handleFileUpload}
           />
           <button
-            className="rounded bg-sky-500 px-3 py-1 text-xs font-medium text-slate-950 hover:bg-sky-400 disabled:opacity-50"
+            className="bg-[#087f72] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#06675d] disabled:opacity-50"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
@@ -68,22 +68,22 @@ export function FreightReconciliationPanel() {
       </div>
 
       <div className="flex gap-4 mb-4">
-        <div className="flex-1 fp-nested-surface p-3">
-          <div className="text-xs text-slate-500">Flagged Mismatches</div>
-          <div className="font-mono text-2xl font-bold tabular-nums text-amber-400">{mismatches.length}</div>
+        <div className="flex-1 border border-[#d7dfdc] bg-[#f8faf9] p-3">
+          <div className="text-[10px] uppercase tracking-wide text-[#63766f]">Flagged mismatches</div>
+          <div className="font-mono text-xl tabular-nums text-[#885100]">{mismatches.length}</div>
         </div>
-        <div className="flex-1 fp-nested-surface p-3">
-          <div className="text-xs text-slate-500">Total Variance Cost</div>
-          <div className="font-mono text-2xl font-bold tabular-nums text-red-500">${totalVariance.toFixed(2)}</div>
+        <div className="flex-1 border border-[#d7dfdc] bg-[#f8faf9] p-3">
+          <div className="text-[10px] uppercase tracking-wide text-[#63766f]">Total variance</div>
+          <div className="font-mono text-xl tabular-nums text-[#a3342f]">${totalVariance.toFixed(2)}</div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto fp-nested-surface">
+      <div className="flex-1 overflow-auto border border-[#d7dfdc]">
         {loading ? (
           <div className="flex h-full items-center justify-center p-4">Loading...</div>
         ) : (
-          <table className="w-full text-left text-sm text-slate-400">
-            <thead className="sticky top-0 bg-slate-900 text-xs font-medium text-slate-300">
+          <table className="w-full text-left text-xs text-[#52665e]">
+            <thead className="sticky top-0 bg-[#f5f8f6] text-[10px] font-semibold uppercase tracking-[0.06em] text-[#63766f]">
               <tr>
                 <th className="px-4 py-3">Carrier</th>
                 <th className="px-4 py-3">Order ID</th>
@@ -93,15 +93,15 @@ export function FreightReconciliationPanel() {
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#e6ebe8]">
               {invoices.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-4 text-center">No invoices uploaded</td>
                 </tr>
               ) : (
                 invoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-3 font-medium text-slate-100">{inv.carrier_id}</td>
+                  <tr key={inv.id} className="hover:bg-[#f8faf9]">
+                    <td className="px-4 py-2.5 font-medium text-[#20372f]">{inv.carrier_id}</td>
                     <td className="px-4 py-3 font-mono text-xs">{inv.order_id.slice(0, 8)}...</td>
                     <td className="px-4 py-3 font-mono tabular-nums">{inv.quoted_rate.toFixed(2)}</td>
                     <td className="px-4 py-3 font-mono tabular-nums">{inv.actual_rate.toFixed(2)}</td>
@@ -114,8 +114,8 @@ export function FreightReconciliationPanel() {
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                           inv.status === 'mismatch_flagged'
-                            ? 'bg-amber-900/30 text-amber-400'
-                            : 'bg-green-900/30 text-green-400'
+                            ? 'bg-[#fffaf0] text-[#885100]'
+                            : 'bg-[#f3faf7] text-[#14745f]'
                         }`}
                       >
                         {inv.status === 'mismatch_flagged' ? 'Mismatch' : 'Matched'}

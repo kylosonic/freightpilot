@@ -101,20 +101,20 @@ export function CsvUploadPanel() {
   }
 
     const fieldClassName =
-      'fp-input file:mr-3 file:rounded-full file:border-0 file:bg-sky-400/15 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-sky-200 hover:file:bg-sky-400/20';
+      'fp-input file:mr-3 file:border-0 file:bg-[#eef6f2] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#087f72] hover:file:bg-[#e0efea]';
 
   return (
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {uploadSpecs.map((spec) => (
           <article key={spec.key} className="fp-row">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="font-['Space_Grotesk'] text-xl font-semibold text-slate-50">{spec.title}</h3>
-              <span className="rounded-full border border-slate-700 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+              <h3 className="text-sm font-semibold text-[#20372f]">{spec.title}</h3>
+              <span className="border border-[#d7dfdc] bg-[#f5f8f6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52665e]">
                 {spec.key}
               </span>
             </div>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">{spec.hint}</p>
+            <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{spec.hint}</p>
 
             <div className="mt-3 space-y-3">
               <input
@@ -132,15 +132,15 @@ export function CsvUploadPanel() {
                 <button
                   disabled={!files[spec.key] || activeKind !== null || freeCapLocked}
                   onClick={() => submit(spec.key)}
-                  className="glow-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {activeKind === spec.key ? 'Uploading...' : freeCapLocked ? 'Writes locked (Free cap)' : spec.actionLabel}
                 </button>
-                <span className="text-sm text-slate-500">{files[spec.key]?.name || 'No file selected'}</span>
+                <span className="text-xs text-[#63766f]">{files[spec.key]?.name || 'No file selected'}</span>
               </div>
             </div>
 
-            {results[spec.key] ? <p className="mt-3 text-sm text-slate-300">{results[spec.key]}</p> : null}
+            {results[spec.key] ? <p className="mt-2 text-xs text-[#40534c]">{results[spec.key]}</p> : null}
           </article>
         ))}
     </div>

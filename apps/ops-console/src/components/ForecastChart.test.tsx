@@ -12,7 +12,7 @@ function quality(overrides: Partial<ForecastQuality> = {}): ForecastQuality {
     evaluated_rows: 8,
     mae: 4.2,
     wape_percent: 18.5,
-    range_basis: 'ensemble_p10_p90_widened_by_holdout_error',
+    range_basis: 'trend_residual_band_widened_by_holdout_error',
     interpretation: 'Held-out error is within 20% of actual demand.',
     caveat: 'This is not a guarantee of future demand.',
     ...overrides,
@@ -20,7 +20,7 @@ function quality(overrides: Partial<ForecastQuality> = {}): ForecastQuality {
 }
 
 function render(dataQuality: ForecastQuality): string {
-  return renderToString(<ForecastChart points={[]} quality={dataQuality} modelName="RandomForestRegressor" />)
+  return renderToString(<ForecastChart points={[]} quality={dataQuality} modelName="TrendRegressor" />)
     .replace(/<!-- -->/g, '');
 }
 
@@ -28,9 +28,9 @@ describe('ForecastChart evidence labels', () => {
   it('states when the range is widened by measured holdout error', () => {
     const html = render(quality());
 
-    expect(html).toContain('RandomForestRegressor');
+    expect(html).toContain('TrendRegressor');
     expect(html).toContain('18.5% WAPE');
-    expect(html).toContain('Planning range widens ensemble spread by held-out error');
+    expect(html).toContain('Planning range widens the trend residual band by held-out error');
   });
 
   it('refuses to claim a holdout-widened range when history is insufficient', () => {
@@ -42,14 +42,14 @@ describe('ForecastChart evidence labels', () => {
         evaluated_rows: 0,
         mae: null,
         wape_percent: null,
-        range_basis: 'ensemble_p10_p90',
+        range_basis: 'trend_residual_band',
         caveat: 'No held-out backtest can be reported.',
       }),
     );
 
     expect(html).toContain('Not available');
-    expect(html).toContain('ensemble spread only');
-    expect(html).not.toContain('Planning range widens ensemble spread by held-out error');
+    expect(html).toContain('trend residual band only');
+    expect(html).not.toContain('Planning range widens the trend residual band by held-out error');
   });
 
   it('does not render high-error validation as an unqualified success', () => {

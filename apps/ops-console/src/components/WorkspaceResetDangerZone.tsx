@@ -40,25 +40,25 @@ export function WorkspaceResetDangerZone({
           setTypedWorkspaceName('');
           setResetModalOpen(true);
         }}
-        className="glow-ring inline-flex min-h-11 items-center justify-center rounded-full border border-rose-500/40 px-5 text-sm font-semibold text-rose-200 transition hover:border-rose-400/60 hover:bg-rose-950/30"
+        className="glow-ring inline-flex min-h-9 items-center justify-center border border-[#e7c2be] bg-white px-4 text-xs font-semibold text-[#a3342f] transition hover:bg-[#fff8f7]"
       >
         Reset workspace to sample data
       </button>
       {resetMutation.isError ? (
-        <p className="mt-3 text-sm text-rose-300">
+        <p className="mt-3 text-xs text-[#8f302a]">
           Reset failed: {(resetMutation.error as Error)?.message || 'Unknown error'}
         </p>
       ) : null}
 
       {resetModalOpen ? (
-        <Dialog className="max-w-md border-rose-500/25">
-          <h3 className="font-['Space_Grotesk'] text-xl font-semibold text-rose-100">
+        <Dialog className="max-w-md border-[#e7c2be]">
+          <h3 className="text-lg font-semibold text-[#8f302a]">
             Reset workspace to sample data?
           </h3>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
+          <p className="mt-2 text-xs leading-5 text-[#63766f]">
             All real uploaded data across warehouses, items, fleet assets, inventory, and orders
             will be deleted and replaced with the seeded sample set. Milestones reset to 0 of 5.
-            Type <span className="font-semibold text-slate-100">{organizationName}</span> to
+            Type <span className="font-semibold text-[#20372f]">{organizationName}</span> to
             confirm.
           </p>
           <input
@@ -66,13 +66,13 @@ export function WorkspaceResetDangerZone({
             onChange={(event) => setTypedWorkspaceName(event.target.value)}
             placeholder={organizationName}
             aria-label="Workspace name confirmation"
-            className="fp-input mt-4 px-4 focus:border-rose-400/50"
+            className="fp-input mt-4"
           />
           <div className="mt-5 flex flex-wrap justify-end gap-3">
             <button
               type="button"
               onClick={() => setResetModalOpen(false)}
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500"
+              className="min-h-8 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
             >
               Cancel
             </button>
@@ -80,7 +80,7 @@ export function WorkspaceResetDangerZone({
               type="button"
               disabled={typedWorkspaceName !== organizationName || resetMutation.isPending}
               onClick={() => resetMutation.mutate(typedWorkspaceName)}
-              className="rounded-full border border-rose-500/50 bg-rose-950/30 px-4 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-950/50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="min-h-8 border border-[#b93a36] bg-[#b93a36] px-3 text-xs font-semibold text-white transition hover:bg-[#9f2f2b] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {resetMutation.isPending ? 'Resetting...' : 'Reset workspace'}
             </button>

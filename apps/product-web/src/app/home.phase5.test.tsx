@@ -179,4 +179,14 @@ describe('home page phase 5 (NB-36..44 locked copy)', () => {
     const html = renderToString(<HomePage />);
     expect(html.length).toBeLessThan(120_000);
   });
+
+  it('renders a real workspace preview in the hero with an accessible description', () => {
+    const html = renderToString(<HomePage />);
+    const hero = sectionHtml(html, 'hero');
+
+    expect(hero).toContain('freightpilot / control-tower');
+    expect(hero).toContain('Next stops');
+    expect(hero).toContain('Example workspace');
+    expect(hero).toContain('aria-hidden="true"');
+  });
 });

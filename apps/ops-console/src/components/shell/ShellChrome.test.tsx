@@ -55,12 +55,14 @@ describe('Shell chrome', () => {
 
   it('renders the shell header context label, descriptor, and identity chips', () => {
     const html = renderToString(
-      <ShellHeader
-        contextLabel="Control tower"
-        descriptor="Routes, exceptions, planning, and workspace governance."
-        user={fixtureUser}
-        onOpenNavigation={() => undefined}
-      />,
+      <StaticRouter location="/">
+        <ShellHeader
+          contextLabel="Control tower"
+          descriptor="Routes, exceptions, planning, and workspace governance."
+          user={fixtureUser}
+          onOpenNavigation={() => undefined}
+        />
+      </StaticRouter>,
     );
 
     expect(html).toContain('Control tower');

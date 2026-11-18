@@ -12,7 +12,8 @@ function FeedbackPanel({
   return (
     <div
       data-testid={testId}
-      className="rounded-[var(--fp-radius-panel)] border border-rose-500/25 bg-rose-950/30 px-3.5 py-3 text-sm text-rose-300"
+      role="alert"
+      className="mt-4 border border-[#e7c2be] border-l-4 border-l-[#b93a36] bg-[#fff8f7] px-3.5 py-2.5 text-xs text-[#8f302a]"
     >
       {message}
     </div>

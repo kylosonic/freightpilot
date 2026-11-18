@@ -23,10 +23,10 @@ export function HowItWorks() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="section-shell pt-14 sm:pt-18" data-section="how-it-works">
-      <div className="glass-panel px-6 py-8 sm:px-8">
+    <section className="section-shell pt-14 sm:pt-20" data-section="how-it-works">
+      <div className="border-y border-[#d7dfdc] py-8 sm:py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="max-w-[24ch] font-display text-[clamp(1.75rem,3.6vw,2.9rem)] leading-[0.98] tracking-[-0.02em] text-white">
+          <h2 className="max-w-[24ch] font-display text-[clamp(1.75rem,3.4vw,2.7rem)] font-semibold leading-[1.08] text-[#172a24]">
             {howItWorksHeading}
           </h2>
           <button
@@ -34,7 +34,7 @@ export function HowItWorks() {
             onClick={() => setOpen((current) => !current)}
             aria-expanded={open}
             aria-controls="how-it-works-steps"
-            className="inline-flex min-h-12 items-center justify-center gap-2 self-start rounded-full border border-white/15 bg-white/[0.06] px-5 text-sm font-semibold text-white transition hover:bg-white/[0.1] sm:self-auto"
+            className="inline-flex min-h-10 items-center justify-center gap-2 self-start border border-[#cfd9d5] bg-white px-4 text-sm font-semibold text-[#40534c] transition hover:bg-[#eef3f0] sm:self-auto"
           >
             {open ? <Minus className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
             {open ? hideLabel : showLabel}
@@ -49,12 +49,12 @@ export function HowItWorks() {
                 return (
                   <li
                     key={step}
-                    className="flex items-start gap-4 rounded-[24px] border border-white/10 bg-black/25 p-5"
+                    className="flex items-start gap-4 border-t border-[#e2e8e5] py-4 first:border-t-0"
                   >
-                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05]">
-                      <Icon className="h-4 w-4 text-cyan-200" aria-hidden="true" />
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center border border-[#d7dfdc] bg-[#f5f8f6]">
+                      <Icon className="h-4 w-4 text-[#087f72]" aria-hidden="true" />
                     </span>
-                    <span className="text-sm leading-7 text-white/72 sm:text-base">{step}</span>
+                    <span className="text-sm leading-7 text-[#40534c] sm:text-base">{step}</span>
                   </li>
                 );
               })}

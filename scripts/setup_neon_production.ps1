@@ -286,7 +286,7 @@ $health = $null
 for ($i = 1; $i -le 12; $i++) {
     Start-Sleep -Seconds 10
     try {
-        $health = (Invoke-WebRequest 'https://platform-api-smoky.vercel.app/health' -TimeoutSec 45 -UseBasicParsing).Content
+        $health = (Invoke-WebRequest 'https://freightpilot-api.freightpilot.workers.dev/health' -TimeoutSec 90 -UseBasicParsing).Content
         Write-Host "  attempt ${i}: $health"
         if ($health -match '"db"\s*:\s*"ok"') { break }
     } catch { Write-Host "  attempt ${i}: $($_.Exception.Message)" }
@@ -297,7 +297,7 @@ Ok 'API reports the database reachable'
 Step 'Launch-funnel verification'
 $funnel = Join-Path $repoRoot '.artifacts/verify_funnel.py'
 if (Test-Path $funnel) {
-    & $PythonExe $funnel 'https://platform-api-smoky.vercel.app' 2>&1 | Select-Object -Last 10
+    & $PythonExe $funnel 'https://freightpilot-api.freightpilot.workers.dev' 2>&1 | Select-Object -Last 10
 } else {
     Warn2 "funnel script not found at $funnel; run it manually"
 }

@@ -82,7 +82,7 @@ If the form has a file upload instead, download `weekly-availability.pdf` from t
 | **Pitch video (MP4)** | `/watch/pitch-video.mp4` | The 4 m 34 s file itself. `video/mp4`, range-enabled |
 | **Product tour** | `/product/` | 8 screenshots of the running console on a real workspace |
 | **Availability (PDF)** | `/weekly-availability.pdf` | The 5-day commitment, working grid, and time-allocation plan |
-| **Live product** | product-web-chi.vercel.app · ops-console-azure.vercel.app · platform-api-smoky.vercel.app | The actual platform. Signup works end to end |
+| **Live product** | freightpilot.pages.dev · freightpilot-ops.freightpilot.workers.dev · freightpilot-api.freightpilot.workers.dev | The actual platform. Signup works end to end |
 
 ### How the 10 required deck sections map to the 7 slides
 

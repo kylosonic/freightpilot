@@ -4,14 +4,14 @@
     Apply pending Alembic migrations to the production Neon database.
 
 .DESCRIPTION
-    Needed because the Vercel project has no migration step: `vercel.json` only
-    builds `api/index.py`, so a merged migration never reaches the database on its
-    own. Every schema change must be applied here, BEFORE the code that depends on
-    it is deployed — otherwise new columns are missing and the API 500s.
+    Cloudflare Worker deployment packages migration files but does not execute
+    them against the production database. Every schema change must be applied
+    here, BEFORE the code that depends on it is deployed; otherwise new columns
+    are missing and the API returns errors.
 
     This is deliberately narrow: it reads the connection string from Neon, checks
     the current revision, runs `alembic upgrade head`, and prints the resulting
-    revision. It changes no Vercel configuration and deploys nothing.
+    revision. It changes no Cloudflare configuration and deploys nothing.
 
 .PARAMETER NeonApiKey
     Neon API key (https://console.neon.tech/app/settings/api-keys).
@@ -80,15 +80,19 @@ Ok "Neon API key present ($($NeonApiKey.Substring(0, [Math]::Min(4, $NeonApiKey.
 
 if (-not $PythonExe) {
     foreach ($candidate in @(
+        (Join-Path $repoRoot '.venv/Scripts/python.exe'),
         (Join-Path $apiDir '.venv-lockcheck/Scripts/python.exe'),
         (Join-Path $apiDir '.venv/Scripts/python.exe'),
-        (Join-Path $repoRoot '.venv/Scripts/python.exe')
     )) {
         if (Test-Path $candidate) { $PythonExe = $candidate; break }
     }
 }
 if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
     Die 'No Python interpreter with alembic found. Pass -PythonExe <path>.'
+}
+$alembicCheck = & $PythonExe -c "import alembic" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Die "Python interpreter does not have Alembic installed:`n$alembicCheck"
 }
 Ok "python: $PythonExe"
 

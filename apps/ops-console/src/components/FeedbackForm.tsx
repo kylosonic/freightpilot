@@ -20,16 +20,16 @@ export function FeedbackForm() {
   };
 
   return (
-    <div className="fp-nested-surface p-5 w-full">
-      <h3 className="font-['Space_Grotesk'] text-lg font-semibold text-slate-50 mb-4">Beta Pilot Feedback</h3>
+    <div className="w-full border border-[#d7dfdc] bg-white p-4">
+      <h3 className="mb-3 text-xs font-semibold text-[#20372f]">Pilot feedback</h3>
       {status === 'success' ? (
-        <div className="text-emerald-400 p-4 border border-emerald-500/20 bg-emerald-950/12 rounded-lg text-sm">
+        <div className="border border-[#b9dcd1] bg-[#f3faf7] p-3 text-xs text-[#14745f]">
           Thank you for your feedback! It helps us improve the platform.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Category</label>
+            <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -42,7 +42,7 @@ export function FeedbackForm() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Feedback Message</label>
+            <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Feedback message</label>
             <textarea
               required
               rows={3}
@@ -53,7 +53,7 @@ export function FeedbackForm() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Email (Optional)</label>
+            <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Email (optional)</label>
             <input
               type="email"
               value={email}
@@ -62,13 +62,13 @@ export function FeedbackForm() {
               className="fp-input p-2"
             />
           </div>
-          {status === 'error' && <p className="text-rose-400 text-xs">Failed to submit feedback. Try again.</p>}
+          {status === 'error' && <p className="text-xs text-[#a3342f]">Failed to submit feedback. Try again.</p>}
           <button
             type="submit"
             disabled={status === 'submitting'}
-            className="glow-ring w-full inline-flex min-h-10 items-center justify-center rounded-lg border border-emerald-500/50 bg-emerald-600/10 px-4 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-600/20 disabled:opacity-50"
+            className="glow-ring inline-flex min-h-9 w-full items-center justify-center border border-[#087f72] bg-white px-4 text-xs font-semibold text-[#087f72] transition hover:bg-[#eef6f2] disabled:opacity-50"
           >
-            {status === 'submitting' ? 'Submitting...' : 'Submit Feedback'}
+            {status === 'submitting' ? 'Submitting...' : 'Submit feedback'}
           </button>
         </form>
       )}

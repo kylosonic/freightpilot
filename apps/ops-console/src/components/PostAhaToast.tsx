@@ -29,9 +29,9 @@ export function PostAhaToast({ visible, onDismiss }: { visible: boolean; onDismi
     <div
       role="status"
       data-testid="post-aha-toast"
-      className="fixed bottom-6 right-6 z-[60] max-w-[380px] rounded-xl border border-emerald-500/25 bg-slate-900/95 px-5 py-4 shadow-lg"
+      className="fixed bottom-6 right-6 z-[60] max-w-[380px] border border-[#b9dcd1] border-l-4 border-l-[#16856b] bg-white px-4 py-3 shadow-lg"
     >
-      <p className="text-sm font-semibold leading-6 text-emerald-100">{TOAST_COPY}</p>
+      <p className="text-xs font-medium leading-5 text-[#25483f]">{TOAST_COPY}</p>
     </div>
   );
 }

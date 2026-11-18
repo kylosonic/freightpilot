@@ -14,10 +14,10 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.models  # noqa: F401
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models import load_all_models
 from app.models.audit_event import AuditEvent
 from app.models.collection_account import CollectionAccount
 from app.models.fleet_asset import FleetAsset
@@ -33,6 +33,8 @@ from app.models.user import User
 from app.models.warehouse import Warehouse
 from app.schemas.auth import UserRole
 from app.services.security import create_access_token, hash_password
+
+load_all_models()
 
 
 @pytest.fixture()

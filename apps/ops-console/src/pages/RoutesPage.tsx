@@ -63,15 +63,15 @@ export function RoutesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Route studio"
         title="Build, compare, and operationalize route scenarios"
-        description="Optimize a dispatch plan, review the resulting path, and keep the saved schedule book visible for the wider team."
+        description="Model a route, compare results, and keep the saved schedule visible."
         actions={
           <button
             onClick={handleRefresh}
-            className="glow-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-700/60 px-4 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800/50"
+            className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
           >
             {isRefreshing ? (
               <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
@@ -82,14 +82,14 @@ export function RoutesPage() {
       />
 
       {error ? (
-        <Panel className="border-rose-500/20 bg-rose-950/20">
-          <p className="text-sm text-rose-200">{error}</p>
+        <Panel className="border-[#e7c2be] bg-[#fff8f7]">
+          <p className="text-sm text-[#8f302a]">{error}</p>
         </Panel>
       ) : null}
 
       {/* Workstation split: the route model form is the dominant surface;
           the map reads clearly subordinate until results exist. */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <RouteOptimizerForm
           onOptimized={(route: RouteOptimizeResponse) => {
             setLatestRouteStops(route.stops);
@@ -105,13 +105,13 @@ export function RoutesPage() {
           <RouteMap stops={latestRouteStops} riskZones={riskZones} />
         ) : (
           <Panel eyebrow="Simulated weather risk" title="Simulated weather risk zones">
-            <div className="grid h-full min-h-[240px] place-items-center rounded-[var(--fp-radius-panel)] border border-dashed border-slate-700/60 bg-slate-900/30 p-6 text-center">
+            <div className="grid h-full min-h-[240px] place-items-center border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
               <div>
-                <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">
+                <p className="text-sm font-semibold text-[#40534c]">
                   Unlocks after Milestone 5
                 </p>
-                <Link to="/upload" className="mt-2 inline-block text-sm font-semibold text-sky-300 underline-offset-4 hover:underline">
-                  Continue onboarding →
+                <Link to="/upload" className="mt-1.5 inline-block text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
+                  Continue onboarding
                 </Link>
               </div>
             </div>
@@ -138,9 +138,9 @@ export function RoutesPage() {
           ))}
 
           {history.length === 0 ? (
-            <div className="rounded-[var(--fp-radius-panel)] border border-slate-800/60 bg-slate-900/35 p-6 text-center">
-              <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">No optimization history</p>
-              <p className="mt-1 text-sm text-slate-500">Run a route optimization above to start building scenario history.</p>
+            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+              <p className="text-sm font-semibold text-[#40534c]">No optimization history</p>
+              <p className="mt-1 text-xs text-[#63766f]">Run a route optimization above to start building scenario history.</p>
             </div>
           ) : null}
         </div>

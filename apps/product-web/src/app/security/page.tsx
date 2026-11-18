@@ -17,11 +17,11 @@ export default function SecurityPage() {
         description="FreightPilot is designed around workspace membership, tenant-scoped data access, auditable actions, and explicit operational evidence. This page states the controls and the remaining limits plainly."
       />
 
-      <section className="section-shell py-12 sm:py-16">
+      <section className="section-shell py-10 sm:py-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="font-display text-2xl text-white">Controls in place</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/65">
+            <h2 className="text-lg font-semibold text-[#172a24]">Controls in place</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>Authenticated access with role checks and active workspace membership on business endpoints.</li>
               <li>Organization-scoped reads and writes; cross-tenant record access returns 404 rather than revealing existence.</li>
               <li>HTTP-only, same-site authentication cookies; the console SPA also uses a short-lived bearer token held in tab-scoped session storage, with cache clearing on account switches.</li>
@@ -31,8 +31,8 @@ export default function SecurityPage() {
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="font-display text-2xl text-white">Current limits</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/65">
+            <h2 className="text-lg font-semibold text-[#172a24]">Current limits</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>This is not a claim of SOC 2, ISO 27001, PCI-DSS, or another third-party certification.</li>
               <li>FreightPilot does not take custody of funds, provide escrow, or guarantee a carrier payment.</li>
               <li>Public docs and status pages are informational; a signed enterprise agreement controls support and incident commitments.</li>
@@ -45,8 +45,8 @@ export default function SecurityPage() {
 
       <section className="section-shell pb-16">
         <SpotlightCard>
-          <h2 className="font-display text-2xl text-white">Report a vulnerability</h2>
-          <p className="mt-4 max-w-[60rem] text-sm leading-8 text-white/65">
+          <h2 className="text-lg font-semibold text-[#172a24]">Report a vulnerability</h2>
+          <p className="mt-3 max-w-[60rem] text-sm leading-7 text-[#5b6d66]">
             Do not include production secrets, customer data, or personal information in a public
             issue. Contact the team through the contact page with a concise description, affected
             surface, reproduction steps, and the minimum evidence needed to validate the report. We

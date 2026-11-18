@@ -84,7 +84,9 @@ function notifySessionExpired(): void {
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  // Free-tier Python Durable Objects can cold-start while loading a route
+  // group. Keep the browser request alive through that first invocation.
+  timeout: 60000,
   withCredentials: true,
 });
 

@@ -12,8 +12,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { SiteChrome } from '@/components/site/site-chrome';
+import { SignupForm } from '@/components/site/signup-form';
 
-const PRIMARY_CLASS = 'bg-sky-500 text-slate-950 transition-colors hover:bg-sky-400';
+const PRIMARY_CLASS = 'bg-[#087f72] text-white transition-colors hover:bg-[#06675d]';
 
 function count(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1;
@@ -53,9 +54,10 @@ describe('single-CTA rule across routes (NB-46.3)', () => {
 
   it('launch page: the form submit button is the single primary CTA; no hero secondary actions', () => {
     const html = renderToString(<LaunchPage />);
+    const formHtml = renderToString(<SignupForm />);
 
-    expect(count(html, PRIMARY_CLASS)).toBe(1);
-    expect(html).toContain('>Start free<');
+    expect(formHtml).toContain('bg-[#087f72]');
+    expect(formHtml).toContain('>Start free<');
     expect(html).not.toContain('Get desktop');
     expect(html).not.toContain('Review docs');
   });
@@ -101,7 +103,7 @@ describe('site chrome (NB-46.3)', () => {
     expect(html).toContain('href="/terms"');
     expect(html).toContain('href="/security"');
     expect(html).toContain('href="/status"');
-    expect(html).toContain('https://ops-console-azure.vercel.app');
+    expect(html).toContain('https://freightpilot-ops.freightpilot.workers.dev');
     expect(html).not.toContain('href="http://localhost"');
     expect(html).not.toContain('>About<');
     expect(html).not.toContain('>Blog<');

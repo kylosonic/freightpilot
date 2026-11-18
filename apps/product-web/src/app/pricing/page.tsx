@@ -63,13 +63,13 @@ export default function PricingPage() {
         }
       />
 
-      <section className="section-shell pt-16 sm:pt-20">
+      <section className="section-shell pt-10 sm:pt-14">
         <SectionHeading
           eyebrow="Paid tiers"
           title="Three tiers with flat prices and clear overage rates"
           description="Every paid tier has a flat price and clear overage rates. The price shown is the price."
         />
-        <div className="mt-10 grid gap-4 xl:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {pricingTiers.map((tier) => {
             const bullets: string[] = [];
             if (tier.included_units.delivery_tasks !== null) {
@@ -94,18 +94,18 @@ export default function PricingPage() {
             return (
               <SpotlightCard key={tier.name}>
                 <p className="kicker">{tier.billing_cycle}</p>
-                <h3 className="mt-4 font-display text-3xl text-white">{tier.name}</h3>
-                <p className="mt-4 font-display text-[clamp(2rem,5vw,3.2rem)] text-white">{formatEtb(tier.price_etb)}</p>
-                <p className="mt-3 text-sm leading-7 text-white/60">{tier.summary}</p>
-                <ul className="mt-6 space-y-3 text-sm text-white/62">
+                <h3 className="mt-2 text-lg font-semibold text-[#172a24]">{tier.name}</h3>
+                <p className="mt-2 font-mono text-[clamp(1.6rem,3vw,2.2rem)] text-[#172a24]">{formatEtb(tier.price_etb)}</p>
+                <p className="mt-1.5 text-sm text-[#63766f]">{tier.summary}</p>
+                <ul className="mt-5 space-y-2 border-t border-[#e2e8e5] pt-4 text-xs leading-5 text-[#52665e]">
                   {bullets.map((bullet) => (
                     <li key={bullet} className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#087f72]" />
                       <span>{bullet}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-8">
+                <div className="mt-6">
                   <MagneticLink href="/launch" variant="secondary">
                     {startFreeCta}
                   </MagneticLink>
@@ -116,21 +116,21 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="section-shell pt-16 sm:pt-20">
+      <section className="section-shell pt-12 sm:pt-16">
         <SpotlightCard>
           <SectionHeading
             eyebrow="Payments"
             title="Pay by bank transfer to CBE or Dashen"
             description="No card is ever required. Partial payments are welcome at any point."
           />
-          <p className="mt-8 max-w-[46rem] text-sm leading-8 text-white/72">{partialPaymentStory}</p>
-          <p className="mt-4 text-sm leading-8 text-white/72">{paymentPaceStory}</p>
-          <p className="mt-4 text-sm font-semibold text-white">{verificationLine}</p>
+          <p className="mt-6 max-w-[46rem] text-sm leading-7 text-[#52665e]">{partialPaymentStory}</p>
+          <p className="mt-3 text-sm leading-7 text-[#52665e]">{paymentPaceStory}</p>
+          <p className="mt-3 text-sm font-semibold text-[#172a24]">{verificationLine}</p>
         </SpotlightCard>
       </section>
 
-      <section className="section-shell py-16 sm:py-20">
-        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="section-shell py-12 sm:py-16">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div>
             <SectionHeading
               eyebrow="Questions"

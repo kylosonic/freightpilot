@@ -8,6 +8,8 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from app.core.config import settings
 from app.schemas.auth import UserRole
@@ -16,7 +18,15 @@ _PBKDF2_ITERATIONS = 600_000
 
 
 def _pbkdf2_hash(password: str, salt: str, iterations: int = _PBKDF2_ITERATIONS) -> str:
-    digest = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), iterations)
+    # Use cryptography's optimized PBKDF2 implementation. The Python Workers
+    # runtime exposes hashlib.pbkdf2_hmac but currently produces unstable
+    # authentication results in Pyodide.
+    digest = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt.encode('utf-8'),
+        iterations=iterations,
+    ).derive(password.encode('utf-8'))
     return urlsafe_b64encode(digest).decode('utf-8')
 
 

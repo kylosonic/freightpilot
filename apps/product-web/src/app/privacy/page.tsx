@@ -17,11 +17,11 @@ export default function PrivacyPage() {
         description="This page explains the data FreightPilot processes and the controls available to a workspace owner. It is product documentation, not a substitute for a signed customer data-processing agreement."
       />
 
-      <section className="section-shell py-12 sm:py-16">
+      <section className="section-shell py-10 sm:py-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="font-display text-2xl text-white">Data we process</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/65">
+            <h2 className="text-lg font-semibold text-[#172a24]">Data we process</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>Account and workspace details: company name, business email, user name, role, and contact phone.</li>
               <li>Operational records you upload or create: warehouses, items, inventory, orders, shipments, routes, drivers, customers, and delivery stops.</li>
               <li>Execution evidence: delivery status, last known location, proof-of-delivery files, recipient confirmation, and cash declarations.</li>
@@ -30,8 +30,8 @@ export default function PrivacyPage() {
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="font-display text-2xl text-white">Why we process it</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/65">
+            <h2 className="text-lg font-semibold text-[#172a24]">Why we process it</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>To operate the workspace and execute the features you request.</li>
               <li>To authenticate users and enforce workspace roles and tenant boundaries.</li>
               <li>To produce route, forecast, exception, and cash-reconciliation evidence.</li>
@@ -44,8 +44,8 @@ export default function PrivacyPage() {
 
       <section className="section-shell pb-12 sm:pb-16">
         <SpotlightCard>
-          <h2 className="font-display text-2xl text-white">Storage, providers, and retention</h2>
-          <div className="mt-4 grid gap-5 text-sm leading-7 text-white/65 lg:grid-cols-2">
+          <h2 className="text-lg font-semibold text-[#172a24]">Storage, providers, and retention</h2>
+          <div className="mt-3 grid gap-5 text-sm leading-7 text-[#5b6d66] lg:grid-cols-2">
             <div className="space-y-3">
               <p>
                 FreightPilot uses hosted infrastructure for the web application, API, database, and
@@ -76,8 +76,8 @@ export default function PrivacyPage() {
 
       <section className="section-shell pb-16">
         <SpotlightCard>
-          <h2 className="font-display text-2xl text-white">Your choices and rights</h2>
-          <p className="mt-4 max-w-[60rem] text-sm leading-8 text-white/65">
+          <h2 className="text-lg font-semibold text-[#172a24]">Your choices and rights</h2>
+          <p className="mt-3 max-w-[60rem] text-sm leading-7 text-[#5b6d66]">
             Workspace owners control membership and provider configuration. Users should contact
             their workspace administrator for access or correction requests. We do not use
             third-party advertising trackers on the operator console. Privacy questions can be sent

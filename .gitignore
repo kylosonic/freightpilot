@@ -17,6 +17,7 @@ apps/ops-console/dist/
 apps/ops-console/.vite/
 apps/product-web/dist/
 apps/product-web/.vite/
+apps/product-web/out/
 
 # Env
 .env
@@ -59,3 +60,13 @@ docs/eaii/pitch-page/**/*.wav
 # Poster/thumbnail images are kept (they are small and referenced by the live pages),
 # but the full-resolution slide raster set is regenerated from the deck PDF.
 docs/eaii/pitch-page/*.jpg
+infra/cloudflare/freightpilot-api/src/app/
+infra/cloudflare/freightpilot-api/src/sample-data/
+infra/cloudflare/freightpilot-api/src/alembic/
+infra/cloudflare/freightpilot-api/src/openapi_schema.py
+infra/cloudflare/freightpilot-api/python_modules/
+infra/cloudflare/freightpilot-api/.venv/
+infra/cloudflare/freightpilot-api/.venv-*/
+infra/cloudflare/freightpilot-api/.venv-workers/
+infra/cloudflare/freightpilot-api/.wrangler/
+infra/cloudflare/freightpilot-api/.artifacts/

@@ -15,25 +15,68 @@ jobs:
       - name: API health
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
-            https://platform-api-smoky.vercel.app/health \
+            https://freightpilot-api.freightpilot.workers.dev/health \
             | tee /tmp/freightpilot-health.json
           python3 - <<'PY'
           import json
 
           with open('/tmp/freightpilot-health.json', encoding='utf-8') as handle:
               health = json.load(handle)
-          assert health == {'status': 'ok', 'db': 'ok'}, health
-          PY
+          assert health['db'] == 'ok', health
+          if health.get('schema') is None:
+              # Deploy the schema-aware health check before enforcing this gate.
+              print('Schema revision unavailable: deploy the updated API.')
+              raise SystemExit(1)
+          assert health['status'] == 'ok', health
+          assert health['schema'] == 'current', health
+          assert health['revision'] == health['expected_revision'], health
+          assert health['revision'] == '20261107_0026', health
+
+      - name: API schema revision endpoint
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            https://freightpilot-api.freightpilot.workers.dev/api/v1/health/schema \
+            | python3 -c "import json,sys; schema=json.load(sys.stdin); assert schema == {'status': 'current', 'current': '20261107_0026', 'expected': '20261107_0026'}, schema"
 
       - name: Public surfaces
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
-            https://product-web-chi.vercel.app/ > /dev/null
+            https://freightpilot.pages.dev/ > /dev/null
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
-            https://ops-console-azure.vercel.app/ > /dev/null
+            https://freightpilot-ops.freightpilot.workers.dev/ > /dev/null
 
       - name: Dispatch fleet endpoint is published
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
-            https://platform-api-smoky.vercel.app/openapi.json \
+            https://freightpilot-api.freightpilot.workers.dev/openapi.json \
             | python3 -c "import json,sys; schema=json.load(sys.stdin); assert '/api/v1/dispatch/plan-fleet' in schema['paths']"
+
+      - name: Security headers are published
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --dump-header /tmp/freightpilot-web-headers.txt \
+            https://freightpilot.pages.dev/ > /dev/null
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --dump-header /tmp/freightpilot-ops-headers.txt \
+            https://freightpilot-ops.freightpilot.workers.dev/ > /dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for path in (
+              '/tmp/freightpilot-web-headers.txt',
+              '/tmp/freightpilot-ops-headers.txt',
+          ):
+              headers = Path(path).read_text(encoding='utf-8').lower()
+              for name in (
+                  'content-security-policy:',
+                  'x-content-type-options: nosniff',
+                  'x-frame-options: deny',
+                  'strict-transport-security:',
+              ):
+                  assert name in headers, (path, name)
+          PY
+
+      - name: Legacy product address redirects
+        run: |
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            https://freightpilot.freightpilot.workers.dev/)" = "301"

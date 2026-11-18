@@ -416,59 +416,59 @@ export function DriverPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--fp-black)] px-3 py-5 text-slate-100">
+    <main className="min-h-screen bg-[#f4f6f5] px-3 py-5 text-[#202b36]">
       <div className="mx-auto max-w-2xl space-y-4">
-        <header className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+        <header className="border border-[#d7dfdc] border-t-4 border-t-[#087f72] bg-white p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">FreightPilot Driver</p>
-              <h1 className="mt-2 font-['Space_Grotesk'] text-3xl font-semibold">{t.title}</h1>
-              {manifest ? <p className="mt-2 text-sm text-slate-400">{manifest.driver_name} · {manifest.start_label}</p> : null}
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">FreightPilot Driver</p>
+              <h1 className="mt-1.5 text-2xl font-semibold text-[#172a24]">{t.title}</h1>
+              {manifest ? <p className="mt-1 text-xs text-[#63766f]">{manifest.driver_name} · {manifest.start_label}</p> : null}
             </div>
-            <button type="button" onClick={() => setLang(lang === 'am' ? 'en' : 'am')} className="rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-300">
+            <button type="button" onClick={() => setLang(lang === 'am' ? 'en' : 'am')} className="min-h-9 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c]">
               {lang === 'am' ? 'EN' : 'አማ'}
             </button>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2 text-xs">
-            <span className={online ? 'text-emerald-300' : 'text-amber-300'}>{online ? t.online : t.offline}</span>
-            {pendingCount + queuedProofs.length > 0 ? <span className="text-amber-300">{pendingCount + queuedProofs.length} queued</span> : null}
-            {busy ? <span className="text-sky-300">{t.sync}</span> : null}
+            <span className={online ? 'text-[#14745f]' : 'text-[#885100]'}>{online ? t.online : t.offline}</span>
+            {pendingCount + queuedProofs.length > 0 ? <span className="text-[#885100]">{pendingCount + queuedProofs.length} queued</span> : null}
+            {busy ? <span className="text-[#17679b]">{t.sync}</span> : null}
           </div>
         </header>
 
-        {error ? <p className="rounded-xl border border-rose-500/25 bg-rose-950/30 p-4 text-sm text-rose-200">{error}</p> : null}
-        {syncError ? <p className="rounded-xl border border-rose-500/25 bg-rose-950/30 p-4 text-sm text-rose-200">{syncError}</p> : null}
-        {notice ? <p className="rounded-xl border border-amber-500/25 bg-amber-950/25 p-4 text-sm text-amber-100">{notice}</p> : null}
+        {error ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]">{error}</p> : null}
+        {syncError ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]">{syncError}</p> : null}
+        {notice ? <p role="status" className="border border-[#e7d1a8] bg-[#fffaf0] p-3 text-xs text-[#704500]">{notice}</p> : null}
 
-        {manifest?.stops.length === 0 ? <p className="rounded-xl border border-slate-800 p-4 text-slate-400">{t.noStops}</p> : null}
+        {manifest?.stops.length === 0 ? <p className="border border-[#d7dfdc] bg-white p-4 text-xs text-[#63766f]">{t.noStops}</p> : null}
 
         <div className="space-y-3">
           {manifest?.stops.map((stop) => (
-            <article key={stop.order_id} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <article key={stop.order_id} className="border border-[#d7dfdc] bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-slate-500">#{stop.sequence} · {stop.order_no}</p>
-                  <h2 className="mt-1 font-['Space_Grotesk'] text-xl font-semibold">{stop.customer_name}</h2>
-                  <p className="mt-1 text-sm text-slate-400">{stop.address}</p>
-                  {stop.phone ? <a href={`tel:${stop.phone}`} className="mt-1 block text-sm text-sky-300 underline">{stop.phone}</a> : null}
+                  <p className="text-[10px] text-[#63766f]">#{stop.sequence} · {stop.order_no}</p>
+                  <h2 className="mt-1 text-base font-semibold text-[#172a24]">{stop.customer_name}</h2>
+                  <p className="mt-1 text-xs text-[#63766f]">{stop.address}</p>
+                  {stop.phone ? <a href={`tel:${stop.phone}`} className="mt-1 block text-xs font-medium text-[#087f72] underline">{stop.phone}</a> : null}
                 </div>
-                <span className="text-right text-sm text-slate-300">{stop.cod_amount_etb} ETB</span>
+                <span className="text-right font-mono text-xs text-[#40534c]">{stop.cod_amount_etb} ETB</span>
               </div>
               {stop.window_start || stop.window_end ? (
-                <p className="mt-3 text-xs text-amber-200">
+                <p className="mt-3 text-xs text-[#885100]">
                   {stop.window_start ? new Date(stop.window_start).toLocaleTimeString() : '—'} – {stop.window_end ? new Date(stop.window_end).toLocaleTimeString() : '—'}
                 </p>
               ) : null}
               <div className="mt-4 grid grid-cols-3 gap-2">
-                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'in_transit' })} className="rounded-lg border border-sky-500/30 px-2 py-2 text-xs font-semibold text-sky-200 disabled:opacity-40">{t.inTransit}</button>
-                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'delivered' })} className="rounded-lg border border-emerald-500/30 px-2 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-40">{t.delivered}</button>
-                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'failed' })} className="rounded-lg border border-rose-500/30 px-2 py-2 text-xs font-semibold text-rose-200 disabled:opacity-40">{t.failed}</button>
+                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'in_transit' })} className="min-h-9 border border-[#bfd8e5] bg-white px-2 text-[11px] font-semibold text-[#17679b] disabled:opacity-40">{t.inTransit}</button>
+                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'delivered' })} className="min-h-9 border border-[#b9dcd1] bg-white px-2 text-[11px] font-semibold text-[#14745f] disabled:opacity-40">{t.delivered}</button>
+                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'failed' })} className="min-h-9 border border-[#e7c2be] bg-white px-2 text-[11px] font-semibold text-[#a3342f] disabled:opacity-40">{t.failed}</button>
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-                <label className="text-xs text-slate-400">
+                <label className="text-xs text-[#63766f]">
                   {t.cash}
                   <input
-                    className="mt-1 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
+                    className="fp-input mt-1 min-h-9"
                     type="number"
                     min="0"
                     step="0.01"
@@ -487,15 +487,15 @@ export function DriverPage() {
                       note: cashNotes[stop.order_id]?.trim() || undefined,
                     })
                   }
-                  className="self-end rounded-lg bg-sky-500 px-4 py-3 text-xs font-semibold text-slate-950 disabled:opacity-40"
+                  className="min-h-9 self-end bg-[#087f72] px-3 text-xs font-semibold text-white disabled:opacity-40"
                 >
                   {t.saveCash}
                 </button>
               </div>
-              <label className="mt-2 block text-xs text-slate-400">
+              <label className="mt-2 block text-xs text-[#63766f]">
                 {t.cashNote}
                 <input
-                  className="mt-1 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
+                  className="fp-input mt-1 min-h-9"
                   value={cashNotes[stop.order_id] ?? ''}
                   onChange={(event) =>
                     setCashNotes((current) => ({
@@ -506,17 +506,17 @@ export function DriverPage() {
                 />
               </label>
               <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-                <label className="text-xs text-slate-400">
+                <label className="text-xs text-[#63766f]">
                   {t.proof}
                   <input
-                    className="mt-1 block w-full text-xs text-slate-300"
+                    className="mt-1 block w-full text-xs text-[#40534c]"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     capture="environment"
                     onChange={(event) => setProofFiles((current) => ({ ...current, [stop.order_id]: event.target.files?.[0] ?? null }))}
                   />
                 </label>
-                <button type="button" disabled={busy || Boolean(stop.proof_id) || queuedProofs.some((proof) => proof.orderId === stop.order_id)} onClick={() => void onProof(stop)} className="self-end rounded-lg border border-slate-600 px-4 py-3 text-xs font-semibold text-slate-200 disabled:opacity-40">
+                <button type="button" disabled={busy || Boolean(stop.proof_id) || queuedProofs.some((proof) => proof.orderId === stop.order_id)} onClick={() => void onProof(stop)} className="min-h-9 self-end border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] disabled:opacity-40">
                   {stop.proof_id
                     ? 'Proof saved'
                     : queuedProofs.some((proof) => proof.orderId === stop.order_id)
@@ -524,7 +524,7 @@ export function DriverPage() {
                       : t.upload}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Status: {stop.status} · {stop.collected_cash_etb} ETB declared</p>
+              <p className="mt-2 text-[11px] text-[#63766f]">Status: {stop.status} · {stop.collected_cash_etb} ETB declared</p>
             </article>
           ))}
         </div>

@@ -165,7 +165,7 @@ describe('ops console surface smoke', () => {
     expect(html).not.toContain('Create initial admin (first-time setup)');
     // the signup CTA must carry the real product address — never a
     // placeholder, local address, or dead link.
-    expect(html).toContain('https://product-web-chi.vercel.app/launch');
+    expect(html).toContain('https://freightpilot.pages.dev/launch/');
   });
 
   it('renders the control-tower dashboard skeleton during data fetch', () => {
@@ -308,9 +308,9 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    // Copy preserved verbatim: `Live sync {time}` pill with the emerald dot.
+    // Copy preserved verbatim: `Live sync {time}` with the success dot.
     expect(html).toContain('Live sync');
-    expect(html).toContain('bg-emerald-400');
+    expect(html).toContain('bg-[#16856b]');
   });
 
   it('renders no Live sync pill when the payload store is empty (TECH-73)', () => {

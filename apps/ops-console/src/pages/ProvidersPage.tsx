@@ -85,23 +85,23 @@ export function ProvidersPage() {
   const isAdminOrOwner = user?.role === 'admin' || user?.role === 'owner';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Carrier Integrations"
         description="Manage secure API credentials for third-party logistics providers and external routing engines."
       />
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Panel eyebrow="Active Connections" title="Provider Keys" description="Keys configured for your workspace.">
             {isLoading ? (
-              <div className="py-8 text-center text-sm text-slate-400">Loading keys...</div>
+              <div className="py-8 text-center text-xs text-[#63766f]">Loading keys...</div>
             ) : error ? (
-              <div className="fp-radius-panel border border-rose-900/50 bg-rose-500/10 p-4 text-sm text-rose-300">
+              <div className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm text-[#8f302a]">
                 {error}
               </div>
             ) : keys.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-400">
+              <div className="py-8 text-center text-xs text-[#63766f]">
                 No provider keys configured. Add one to get started.
               </div>
             ) : (
@@ -113,20 +113,20 @@ export function ProvidersPage() {
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <h4 className="font-semibold text-slate-100">{key.provider_name}</h4>
-                        <span className="text-sm text-slate-400">{key.key_name}</span>
+                        <h4 className="text-xs font-semibold text-[#20372f]">{key.provider_name}</h4>
+                        <span className="text-xs text-[#63766f]">{key.key_name}</span>
                         <StatusBadge
                           label={key.status}
                           tone={key.status === 'active' ? 'success' : 'neutral'}
                         />
                       </div>
-                      <p className="mt-1 font-mono text-xs text-slate-500">{key.masked_key}</p>
+                      <p className="mt-1 font-mono text-[10px] text-[#6b7d76]">{key.masked_key}</p>
                     </div>
 
                     {isAdminOrOwner && key.status === 'active' && (
                       <button
                         onClick={() => onRevoke(key.id)}
-                        className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-rose-300 transition hover:bg-rose-500/20"
+                        className="min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
                       >
                         REVOKE
                       </button>
@@ -142,7 +142,7 @@ export function ProvidersPage() {
           <div className="lg:col-span-1">
             <Panel eyebrow="New Integration" title="Add Credentials">
               <form onSubmit={onSubmit} className="mt-2 grid gap-4">
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
                   Provider Code
                   <input
                     required
@@ -153,7 +153,7 @@ export function ProvidersPage() {
                   />
                 </label>
 
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
                   Key Name / Alias
                   <input
                     required
@@ -164,7 +164,7 @@ export function ProvidersPage() {
                   />
                 </label>
 
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
                   API Key / Secret
                   <input
                     required
@@ -177,14 +177,14 @@ export function ProvidersPage() {
                 </label>
 
                 {testError && (
-                  <div className="fp-radius-panel mt-2 border border-rose-900/50 bg-rose-500/10 p-3 text-sm text-rose-300" style={{ animation: 'fadeIn 0.3s ease-out both' }}>
+                  <div className="mt-2 border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]" style={{ animation: 'fadeIn 0.3s ease-out both' }}>
                     {testError}
                   </div>
                 )}
 
                 <button
                   disabled={isSubmitting}
-                  className="glow-ring mt-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="glow-ring mt-2 inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? 'Validating connection...' : 'Securely Save Key'}
                 </button>

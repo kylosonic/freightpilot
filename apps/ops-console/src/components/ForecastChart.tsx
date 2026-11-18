@@ -18,12 +18,12 @@ type Props = {
   modelName?: string;
 };
 
-const axisStyle = { fill: '#94a3b8', fontSize: 12 };
+const axisStyle = { fill: '#63766f', fontSize: 11 };
 const tooltipStyle = {
-  backgroundColor: '#020817',
-  border: '1px solid rgba(148, 163, 184, 0.22)',
-  borderRadius: '16px',
-  color: '#e2e8f0',
+  backgroundColor: '#ffffff',
+  border: '1px solid #d7dfdc',
+  borderRadius: '4px',
+  color: '#20372f',
 };
 
 export function ForecastChart({ points, quality, modelName }: Props) {
@@ -53,10 +53,10 @@ export function ForecastChart({ points, quality, modelName }: Props) {
   const hasHighError = quality?.wape_percent != null && quality.wape_percent > 35;
   const qualityTone =
     hasHighError || quality?.status === 'limited'
-      ? 'border-amber-500/30 bg-amber-950/15 text-amber-200'
+      ? 'border-[#e7d1a8] bg-[#fffaf0] text-[#704500]'
       : quality?.status === 'validated'
-        ? 'border-emerald-500/30 bg-emerald-950/15 text-emerald-200'
-        : 'border-slate-700/60 bg-slate-900/45 text-slate-300';
+        ? 'border-[#b9dcd1] bg-[#edf8f3] text-[#14745f]'
+        : 'border-[#d7dfdc] bg-[#f5f8f6] text-[#40534c]';
   const evidenceLabel = quality
     ? `${quality.status.split('_').join(' ')}${hasHighError ? ' - high error' : ''}`
     : 'Unavailable';
@@ -69,23 +69,23 @@ export function ForecastChart({ points, quality, modelName }: Props) {
       description="Point demand, a planning range derived from the available model evidence, and the limits behind the output."
     >
       <div className="mb-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="fp-nested-surface px-4 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Model</p>
-          <p className="mt-1 text-sm font-semibold text-slate-100">{modelName ?? 'Demand model'}</p>
+        <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Model</p>
+          <p className="mt-1 text-xs font-semibold text-[#20372f]">{modelName ?? 'Demand model'}</p>
         </div>
-        <div className="fp-nested-surface px-4 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Backtest error</p>
-          <p className="mt-1 font-mono text-sm font-semibold tabular-nums text-slate-100">{backtestLabel}</p>
+        <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Backtest error</p>
+          <p className="mt-1 font-mono text-xs font-semibold tabular-nums text-[#20372f]">{backtestLabel}</p>
         </div>
-        <div className="fp-nested-surface px-4 py-3">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Demand history</p>
-          <p className="mt-1 font-mono text-sm font-semibold tabular-nums text-slate-100">
+        <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Demand history</p>
+          <p className="mt-1 font-mono text-xs font-semibold tabular-nums text-[#20372f]">
             {quality ? `${quality.history_weeks} wk` : 'Unknown'}
           </p>
         </div>
-        <div className={`rounded-[var(--fp-radius-panel)] border px-4 py-3 ${qualityTone}`}>
-          <p className="text-[11px] uppercase tracking-wide opacity-70">Forecast evidence</p>
-          <p className="mt-1 text-sm font-semibold capitalize">{evidenceLabel}</p>
+        <div className={`border px-3 py-2 ${qualityTone}`}>
+          <p className="text-[10px] uppercase tracking-wide opacity-70">Forecast evidence</p>
+          <p className="mt-1 text-xs font-semibold capitalize">{evidenceLabel}</p>
         </div>
       </div>
       <div className="h-80">
@@ -93,20 +93,20 @@ export function ForecastChart({ points, quality, modelName }: Props) {
           <LineChart data={data}>
             <defs>
               <linearGradient id="demandGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="#087f72" stopOpacity={0.16} />
+                <stop offset="100%" stopColor="#087f72" stopOpacity={0.01} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="rgba(148, 163, 184, 0.08)" strokeDasharray="3 3" />
+            <CartesianGrid stroke="#e6ebe8" strokeDasharray="2 3" />
             <XAxis dataKey="week_start" tick={axisStyle} axisLine={false} tickLine={false} />
             <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(148, 163, 184, 0.18)' }} />
-            <Legend wrapperStyle={{ color: '#cbd5e1', fontSize: 12 }} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#a9bbb4' }} />
+            <Legend wrapperStyle={{ color: '#40534c', fontSize: 11 }} />
             <Line
               type="monotone"
               dataKey="planning_low"
               name="Planning low"
-              stroke="#f59e0b"
+              stroke="#a15b00"
               strokeWidth={1.5}
               strokeDasharray="5 5"
               dot={false}
@@ -116,7 +116,7 @@ export function ForecastChart({ points, quality, modelName }: Props) {
               type="monotone"
               dataKey="planning_high"
               name="Planning high"
-              stroke="#f59e0b"
+              stroke="#a15b00"
               strokeWidth={1.5}
               strokeDasharray="5 5"
               dot={false}
@@ -126,10 +126,10 @@ export function ForecastChart({ points, quality, modelName }: Props) {
               type="monotone"
               dataKey="predicted_total_demand"
               name="Predicted demand"
-              stroke="#38bdf8"
+              stroke="#087f72"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, fill: '#38bdf8', stroke: '#0c4a6e', strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: '#087f72', stroke: '#ffffff', strokeWidth: 2 }}
               animationDuration={1200}
               animationEasing="ease-out"
             />
@@ -137,13 +137,13 @@ export function ForecastChart({ points, quality, modelName }: Props) {
         </ResponsiveContainer>
       </div>
       {quality ? (
-        <div className="mt-4 rounded-[var(--fp-radius-panel)] border border-slate-800/70 bg-slate-900/35 px-4 py-3">
-          <p className="text-sm leading-6 text-slate-300">{quality.interpretation}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">{quality.caveat}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
+        <div className="mt-3 border-t border-[#e6ebe8] pt-2.5">
+          <p className="text-xs leading-5 text-[#40534c]">{quality.interpretation}</p>
+          <p className="mt-1 text-[11px] leading-5 text-[#63766f]">{quality.caveat}</p>
+          <p className="mt-1 text-[11px] leading-5 text-[#63766f]">
             {widensByBacktest
-              ? 'Planning range widens ensemble spread by held-out error; it is not a guarantee.'
-              : 'Planning range reflects ensemble spread only; no held-out error estimate was available.'}
+              ? 'Planning range widens the trend residual band by held-out error; it is not a guarantee.'
+              : 'Planning range reflects the trend residual band only; no held-out error estimate was available.'}
           </p>
         </div>
       ) : null}

@@ -44,7 +44,7 @@ function RejectDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
           >
             Cancel
           </button>
@@ -52,7 +52,7 @@ function RejectDialog({
             type="button"
             onClick={() => reason.trim() && onConfirm(reason.trim())}
             disabled={!reason.trim()}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-rose-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#b93a36] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#9f2f2b] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Reject plan
           </button>
@@ -136,7 +136,7 @@ export function PlanningPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {rejectDialog ? (
         <RejectDialog
           sku={rejectDialog.plan.sku}
@@ -148,14 +148,14 @@ export function PlanningPage() {
       <PageHeader
         eyebrow="Planning"
         title="Generate and approve replenishment actions"
-        description="Keep demand pressure, approval load, and plan rationale visible so replenishment work does not become a spreadsheet side-channel."
+        description="Review demand pressure, suggested quantities, and pending approvals."
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-        <MetricTile title="Horizon" value={`${horizon} weeks`} detail="Current planning horizon for the next generated run." tone="info" />
-        <MetricTile title="Pending" value={counts.pending} detail="Plans waiting for admin review." tone={counts.pending > 0 ? 'warning' : 'success'} />
-        <MetricTile title="Approved" value={counts.approved} detail="Suggestions already accepted into the operating plan." tone="success" />
-        <MetricTile title="Rejected" value={counts.rejected} detail="Suggestions sent back for manual review or correction." tone="danger" />
+      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile title="Horizon" value={`${horizon} weeks`} detail="Next planning run" tone="info" />
+        <MetricTile title="Pending" value={counts.pending} detail="Awaiting admin review" tone={counts.pending > 0 ? 'warning' : 'success'} />
+        <MetricTile title="Approved" value={counts.approved} detail="Accepted into operations" tone="success" />
+        <MetricTile title="Rejected" value={counts.rejected} detail="Returned for review" tone="danger" />
       </div>
 
       <Panel
@@ -164,7 +164,7 @@ export function PlanningPage() {
         description="Generate a fresh suggestion set using the selected horizon and the latest inventory and forecast posture."
       >
         <div className="flex flex-wrap items-end gap-3">
-          <label className="grid gap-2 text-sm text-slate-300" htmlFor="horizon">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]" htmlFor="horizon">
             Horizon (weeks)
             <input
               id="horizon"
@@ -179,7 +179,7 @@ export function PlanningPage() {
           <button
             onClick={onGenerate}
             disabled={isGenerating}
-            className="glow-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:opacity-60"
+            className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:opacity-60"
           >
             {isGenerating ? (
               <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
@@ -190,8 +190,8 @@ export function PlanningPage() {
       </Panel>
 
       {error ? (
-        <Panel className="border-rose-500/25 bg-rose-950/12">
-          <p className="text-sm text-rose-200">{error}</p>
+        <Panel className="border-[#e7c2be] bg-[#fff8f7]">
+          <p className="text-sm text-[#8f302a]">{error}</p>
         </Panel>
       ) : null}
 
@@ -223,7 +223,7 @@ export function PlanningPage() {
             ) : null}
 
             {plans.filter((plan) => plan.status !== 'pending_approval').length > 0 ? (
-              <div className="space-y-3 border-t border-slate-800/70 pt-5 opacity-80">
+              <div className="space-y-3 border-t border-[#e6ebe8] pt-4 opacity-80">
                 {plans
                   .filter((plan) => plan.status !== 'pending_approval')
                   .map((plan) => (
@@ -233,9 +233,9 @@ export function PlanningPage() {
             ) : null}
 
             {plans.length === 0 ? (
-              <div className="fp-nested-surface p-6 text-center">
-                <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">No plans yet</p>
-                <p className="mt-1 text-sm text-slate-500">Generate replenishment suggestions using the form above.</p>
+              <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+                <p className="text-sm font-semibold text-[#40534c]">No plans yet</p>
+                <p className="mt-1 text-xs text-[#63766f]">Generate replenishment suggestions using the form above.</p>
               </div>
             ) : null}
           </div>
@@ -262,37 +262,37 @@ function PlanRow({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge label={plan.status} tone={statusTone(plan.status)} />
-            <span className="text-xs uppercase tracking-[0.18em] text-slate-500">{plan.warehouse_code}</span>
+            <span className="text-[10px] uppercase tracking-[0.08em] text-[#6b7d76]">{plan.warehouse_code}</span>
           </div>
-          <h3 className="mt-1.5 font-['Space_Grotesk'] text-lg font-semibold text-slate-50">{plan.sku}</h3>
+          <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">{plan.sku}</h3>
         </div>
-        <div className="grid gap-1 text-right font-mono text-sm text-slate-400 tabular-nums sm:grid-cols-3 sm:text-left">
-          <span>Avg demand: <span className="font-semibold text-slate-200">{plan.avg_weekly_demand.toFixed(2)}</span></span>
-          <span>Suggested: <span className="font-semibold text-slate-200">{plan.suggested_quantity}</span></span>
-          <span>Horizon: <span className="font-semibold text-slate-200">{plan.horizon_weeks}w</span></span>
+        <div className="grid gap-1 text-right font-mono text-xs text-[#63766f] tabular-nums sm:grid-cols-3 sm:text-left">
+          <span>Avg demand: <span className="font-semibold text-[#20372f]">{plan.avg_weekly_demand.toFixed(2)}</span></span>
+          <span>Suggested: <span className="font-semibold text-[#20372f]">{plan.suggested_quantity}</span></span>
+          <span>Horizon: <span className="font-semibold text-[#20372f]">{plan.horizon_weeks}w</span></span>
         </div>
       </div>
 
-      <p className="mt-2 text-sm leading-6 text-slate-400">{plan.rationale}</p>
+      <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{plan.rationale}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {userRole === 'admin' && plan.status === 'pending_approval' ? (
           <>
             <button
               onClick={() => onApprove(plan.id)}
-              className="glow-ring rounded-full border border-emerald-500/30 px-3 py-2 text-xs font-semibold text-emerald-200 transition hover:border-emerald-400/50 hover:bg-emerald-950/20"
+              className="glow-ring min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f] transition hover:bg-[#edf8f3]"
             >
               Approve
             </button>
             <button
               onClick={onReject}
-              className="glow-ring rounded-full border border-rose-500/30 px-3 py-2 text-xs font-semibold text-rose-200 transition hover:border-rose-400/50 hover:bg-rose-950/20"
+              className="glow-ring min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
             >
               Reject
             </button>
           </>
         ) : (
-          <span className="text-xs text-slate-500">{plan.rejection_reason || 'No rejection reason recorded.'}</span>
+          <span className="text-xs text-[#63766f]">{plan.rejection_reason || 'No rejection reason recorded.'}</span>
         )}
       </div>
     </article>

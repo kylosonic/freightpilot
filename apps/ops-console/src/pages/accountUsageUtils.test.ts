@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   includedTasksLabel,
+  overageCostLabel,
   overageRateLabel,
+  planPriceLabel,
   usageMetricLabel,
   usageProgressPercent,
 } from './accountUsageUtils';
@@ -16,6 +18,9 @@ const starterPlan: SubscriptionPlan = {
   vehicle_limit: 25,
   included_tasks_per_month: 2500,
   overage_unit_price_usd: 0.2,
+  flat_price_etb: '4500.00',
+  billing_cycle: 'monthly',
+  overage_unit_price_etb: '0.20',
   includes_sso: false,
   includes_priority_support: false,
 };
@@ -29,6 +34,7 @@ const usage: UsageSummary = {
   overage_units: 0,
   utilization_percent: 84,
   estimated_overage_cost_usd: 0,
+  estimated_overage_cost_etb: 0,
 };
 
 describe('accountUsageUtils', () => {
@@ -50,7 +56,9 @@ describe('accountUsageUtils', () => {
 
   it('formats included task quota and overage rate', () => {
     expect(includedTasksLabel(starterPlan)).toBe('2,500');
-    expect(overageRateLabel(starterPlan)).toBe('$0.20 / task');
+    expect(overageRateLabel(starterPlan)).toBe('0.20 ETB / task');
+    expect(planPriceLabel(starterPlan)).toBe('4,500 ETB / month');
+    expect(overageCostLabel(usage)).toBe('0.00 ETB');
   });
 
   it('supports unlimited and custom overage labels', () => {
@@ -60,9 +68,13 @@ describe('accountUsageUtils', () => {
       monthly_price_usd: null,
       included_tasks_per_month: null,
       overage_unit_price_usd: null,
+      flat_price_etb: null,
+      billing_cycle: null,
+      overage_unit_price_etb: null,
     };
 
     expect(includedTasksLabel(enterprisePlan)).toBe('Unlimited');
     expect(overageRateLabel(enterprisePlan)).toBe('N/A');
+    expect(planPriceLabel(enterprisePlan)).toBe('Contact sales');
   });
 });

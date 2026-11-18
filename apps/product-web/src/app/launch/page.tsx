@@ -20,11 +20,11 @@ export default function LaunchPage() {
         description="Sign up and your workspace loads with sample data — warehouses, fleet, inventory, orders, all ready. Optimize your first route immediately. No card required."
       />
 
-      <section className="section-shell pt-16 sm:pt-20">
-        <div className="grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
+      <section className="section-shell pt-10 sm:pt-14">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
           <SignupForm />
 
-          <div className="glass-panel px-6 py-7">
+          <div className="border border-[#d7dfdc] bg-white px-5 py-6 sm:px-6">
             <SectionHeading
               eyebrow="After signup"
               title="What happens next"
@@ -32,10 +32,10 @@ export default function LaunchPage() {
             />
             <div className="mt-8 space-y-4">
               {afterSignupSteps.map((step) => (
-                <div key={step.title} className="rounded-[24px] border border-white/10 bg-black/25 p-5">
+                <div key={step.title} className="border-t border-[#e2e8e5] py-4 first:border-t-0 first:pt-0">
                   <span className="kicker">{step.label}</span>
-                  <h3 className="mt-3 font-display text-2xl text-white">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-white/60">{step.detail}</p>
+                  <h3 className="mt-1.5 text-base font-semibold text-[#172a24]">{step.title}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-[#5b6d66]">{step.detail}</p>
                 </div>
               ))}
             </div>

@@ -22,15 +22,8 @@ import {
   updateContactPhone,
 } from '../services/billingApi';
 import { getAuditTimeline } from '../services/logisticsApi';
-import { includedTasksLabel, overageRateLabel, usageMetricLabel, usageProgressPercent } from './accountUsageUtils';
+import { includedTasksLabel, overageCostLabel, overageRateLabel, planPriceLabel, usageMetricLabel, usageProgressPercent } from './accountUsageUtils';
 import type { AuditEvent, CurrentSubscription, ProviderKey, SubscriptionPlan, SubscriptionTier, UsageSummary } from '../types/api';
-
-function priceText(plan: SubscriptionPlan): string {
-  if (plan.monthly_price_usd == null) {
-    return 'Contact sales';
-  }
-  return `$${plan.monthly_price_usd}/mo`;
-}
 
 function keyTone(status: string) {
   if (status === 'active') return 'success';
@@ -213,28 +206,23 @@ export function AccountPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Workspace controls"
-        title="Billing, quota, and AI provider governance"
-        description="Keep subscription posture, included task capacity, overage pressure, and provider configuration visible to the team running the workspace."
+        title="Workspace controls"
+        description="Manage the plan, usage, team access, and provider connections."
       />
 
-      {/* Posture strip — dominant pair (plan, usage) on the framed primary
-          strip; the quieter secondary pair (provider, keys) below. */}
-      <div className="fp-shell-surface grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
         <MetricTile title="Current plan" value={subscription?.tier ?? 'Unknown'} detail={`Status: ${subscription?.status ?? 'unknown'}`} tone="info" />
         <MetricTile title="Usage" value={usage ? `${usage.used_units.toLocaleString()}` : 'N/A'} detail={metricLabel} tone={progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'success'} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <MetricTile title="Preferred provider" value={subscription?.preferred_ai_provider ?? 'None'} detail="Dashboard workflows use this provider when configured." tone="neutral" />
-        <MetricTile title="Active keys" value={activeKeyCount} detail="Provider credentials available for current workspace use." tone={activeKeyCount > 0 ? 'success' : 'warning'} />
+        <MetricTile title="Preferred provider" value={subscription?.preferred_ai_provider ?? 'None'} detail="For dashboard workflows" tone="neutral" />
+        <MetricTile title="Active keys" value={activeKeyCount} detail="Available provider credentials" tone={activeKeyCount > 0 ? 'success' : 'warning'} />
       </div>
 
       {statusMessage ? (
-        <Panel className="border-sky-500/20 bg-sky-950/20">
-          <p className="text-sm text-sky-100">{statusMessage}</p>
+        <Panel className="border-[#bfd8e5] bg-[#f3f9fc]">
+          <p className="text-sm text-[#17679b]">{statusMessage}</p>
         </Panel>
       ) : null}
 
@@ -247,34 +235,34 @@ export function AccountPage() {
             <button
               type="button"
               onClick={onRefreshUsage}
-              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-700/60 px-4 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800/50"
+              className="inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
             >
               Refresh usage
             </button>
           }
         >
-          <div className="fp-nested-surface p-4">
-            <p className="text-sm font-semibold text-slate-100">Current plan: {tierLabel}</p>
-            <p className="mt-2 text-sm text-slate-400">Organization: {subscription?.organization_name ?? 'Unknown'}</p>
+          <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+            <p className="text-xs font-semibold text-[#20372f]">Current plan: {tierLabel}</p>
+            <p className="mt-1 text-xs text-[#63766f]">Organization: {subscription?.organization_name ?? 'Unknown'}</p>
           </div>
 
-          <div className="mt-4 fp-nested-surface p-4">
-            <p className="text-sm font-semibold text-slate-100">Usage meter</p>
-            <p className="mt-1 text-xs text-slate-500">{metricLabel}</p>
+          <div className="mt-3 border border-[#d7dfdc] bg-[#f8faf9] p-3">
+            <p className="text-xs font-semibold text-[#20372f]">Usage meter</p>
+            <p className="mt-0.5 text-[11px] text-[#63766f]">{metricLabel}</p>
 
             {usage ? (
               <div className="mt-4 space-y-4">
-                <div className="grid gap-2 text-xs text-slate-400 md:grid-cols-3">
+                <div className="grid gap-2 text-xs text-[#63766f] md:grid-cols-3">
                   <p>
-                    Period: <span className="font-semibold text-slate-200">{usage.period_start}</span> to{' '}
-                    <span className="font-semibold text-slate-200">{usage.period_end}</span>
+                    Period: <span className="font-semibold text-[#40534c]">{usage.period_start}</span> to{' '}
+                    <span className="font-semibold text-[#40534c]">{usage.period_end}</span>
                   </p>
                   <p>
-                    Used: <span className="font-mono font-semibold tabular-nums text-slate-200">{usage.used_units.toLocaleString()}</span>
+                    Used: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.used_units.toLocaleString()}</span>
                   </p>
                   <p>
                     Included:{' '}
-                    <span className="font-mono font-semibold tabular-nums text-slate-200">
+                    <span className="font-mono font-semibold tabular-nums text-[#40534c]">
                       {usage.included_units == null ? 'Unlimited' : usage.included_units.toLocaleString()}
                     </span>
                   </p>
@@ -282,47 +270,45 @@ export function AccountPage() {
 
                 {usage.included_units != null ? (
                   <>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                      <div className="h-full rounded-lg bg-sky-500" style={{ width: `${progressPercent}%` }} />
+                    <div className="h-1 overflow-hidden bg-[#dce8e3]">
+                      <div className="h-full bg-[#087f72]" style={{ width: `${progressPercent}%` }} />
                     </div>
-                    <p className="text-xs text-slate-400">
-                      Utilization: <span className="font-mono font-semibold tabular-nums text-slate-200">{usage.utilization_percent ?? 0}%</span>
+                    <p className="text-xs text-[#63766f]">
+                      Utilization: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.utilization_percent ?? 0}%</span>
                     </p>
                   </>
                 ) : (
-                  <p className="text-xs text-slate-400">No monthly cap on this plan.</p>
+                  <p className="text-xs text-[#63766f]">No monthly cap on this plan.</p>
                 )}
 
-                <div className="grid gap-2 text-xs text-slate-400 md:grid-cols-2">
+                <div className="grid gap-2 text-xs text-[#63766f] md:grid-cols-2">
                   <p>
-                    Overage units: <span className="font-mono font-semibold tabular-nums text-slate-200">{usage.overage_units.toLocaleString()}</span>
+                    Overage units: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.overage_units.toLocaleString()}</span>
                   </p>
                   <p>
                     Estimated overage cost:{' '}
-                    <span className="font-mono font-semibold tabular-nums text-slate-200">
-                      {usage.estimated_overage_cost_usd == null
-                        ? 'N/A'
-                        : `$${usage.estimated_overage_cost_usd.toLocaleString()}`}
+                    <span className="font-mono font-semibold tabular-nums text-[#40534c]">
+                      {overageCostLabel(usage)}
                     </span>
                   </p>
                 </div>
               </div>
             ) : (
-              <p className="mt-4 text-xs text-slate-400">Usage endpoint unavailable. Run the latest backend migration and refresh.</p>
+              <p className="mt-3 text-xs text-[#63766f]">Usage endpoint unavailable. Run the latest backend migration and refresh.</p>
             )}
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {plans.map((plan) => (
-              <div key={plan.tier} className="hover-lift fp-nested-surface p-3.5 transition">
+              <div key={plan.tier} className="border border-[#d7dfdc] bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-['Space_Grotesk'] text-xl font-semibold text-slate-50">{plan.title}</h2>
-                    <p className="font-mono tabular-nums text-sm text-slate-400">{priceText(plan)}</p>
+                    <h2 className="text-sm font-semibold text-[#20372f]">{plan.title}</h2>
+                    <p className="font-mono tabular-nums text-xs text-[#63766f]">{planPriceLabel(plan)}</p>
                   </div>
                   {currentTier === plan.tier ? <StatusBadge label="Current" tone="info" /> : null}
                 </div>
-                <div className="mt-3 space-y-1 text-xs text-slate-400">
+                <div className="mt-2 space-y-0.5 text-[11px] text-[#63766f]">
                   <p>Seats: <span className="font-mono tabular-nums">{plan.seat_limit ?? 'Unlimited'}</span></p>
                   <p>Vehicles: <span className="font-mono tabular-nums">{plan.vehicle_limit ?? 'Unlimited'}</span></p>
                   <p>Included tasks: <span className="font-mono tabular-nums">{includedTasksLabel(plan)}</span></p>
@@ -332,7 +318,7 @@ export function AccountPage() {
                   type="button"
                   disabled={currentTier === plan.tier}
                   onClick={() => onSelectTier(plan.tier)}
-                  className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-slate-700/60 px-4 text-xs font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-3 inline-flex min-h-8 w-full items-center justify-center border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {currentTier === plan.tier ? 'Current plan' : 'Switch to plan'}
                 </button>
@@ -343,14 +329,14 @@ export function AccountPage() {
 
         {/* Sections 2 + 3 — escalation contact and provider control as
             side-by-side secondary work areas */}
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Panel
           eyebrow="Escalation contact"
           title="Escalation SMS phone"
           description="Receipt escalations are sent to this number. The workspace can be locked exactly when escalation matters — owners and admins can update it anytime."
         >
-          <div className="fp-nested-surface p-4">
-            <label htmlFor="contactPhone" className="text-sm font-semibold text-slate-100">
+          <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+            <label htmlFor="contactPhone" className="text-xs font-semibold text-[#20372f]">
               Contact phone
             </label>
             <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -358,18 +344,18 @@ export function AccountPage() {
                 id="contactPhone"
                 value={contactPhone}
                 onChange={(event) => setContactPhone(event.target.value)}
-                className={`${fieldClassName} min-w-[240px]`}
+                className={`${fieldClassName} min-w-0 flex-1 sm:min-w-[240px]`}
                 placeholder="Escalation phone"
               />
               <button
                 type="button"
                 onClick={onSaveContactPhone}
-                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
+                className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
               >
                 Save phone number
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-[11px] text-[#63766f]">
               Current: {subscription?.contact_phone ?? 'Not set'}
             </p>
           </div>
@@ -382,10 +368,10 @@ export function AccountPage() {
           title="Bring your own provider keys"
           description="Set the preferred provider for dashboard workflows, test active keys, and rotate credentials without leaving the workspace."
         >
-          <div className="fp-nested-surface p-4">
-            <p className="text-sm font-semibold text-slate-100">Preferred AI provider for the dashboard</p>
+          <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+            <p className="text-xs font-semibold text-[#20372f]">Preferred AI provider for the dashboard</p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <select value={preferredKeyId} onChange={(event) => setPreferredKeyId(event.target.value)} className={`${fieldClassName} min-w-[240px]`}>
+              <select value={preferredKeyId} onChange={(event) => setPreferredKeyId(event.target.value)} className={`${fieldClassName} min-w-0 flex-1 sm:min-w-[240px]`}>
                 <option value="">Select active provider key</option>
                 {keys
                   .filter((key) => key.status === 'active')
@@ -396,12 +382,12 @@ export function AccountPage() {
               <button
                 type="button"
                 onClick={onSetPreferredKey}
-                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
+                className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
               >
                 Save preferred provider
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Current: {subscription?.preferred_ai_provider ?? 'Not configured'}</p>
+            <p className="mt-2 text-[11px] text-[#63766f]">Current: {subscription?.preferred_ai_provider ?? 'Not configured'}</p>
           </div>
 
           <form onSubmit={onAddKey} className="mt-4 grid gap-3 md:grid-cols-3">
@@ -409,7 +395,7 @@ export function AccountPage() {
             <input value={keyName} onChange={(event) => setKeyName(event.target.value)} className={fieldClassName} placeholder="Key label" />
             <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} className={fieldClassName} placeholder="API key" />
             <div className="md:col-span-3">
-              <button type="submit" className="inline-flex min-h-12 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400">
+              <button type="submit" className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]">
                 Save key
               </button>
             </div>
@@ -422,16 +408,16 @@ export function AccountPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge label={key.status} tone={keyTone(key.status)} />
-                      <span className="text-xs uppercase tracking-wide text-slate-500">{key.provider_name}</span>
+                      <span className="text-[10px] uppercase tracking-wide text-[#6b7d76]">{key.provider_name}</span>
                     </div>
-                    <h3 className="mt-2 font-['Space_Grotesk'] text-lg font-semibold text-slate-50">{key.key_name}</h3>
-                    <p className="mt-1 font-mono text-xs text-slate-400">{key.masked_key}</p>
+                    <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">{key.key_name}</h3>
+                    <p className="mt-0.5 font-mono text-[10px] text-[#63766f]">{key.masked_key}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => onTestKey(key.id)}
-                      className="rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-950"
+                      className="min-h-8 border border-[#cfd9d5] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
                     >
                       Test
                     </button>
@@ -439,7 +425,7 @@ export function AccountPage() {
                       <button
                         type="button"
                         onClick={() => onRevokeKey(key.id)}
-                        className="rounded-full border border-rose-500/30 px-3 py-2 text-xs font-semibold text-rose-200 transition hover:border-rose-400/50 hover:bg-rose-950/20"
+                        className="min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
                       >
                         Revoke
                       </button>
@@ -449,7 +435,7 @@ export function AccountPage() {
               </article>
             ))}
 
-            {keys.length === 0 ? <p className="text-sm text-slate-500">No provider keys configured yet.</p> : null}
+            {keys.length === 0 ? <p className="text-xs text-[#63766f]">No provider keys configured yet.</p> : null}
           </div>
         </Panel>
       </div>
@@ -461,21 +447,21 @@ export function AccountPage() {
       >
         <div className="space-y-3">
           {auditEvents.slice(0, 8).map((event) => (
-            <article key={event.id} className="hover-lift fp-nested-surface p-4">
+            <article key={event.id} className="border-t border-[#e6ebe8] py-2.5 first:border-t-0 first:pt-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={event.entity_type} tone="info" />
-                    <span className="text-xs uppercase tracking-wide text-slate-500">{event.event_type}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-[#6b7d76]">{event.event_type}</span>
                   </div>
-                  <h3 className="mt-2 font-['Space_Grotesk'] text-lg font-semibold text-slate-50">{event.description}</h3>
+                  <h3 className="mt-1.5 text-xs font-semibold text-[#20372f]">{event.description}</h3>
                 </div>
-                <span className="text-xs text-slate-500">{new Date(event.created_at).toLocaleString()}</span>
+                <span className="text-[10px] text-[#63766f]">{new Date(event.created_at).toLocaleString()}</span>
               </div>
             </article>
           ))}
 
-          {auditEvents.length === 0 ? <p className="text-sm text-slate-500">No audit events recorded yet.</p> : null}
+          {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No audit events recorded yet.</p> : null}
         </div>
       </Panel>
 

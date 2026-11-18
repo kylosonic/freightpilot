@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
 import type { PropsWithChildren } from 'react';
 
 import { MotionProvider } from '@/components/site/motion-provider';
@@ -8,10 +8,10 @@ import { SiteChrome } from '@/components/site/site-chrome';
 
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' });
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://product-web-chi.vercel.app';
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://freightpilot.pages.dev';
 
 const siteDescription =
   'Sign up and your workspace loads with sample data — warehouses, fleet, inventory, orders, all ready. Optimize your first route immediately.';
@@ -74,14 +74,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#050505',
+  themeColor: '#f4f6f5',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={dmSans.variable}>
       <body className="font-sans antialiased">
         <a href="#main-content" className="skip-to-content">
           Skip to content

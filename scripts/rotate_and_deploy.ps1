@@ -186,7 +186,7 @@ $health = $null
 for ($attempt = 1; $attempt -le 12; $attempt++) {
     Start-Sleep -Seconds 10
     try {
-        $health = (Invoke-WebRequest -Uri 'https://platform-api-smoky.vercel.app/health' -TimeoutSec 45 -UseBasicParsing).Content
+        $health = (Invoke-WebRequest -Uri 'https://freightpilot-api.freightpilot.workers.dev/health' -TimeoutSec 90 -UseBasicParsing).Content
         Write-Host "  attempt ${attempt}: $health"
         if ($health -match '"db"\s*:\s*"ok"') { break }
     } catch {
@@ -197,7 +197,7 @@ for ($attempt = 1; $attempt -le 12; $attempt++) {
 if ($health -match '"db"\s*:\s*"ok"') {
     Write-Ok 'API health reports the database reachable'
     Write-Step 'Running the launch-funnel verification'
-    & $PythonExe (Join-Path $repoRoot '.artifacts/verify_funnel.py') 'https://platform-api-smoky.vercel.app' 2>&1 |
+    & $PythonExe (Join-Path $repoRoot '.artifacts/verify_funnel.py') 'https://freightpilot-api.freightpilot.workers.dev' 2>&1 |
         Select-Object -Last 12
 } else {
     Write-Fail 'API still reports the database unavailable. Check the platform-api deployment logs.'

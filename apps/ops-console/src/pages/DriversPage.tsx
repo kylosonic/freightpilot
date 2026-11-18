@@ -93,7 +93,7 @@ function DeclareCashDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
           >
             Cancel
           </button>
@@ -101,7 +101,7 @@ function DeclareCashDialog({
             type="button"
             onClick={() => onConfirm(entered, note)}
             disabled={!Number.isFinite(entered) || entered < 0}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Record cash
           </button>
@@ -109,7 +109,7 @@ function DeclareCashDialog({
       }
     >
       <div className="grid gap-4">
-        <label className="grid gap-2 text-sm text-slate-300">
+        <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
           Cash collected (ETB)
           <input
             autoFocus
@@ -121,7 +121,7 @@ function DeclareCashDialog({
             onChange={(e) => setCollected(e.target.value)}
           />
         </label>
-        <label className="grid gap-2 text-sm text-slate-300">
+        <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
           Note (optional)
           <textarea
             className="fp-input min-h-20 px-4 py-3"
@@ -130,7 +130,7 @@ function DeclareCashDialog({
             onChange={(e) => setNote(e.target.value)}
           />
         </label>
-        <p className={`text-sm ${shortfall > 0 ? 'text-amber-300' : 'text-slate-400'}`}>
+        <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#63766f]'}`}>
           {shortfall > 0
             ? `Shortfall of ${etb(shortfall)} will be recorded against this delivery.`
             : 'This clears the expected amount in full.'}
@@ -161,21 +161,21 @@ function SettleCashDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-full border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(note)}
-            className="glow-ring inline-flex min-h-10 items-center justify-center rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
+            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
           >
             Settle
           </button>
         </>
       }
     >
-      <label className="grid gap-2 text-sm text-slate-300">
+      <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
         Settlement note (optional)
         <textarea
           autoFocus
@@ -305,7 +305,7 @@ export function DriversPage() {
   const shortfall = Number(ledger.shortfall_etb ?? 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {declareTarget ? (
         <DeclareCashDialog
           record={declareTarget}
@@ -325,26 +325,26 @@ export function DriversPage() {
       <PageHeader
         eyebrow="Fleet and cash"
         title="Know who is carrying the load and what cash is coming back"
-        description="Keep the driver roster current, see what each driver has on the van, and close the day knowing exactly how much cash is still out and how much is missing."
+        description="Track the driver roster, cash with each driver, and the end-of-day cash position."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
         <MetricTile
           title="Active drivers"
           value={activeCount}
-          detail={`${drivers.length} on the roster in total.`}
+          detail={`${drivers.length} on the roster`}
           tone="info"
         />
         <MetricTile
           title="Cash with drivers"
           value={etb(ledger.outstanding_expected_etb)}
-          detail={`${ledger.outstanding_count} deliveries awaiting a cash figure.`}
+          detail={`${ledger.outstanding_count} awaiting cash`}
           tone={ledger.outstanding_count > 0 ? 'warning' : 'neutral'}
         />
         <MetricTile
           title="Collected, not banked"
           value={etb(ledger.collected_etb)}
-          detail={`${ledger.collected_count} collections recorded and not yet settled.`}
+          detail={`${ledger.collected_count} not yet settled`}
           tone="neutral"
         />
         <MetricTile
@@ -352,22 +352,22 @@ export function DriversPage() {
           value={etb(ledger.shortfall_etb)}
           detail={
             shortfall > 0
-              ? 'Collected short of the expected amount. Still on the books.'
+              ? 'Collected short of expected'
               : 'Every collection matches what was expected.'
           }
           tone={shortfall > 0 ? 'danger' : 'success'}
         />
       </div>
 
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {error ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
 
       <Panel
         eyebrow="Roster"
         title="Add a driver"
         description="Phone number is how a driver is identified day to day, so it is the one field that must be right."
       >
-        <form className="grid grid-cols-1 gap-4 lg:grid-cols-5" onSubmit={onCreateDriver}>
-          <label className="grid gap-2 text-sm text-slate-300">
+        <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreateDriver}>
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Full name
             <input
               className="fp-input"
@@ -377,7 +377,7 @@ export function DriversPage() {
               required
             />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Phone
             <input
               className="fp-input"
@@ -387,7 +387,7 @@ export function DriversPage() {
               required
             />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Licence no
             <input
               className="fp-input"
@@ -396,7 +396,7 @@ export function DriversPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, license_no: e.target.value }))}
             />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Vehicle plate
             <input
               className="fp-input"
@@ -405,7 +405,7 @@ export function DriversPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, vehicle_plate: e.target.value }))}
             />
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Notes
             <input
               className="fp-input"
@@ -418,7 +418,7 @@ export function DriversPage() {
             <button
               type="submit"
               disabled={saving}
-              className="glow-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-sky-500 px-5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? (
                 <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -451,27 +451,27 @@ export function DriversPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={driver.status} tone={driverTone(driver.status)} />
-                    <span className="font-mono text-xs text-slate-500">{driver.phone}</span>
+                    <span className="font-mono text-[10px] text-[#63766f]">{driver.phone}</span>
                   </div>
-                  <h3 className="mt-1.5 font-['Space_Grotesk'] text-lg font-semibold text-slate-50">
+                  <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">
                     {driver.full_name}
                   </h3>
                 </div>
-                <div className="text-right font-mono text-sm text-slate-400 tabular-nums">
+                <div className="text-right font-mono text-xs text-[#63766f] tabular-nums">
                   <p>{driver.vehicle_plate || 'No plate on file'}</p>
                   <p>{driver.license_no || 'No licence on file'}</p>
                 </div>
               </div>
 
               {driver.notes ? (
-                <p className="mt-2 text-sm leading-6 text-slate-400">{driver.notes}</p>
+                <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{driver.notes}</p>
               ) : null}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => onShowVan(driver)}
-                  className="glow-ring rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-950"
+                  className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
                 >
                   What is on the van
                 </button>
@@ -479,7 +479,7 @@ export function DriversPage() {
                   <button
                     type="button"
                     onClick={() => onDeactivate(driver)}
-                    className="glow-ring rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-500/50 hover:bg-rose-950/20 hover:text-rose-200"
+                    className="glow-ring min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
                   >
                     Deactivate
                   </button>
@@ -489,9 +489,9 @@ export function DriversPage() {
           ))}
 
           {!loading && drivers.length === 0 ? (
-            <div className="fp-nested-surface p-6 text-center">
-              <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">No drivers on the roster</p>
-              <p className="mt-1 text-sm text-slate-500">
+            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+              <p className="text-sm font-semibold text-[#40534c]">No drivers on the roster</p>
+              <p className="mt-1 text-xs text-[#63766f]">
                 Add your first driver above. A fleet CSV upload does not create drivers — the roster is maintained here.
               </p>
             </div>
@@ -507,24 +507,24 @@ export function DriversPage() {
         >
           <div className="space-y-3">
             {van.shipments.map((shipment) => (
-              <div key={shipment.id} className="fp-nested-surface flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
                 <div className="flex items-center gap-3">
                   <StatusBadge label={shipment.status} tone={shipment.status === 'delivered' ? 'success' : 'info'} />
-                  <span className="font-mono text-sm text-slate-200">{shipment.shipment_no}</span>
+                  <span className="font-mono text-xs text-[#20372f]">{shipment.shipment_no}</span>
                 </div>
-                <span className="font-mono text-sm text-slate-400 tabular-nums">
+                <span className="font-mono text-xs text-[#63766f] tabular-nums">
                   COD {etb(shipment.cod_amount_etb)}
                 </span>
               </div>
             ))}
             {van.shipments.length === 0 ? (
-              <p className="text-sm text-slate-400">Nothing assigned to this driver right now.</p>
+              <p className="text-xs text-[#63766f]">Nothing assigned to this driver right now.</p>
             ) : null}
             <div className="flex justify-end">
               <button
                 type="button"
                 onClick={() => setVan(null)}
-                className="glow-ring rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-950"
+                className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
               >
                 Close
               </button>
@@ -545,29 +545,29 @@ export function DriversPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={record.status} tone={cashTone(record.status)} />
-                    <span className="font-mono text-xs text-slate-500">{record.shipment_no}</span>
+                    <span className="font-mono text-[10px] text-[#63766f]">{record.shipment_no}</span>
                   </div>
-                  <h3 className="mt-1.5 font-['Space_Grotesk'] text-lg font-semibold text-slate-50">
+                  <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">
                     {record.driver_name || 'Unassigned driver'}
                   </h3>
                 </div>
-                <div className="text-right font-mono text-sm text-slate-400 tabular-nums">
+                <div className="text-right font-mono text-xs text-[#63766f] tabular-nums">
                   <p>Expected {etb(record.expected_etb)}</p>
                   <p>Collected {etb(record.collected_etb)}</p>
-                  <p className={Number(record.shortfall_etb ?? 0) > 0 ? 'text-amber-300' : 'text-slate-500'}>
+                  <p className={Number(record.shortfall_etb ?? 0) > 0 ? 'text-[#885100]' : 'text-[#6b7d76]'}>
                     Shortfall {etb(record.shortfall_etb)}
                   </p>
                 </div>
               </div>
 
-              {record.note ? <p className="mt-2 text-sm leading-6 text-slate-400">{record.note}</p> : null}
+              {record.note ? <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{record.note}</p> : null}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {record.status === 'outstanding' ? (
                   <button
                     type="button"
                     onClick={() => setDeclareTarget(record)}
-                    className="glow-ring rounded-full border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-950"
+                    className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
                   >
                     Record cash
                   </button>
@@ -576,7 +576,7 @@ export function DriversPage() {
                   <button
                     type="button"
                     onClick={() => setSettleTarget(record)}
-                    className="glow-ring rounded-full border border-emerald-500/30 px-3 py-2 text-xs font-semibold text-emerald-200 transition hover:border-emerald-400/50 hover:bg-emerald-950/20"
+                    className="glow-ring min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f] transition hover:bg-[#edf8f3]"
                   >
                     Settle
                   </button>
@@ -586,17 +586,17 @@ export function DriversPage() {
           ))}
 
           {!loading && collections.length === 0 ? (
-            <div className="fp-nested-surface p-6 text-center">
-              <p className="font-['Space_Grotesk'] text-lg font-semibold text-slate-300">No cash expected right now</p>
-              <p className="mt-1 text-sm text-slate-500">
+            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+              <p className="text-sm font-semibold text-[#40534c]">No cash expected right now</p>
+              <p className="mt-1 text-xs text-[#63766f]">
                 A cash record opens when a cash-on-delivery shipment is marked delivered on the Shipments board.
               </p>
             </div>
           ) : null}
         </div>
 
-        <p className="mt-4 text-sm text-slate-500">
-          Settled to date: <span className="font-mono text-slate-300">{etb(ledger.settled_etb)}</span> across{' '}
+        <p className="mt-3 text-xs text-[#63766f]">
+          Settled to date: <span className="font-mono text-[#40534c]">{etb(ledger.settled_etb)}</span> across{' '}
           {ledger.settled_count} collections.
         </p>
       </Panel>

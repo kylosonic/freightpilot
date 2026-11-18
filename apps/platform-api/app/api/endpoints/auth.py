@@ -1,11 +1,10 @@
+import os
 import re
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -32,7 +31,6 @@ from app.schemas.auth import (
     UserRead,
     UserRole,
 )
-from app.services.activation import seeding
 from app.services.audit import record_audit_event
 from app.services.security import (
     create_access_token,
@@ -41,9 +39,21 @@ from app.services.security import (
     verify_password,
 )
 
+if os.environ.get('CLOUDFLARE_WORKER') == '1':
+
+    class _WorkerLimiter:
+        def limit(self, *_args, **_kwargs):
+            return lambda function: function
+
+    limiter = _WorkerLimiter()
+else:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+
+    limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter()
 optional_bearer_scheme = HTTPBearer(auto_error=False)
-limiter = Limiter(key_func=get_remote_address)
 
 _RATE_LOGIN = '10/minute'
 _RATE_REGISTER = '5/minute'
@@ -216,6 +226,8 @@ def company_signup(
     response: Response,
     db: Session = Depends(get_db),
 ):
+    from app.services.activation import seeding
+
     normalized_email = payload.company_email.strip().lower()
     domain = _extract_domain(normalized_email)
     _ensure_not_public_email(domain)

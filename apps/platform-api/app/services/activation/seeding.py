@@ -6,17 +6,19 @@ the shipped ``sample-data/`` CSVs (build-image-relative via
 uploaded category in the SAME transaction — except sample rows still
 referenced by real rows of a downstream table (decision #3 keep rule).
 
-Import map: models (5 tables), core.config, pandas, services.audit,
+Import map: models (5 tables), core.config, stdlib csv, services.audit,
 activation.state. Never imports app.api.
 """
 
 from __future__ import annotations
 
+import csv
+import io
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -49,19 +51,28 @@ def _sample_data_dir() -> Path:
     )
 
 
-def _opt(row, df: pd.DataFrame, column: str, default: Any = None) -> Any:
-    if column in df.columns and pd.notna(row[column]):
-        return row[column]
+def _opt(row: dict[str, str], column: str, default: Any = None) -> Any:
+    value = row.get(column)
+    if value is not None and str(value).strip() != '':
+        return value
     return default
 
 
 def _load_csv_rows(category: str) -> list[dict]:
     """CSV rows -> row dicts matching the ingestion handler column mapping
     (decision #11 — headers verified against the shipped files)."""
-    path = _sample_data_dir() / f'{category}.csv'
-    df = pd.read_csv(path)
+    if os.environ.get('CLOUDFLARE_WORKER') == '1':
+        # The Worker runtime has no filesystem. prepare_app.py embeds the
+        # shipped CSVs in a statically imported Python module instead.
+        from sample_data import SAMPLE_CSV_FILES
+
+        source_rows = list(csv.DictReader(io.StringIO(SAMPLE_CSV_FILES[f'{category}.csv'])))
+    else:
+        path = _sample_data_dir() / f'{category}.csv'
+        with path.open(newline='', encoding='utf-8') as handle:
+            source_rows = list(csv.DictReader(handle))
     rows: list[dict] = []
-    for _idx, row in df.iterrows():
+    for row in source_rows:
         if category == 'warehouses':
             rows.append({
                 'code': str(row['code']).strip(),
@@ -82,7 +93,7 @@ def _load_csv_rows(category: str) -> list[dict]:
                 'unit_cost': float(row['unit_cost']),
                 'reorder_level': int(row['reorder_level']),
             }
-            threshold = _opt(row, df, 'temperature_threshold')
+            threshold = _opt(row, 'temperature_threshold')
             if threshold is not None:
                 payload['temperature_threshold'] = float(threshold)
             rows.append(payload)
@@ -92,10 +103,10 @@ def _load_csv_rows(category: str) -> list[dict]:
                 'driver_name': str(row['driver_name']),
                 'capacity_units': int(row['capacity_units']),
             }
-            contact = _opt(row, df, 'driver_contact')
+            contact = _opt(row, 'driver_contact')
             if contact is not None:
                 payload['driver_contact'] = str(contact)
-            status = _opt(row, df, 'status')
+            status = _opt(row, 'status')
             payload['status'] = str(status) if status is not None else 'active'
             rows.append(payload)
         elif category == 'inventory':
@@ -103,27 +114,27 @@ def _load_csv_rows(category: str) -> list[dict]:
                 'warehouse_code': str(row['warehouse_code']).strip(),
                 'sku': str(row['sku']).strip(),
                 'quantity_on_hand': int(row['quantity_on_hand']),
-                'safety_stock': int(_opt(row, df, 'safety_stock', 0)),
+                'safety_stock': int(_opt(row, 'safety_stock', 0)),
             })
         elif category == 'orders':
             rows.append({
-                'order_date': pd.to_datetime(row['order_date']).date(),
+                'order_date': datetime.fromisoformat(str(row['order_date'])[:10]).date(),
                 'warehouse_code': str(row['warehouse_code']).strip(),
                 'sku': str(row['sku']).strip(),
                 'quantity': int(row['quantity']),
-                'unit_price': float(_opt(row, df, 'unit_price', 0.0)),
-                'customer_region': str(_opt(row, df, 'customer_region', 'unknown')),
+                'unit_price': float(_opt(row, 'unit_price', 0.0)),
+                'customer_region': str(_opt(row, 'customer_region', 'unknown')),
                 'weather_avg_temp_c': (
-                    float(_opt(row, df, 'weather_avg_temp_c'))
-                    if _opt(row, df, 'weather_avg_temp_c') is not None else None
+                    float(_opt(row, 'weather_avg_temp_c'))
+                    if _opt(row, 'weather_avg_temp_c') is not None else None
                 ),
                 'weather_precip_mm': (
-                    float(_opt(row, df, 'weather_precip_mm'))
-                    if _opt(row, df, 'weather_precip_mm') is not None else None
+                    float(_opt(row, 'weather_precip_mm'))
+                    if _opt(row, 'weather_precip_mm') is not None else None
                 ),
                 'weather_disruption_index': (
-                    float(_opt(row, df, 'weather_disruption_index'))
-                    if _opt(row, df, 'weather_disruption_index') is not None else None
+                    float(_opt(row, 'weather_disruption_index'))
+                    if _opt(row, 'weather_disruption_index') is not None else None
                 ),
             })
         else:  # pragma: no cover — CATEGORIES is locked

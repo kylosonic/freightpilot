@@ -12,7 +12,7 @@ export function SpotlightCard({ children, className }: PropsWithChildren<{ class
   return (
     <article
       className={cn(
-        'group relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition-colors duration-200 hover:border-white/20 sm:p-6',
+        'group relative min-w-0 overflow-hidden border border-[#d7dfdc] bg-white p-5 transition-colors duration-200 hover:border-[#a9bbb4] sm:p-6',
         className,
       )}
     >

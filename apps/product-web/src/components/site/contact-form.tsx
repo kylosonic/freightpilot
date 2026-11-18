@@ -44,17 +44,18 @@ export function ContactForm() {
 
   if (status === 'success') {
     return (
-      <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-12 text-center">
-        <CheckCircle2 className="h-12 w-12 text-emerald-400" />
+      <div className="flex flex-col items-center justify-center space-y-4 border border-[#b9dcd1] bg-[#f3faf7] p-10 text-center">
+        <CheckCircle2 className="h-10 w-10 text-[#14745f]" aria-hidden="true" />
         <div className="space-y-2">
-          <h3 className="font-display text-xl text-white">Message sent</h3>
-          <p className="text-sm text-white/60">
+          <h3 className="text-lg font-semibold text-[#172a24]">Message sent</h3>
+          <p className="text-sm text-[#5b6d66]">
             Thank you for reaching out. Our team will get back to you shortly.
           </p>
         </div>
         <button
+          type="button"
           onClick={() => setStatus('idle')}
-          className="mt-6 rounded-full border border-white/10 bg-white/5 px-6 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+          className="mt-4 border border-[#cfd9d5] bg-white px-4 py-2 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
         >
           Send another message
         </button>
@@ -66,7 +67,7 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <label htmlFor="name" className="text-xs font-medium text-white/70">
+          <label htmlFor="name" className="text-xs font-semibold text-[#40534c]">
             Full Name
           </label>
           <input
@@ -74,12 +75,12 @@ export function ContactForm() {
             name="name"
             required
             type="text"
-            className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-cyan-400/50 focus:bg-white/5"
+            className="fp-site-input"
             placeholder="Jane Doe"
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="email" className="text-xs font-medium text-white/70">
+          <label htmlFor="email" className="text-xs font-semibold text-[#40534c]">
             Work Email
           </label>
           <input
@@ -87,14 +88,14 @@ export function ContactForm() {
             name="email"
             required
             type="email"
-            className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-cyan-400/50 focus:bg-white/5"
+            className="fp-site-input"
             placeholder="jane@company.com"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="company" className="text-xs font-medium text-white/70">
+        <label htmlFor="company" className="text-xs font-semibold text-[#40534c]">
           Company Name
         </label>
         <input
@@ -102,13 +103,13 @@ export function ContactForm() {
           name="company"
           required
           type="text"
-          className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-cyan-400/50 focus:bg-white/5"
+          className="fp-site-input"
           placeholder="Acme Logistics"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="message" className="text-xs font-medium text-white/70">
+        <label htmlFor="message" className="text-xs font-semibold text-[#40534c]">
           Message
         </label>
         <textarea
@@ -116,13 +117,13 @@ export function ContactForm() {
           name="message"
           required
           rows={4}
-          className="w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-cyan-400/50 focus:bg-white/5"
+          className="fp-site-input resize-none"
           placeholder="How can we help your team?"
         />
       </div>
 
       {status === 'error' && (
-        <p className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-[#8f302a]">
           Something went wrong. Please try again later.
         </p>
       )}
@@ -131,19 +132,19 @@ export function ContactForm() {
         type="submit"
         disabled={status === 'loading'}
         className={cn(
-          'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-6 py-3.5 text-sm font-semibold text-slate-950 transition',
-          status === 'loading' ? 'cursor-not-allowed opacity-70' : 'hover:bg-cyan-300'
+          'inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#087f72] px-6 text-sm font-semibold text-white transition-colors',
+          status === 'loading' ? 'cursor-not-allowed opacity-70' : 'hover:bg-[#06675d]'
         )}
       >
         {status === 'loading' ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             Sending...
           </>
         ) : (
           <>
             Send Message
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4" aria-hidden="true" />
           </>
         )}
       </button>

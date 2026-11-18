@@ -1,0 +1,89 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "freightpilot-api",
+  "main": "src/entry.py",
+  "compatibility_date": "2026-11-16",
+  "compatibility_flags": ["python_workers", "python_workers_314"],
+  "workers_dev": true,
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "a842f4f83f344172b8cd329bb77328cd"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "FREIGHTPILOT_API",
+        "class_name": "FreightPilotAPI"
+      },
+      {
+        "name": "FREIGHTPILOT_LOGISTICS",
+        "class_name": "FreightPilotLogistics"
+      },
+      {
+        "name": "FREIGHTPILOT_DISPATCH",
+        "class_name": "FreightPilotDispatch"
+      },
+      {
+        "name": "FREIGHTPILOT_ROUTING",
+        "class_name": "FreightPilotRouting"
+      },
+      {
+        "name": "FREIGHTPILOT_HEALTH",
+        "class_name": "FreightPilotHealth"
+      },
+      {
+        "name": "FREIGHTPILOT_DATA",
+        "class_name": "FreightPilotData"
+      },
+      {
+        "name": "FREIGHTPILOT_ACCOUNT",
+        "class_name": "FreightPilotAccount"
+      },
+      {
+        "name": "FREIGHTPILOT_OPERATIONS",
+        "class_name": "FreightPilotOperations"
+      },
+      {
+        "name": "FREIGHTPILOT_FINANCE",
+        "class_name": "FreightPilotFinance"
+      },
+      {
+        "name": "FREIGHTPILOT_ANALYTICS",
+        "class_name": "FreightPilotAnalytics"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["FreightPilotAPI"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": [
+        "FreightPilotLogistics",
+        "FreightPilotDispatch",
+        "FreightPilotRouting"
+      ]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": [
+        "FreightPilotHealth",
+        "FreightPilotData",
+        "FreightPilotAccount",
+        "FreightPilotOperations",
+        "FreightPilotFinance"
+      ]
+    },
+    {
+      "tag": "v4",
+      "new_sqlite_classes": ["FreightPilotAnalytics"]
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

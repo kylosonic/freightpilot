@@ -25,8 +25,27 @@ export function includedTasksLabel(plan: SubscriptionPlan): string {
 }
 
 export function overageRateLabel(plan: SubscriptionPlan): string {
-  if (plan.overage_unit_price_usd == null) {
+  if (plan.overage_unit_price_etb == null) {
     return 'N/A';
   }
-  return `$${plan.overage_unit_price_usd.toFixed(2)} / task`;
+  return `${Number(plan.overage_unit_price_etb).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB / task`;
+}
+
+export function planPriceLabel(plan: SubscriptionPlan): string {
+  if (plan.flat_price_etb == null) {
+    return 'Contact sales';
+  }
+  if (Number(plan.flat_price_etb) === 0) {
+    return 'Free';
+  }
+  const cycle = plan.billing_cycle === 'monthly' ? 'month' : plan.billing_cycle === 'quarterly' ? 'quarter' : null;
+  const price = Number(plan.flat_price_etb).toLocaleString();
+  return cycle ? `${price} ETB / ${cycle}` : `${price} ETB`;
+}
+
+export function overageCostLabel(usage: UsageSummary): string {
+  if (usage.estimated_overage_cost_etb == null) {
+    return 'N/A';
+  }
+  return `${Number(usage.estimated_overage_cost_etb).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`;
 }

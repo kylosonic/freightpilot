@@ -5,7 +5,7 @@ import { Panel } from '../components/ui/Panel';
 
 export function UploadPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         eyebrow="Data intake"
         title="Load a workspace in the right operational order"
@@ -19,11 +19,11 @@ export function UploadPage() {
         title="Recommended onboarding order"
         description="Follow the steps top to bottom so downstream files can resolve against upstream warehouse, SKU, and fleet references."
       >
-        <ol className="flex flex-wrap items-center gap-2.5">
+        <ol className="flex flex-wrap items-center gap-2">
           {['Warehouses', 'Items', 'Fleet', 'Inventory', 'Orders'].map((step, index) => (
-            <li key={step} className="fp-pill">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Step {index + 1}</span>
-              <span className="font-['Space_Grotesk'] text-sm font-semibold text-slate-50">{step}</span>
+            <li key={step} className="inline-flex items-center gap-2 border border-[#d7dfdc] bg-[#f8faf9] px-2.5 py-1.5">
+              <span className="font-mono text-[10px] text-[#63766f]">0{index + 1}</span>
+              <span className="text-xs font-semibold text-[#20372f]">{step}</span>
             </li>
           ))}
         </ol>

@@ -49,25 +49,25 @@ const FIVE_CLASSES = [
 const TOKEN_EXPECTATIONS: Readonly<Record<(typeof FIVE_CLASSES)[number], { bg: string; border: string }>> = {
   '.fp-shell-surface': { bg: 'var(--fp-surface)', border: 'var(--fp-border)' },
   '.fp-nested-surface': { bg: 'var(--fp-elevated)', border: 'var(--fp-border)' },
-  '.fp-pill': { bg: 'var(--fp-elevated)', border: 'var(--fp-border)' },
+  '.fp-pill': { bg: 'var(--fp-surface-inset)', border: 'var(--fp-border)' },
   '.fp-input': { bg: 'var(--fp-input)', border: 'var(--fp-border)' },
-  '.fp-row': { bg: 'var(--fp-elevated)', border: 'var(--fp-border)' },
+  '.fp-row': { bg: 'var(--fp-surface)', border: 'var(--fp-border)' },
 };
 
 const FORBIDDEN_SLATE_OVERLAYS = ['bg-slate-950', 'bg-slate-900', 'bg-slate-800', 'bg-slate-700'] as const;
 
 describe('shared surface token guard (TECH-77 / NB-60, NB-62 seed)', () => {
   it('declares the --fp-placeholder token in :root', () => {
-    expect(tokenBlock(readIndexCss())).toContain('--fp-placeholder: #94a3b8;');
+    expect(tokenBlock(readIndexCss())).toContain('--fp-placeholder: #63716c;');
   });
 
-  it('declares the five load-bearing color tokens in :root with their phase-1 values', () => {
+  it('declares the five load-bearing light-theme color tokens in :root', () => {
     const tokens = tokenBlock(readIndexCss());
-    expect(tokens).toContain('--fp-surface: #0d141d;');
-    expect(tokens).toContain('--fp-elevated: #111a26;');
-    expect(tokens).toContain('--fp-input: #233040;');
-    expect(tokens).toContain('--fp-border: #1f2a37;');
-    expect(tokens).toContain('--fp-primary: #dbe4ee;');
+    expect(tokens).toContain('--fp-surface: #ffffff;');
+    expect(tokens).toContain('--fp-elevated: #ffffff;');
+    expect(tokens).toContain('--fp-input: #ffffff;');
+    expect(tokens).toContain('--fp-border: #d7dfdc;');
+    expect(tokens).toContain('--fp-primary: #202b36;');
   });
 
   it.each(FIVE_CLASSES.map((selector) => [selector]))(

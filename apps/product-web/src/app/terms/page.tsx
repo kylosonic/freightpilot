@@ -17,11 +17,11 @@ export default function TermsPage() {
         description="These terms describe the baseline use of FreightPilot. A paid or enterprise engagement may add a signed order form, data-processing terms, or service-level terms."
       />
 
-      <section className="section-shell py-12 sm:py-16">
+      <section className="section-shell py-10 sm:py-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="font-display text-2xl text-white">Using the service</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/65">
+            <h2 className="text-lg font-semibold text-[#172a24]">Using the service</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>You must have authority to create or administer the company workspace.</li>
               <li>You are responsible for the accuracy of the operational data you import and for the actions you approve.</li>
               <li>You must keep workspace credentials and provider keys secure and remove access when a teammate leaves.</li>
@@ -30,8 +30,8 @@ export default function TermsPage() {
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="font-display text-2xl text-white">Commercial terms</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/65">
+            <h2 className="text-lg font-semibold text-[#172a24]">Commercial terms</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>Published Free and paid tiers are described on the pricing page.</li>
               <li>Bank-transfer evidence is reviewed by the operator; a submitted receipt does not by itself prove settlement.</li>
               <li>The workspace may be locked for billing, security, or operational reasons while preserving read access where documented.</li>
@@ -44,8 +44,8 @@ export default function TermsPage() {
 
       <section className="section-shell pb-16">
         <SpotlightCard>
-          <h2 className="font-display text-2xl text-white">Availability, liability, and termination</h2>
-          <p className="mt-4 max-w-[62rem] text-sm leading-8 text-white/65">
+          <h2 className="text-lg font-semibold text-[#172a24]">Availability, liability, and termination</h2>
+          <p className="mt-3 max-w-[62rem] text-sm leading-7 text-[#5b6d66]">
             We work to keep the service available and recoverable, but the public site does not
             promise an enterprise service-level objective. To the extent permitted by applicable
             law, FreightPilot is not liable for indirect or consequential loss, lost profit, or
@@ -54,7 +54,7 @@ export default function TermsPage() {
             termination, export the operational data you need to retain; deletion and backup
             windows are described on the privacy page.
           </p>
-          <p className="mt-4 text-sm leading-7 text-white/65">
+          <p className="mt-3 text-sm leading-7 text-[#5b6d66]">
             Questions about these terms can be sent through the contact page.
           </p>
         </SpotlightCard>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight, Boxes, CircleAlert, ShieldCheck } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 import { LoginFeedbackPanels } from '../components/login/LoginFeedbackPanels';
@@ -34,11 +35,10 @@ const VALUE_POINTS = [
 
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
-  const signupUrl = import.meta.env.VITE_SIGNUP_URL || 'https://product-web-chi.vercel.app/launch';
-  const [identifier, setIdentifier] = useState(() =>
-    import.meta.env.PROD ? '' : 'admin@testco.com',
-  );
-  const [password, setPassword] = useState(() => (import.meta.env.PROD ? '' : 'admin12345'));
+  const signupUrl =
+    import.meta.env.VITE_SIGNUP_URL || 'https://freightpilot.pages.dev/launch/';
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [signInError, setSignInError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,110 +60,104 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8 lg:px-6">
-      <div className="grid w-full max-w-5xl gap-5 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)] lg:gap-6">
-        <section className="fp-shell-surface px-6 py-7 sm:px-8 sm:py-8">
-          <div className="flex h-full flex-col justify-between gap-6">
-            <div className="space-y-3">
-              <span className="inline-grid h-11 w-11 place-items-center rounded-lg bg-sky-500 font-['Space_Grotesk'] text-sm font-bold text-slate-950">
-                FP
-              </span>
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">FreightPilot workspace</p>
-                <h1 className="font-['Space_Grotesk'] text-[clamp(2rem,3.2vw,2.8rem)] font-semibold leading-tight tracking-tight text-slate-100">
-                  Enter the control tower with the same calm surface you saw on the site.
-                </h1>
-                <p className="max-w-[34rem] text-sm leading-7 text-slate-400">
-                  Sign in with the company account you created during launch. Once inside, your routes,
-                  exceptions, onboarding progress, and provider controls all live in one operator surface.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {VALUE_POINTS.map((point) => (
-                <article key={point.label} className="fp-nested-surface px-4 py-4">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{point.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">{point.title}</p>
-                </article>
-              ))}
-            </div>
+    <div className="grid min-h-screen bg-[#f4f6f5] xl:grid-cols-[minmax(0,1.05fr)_minmax(400px,0.95fr)]">
+      <section className="flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#153f3a] px-6 py-8 text-white sm:px-10 lg:px-14 lg:py-12">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center bg-white text-[13px] font-bold text-[#153f3a]">FP</span>
+          <div>
+            <p className="text-base font-semibold">FreightPilot</p>
+            <p className="text-xs text-[#c2d7d1]">Freight operations workspace</p>
           </div>
-        </section>
-
-        <section className="fp-shell-surface px-6 py-7 sm:px-8 sm:py-8">
-          <div className="space-y-6">
-            <div className="fp-nested-surface px-5 py-5 sm:px-6 sm:py-6">
-              <div className="space-y-6">
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Control tower login</p>
-                  <h2 className="font-['Space_Grotesk'] text-2xl font-semibold tracking-tight text-slate-100">
-                    Sign in to your workspace
-                  </h2>
-                  <p className="text-sm leading-6 text-slate-400">
-                    Use the company email and password you used when you created the workspace.
-                  </p>
+        </div>
+        <div className="mt-10 max-w-[600px]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9cfc5]">Operations workspace</p>
+          <h1 className="mt-2 text-[clamp(1.8rem,3vw,2.7rem)] font-semibold leading-tight">
+            Enter the control tower with the same calm surface you saw on the site.
+          </h1>
+          <p className="mt-3 max-w-[520px] text-sm leading-6 text-[#c2d7d1]">
+            Sign in with the company account you created during launch. Once inside, your routes,
+            exceptions, onboarding progress, and provider controls all live in one operator surface.
+          </p>
+        </div>
+        <div className="mt-10 hidden grid-cols-3 divide-x divide-[#3c625c] border-t border-[#3c625c] pt-5 xl:grid">
+          {VALUE_POINTS.map((point, index) => {
+            const Icon = [Boxes, CircleAlert, ShieldCheck][index];
+            return (
+              <div key={point.label} className={index === 0 ? 'pr-4' : 'px-4'}>
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#c2d7d1]">
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {point.label}
                 </div>
-
-                <form className="space-y-4" onSubmit={onSubmit}>
-                  <div className="space-y-1.5">
-                    <label htmlFor="identifier" className="block text-sm font-medium text-slate-300">
-                      Company email or username
-                    </label>
-                    <input
-                      id="identifier"
-                      className="fp-input"
-                      placeholder="you@company.com"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      autoComplete="username"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="password" className="block text-sm font-medium text-slate-300">
-                      Password
-                    </label>
-                    <input
-                      id="password"
-                      className="fp-input"
-                      placeholder="••••••••"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      autoComplete="current-password"
-                    />
-                  </div>
-
-                  <button
-                    disabled={isSubmitting}
-                    className="w-full rounded-[var(--fp-radius-panel)] bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isSubmitting ? 'Signing in...' : 'Enter control tower'}
-                  </button>
-                </form>
-
-                <LoginFeedbackPanels signInError={signInError} />
+                <p className="mt-2 text-xs leading-5 text-white">{point.title}</p>
               </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-10">
+        <div className="w-full max-w-[430px]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">Control tower login</p>
+          <h2 className="mt-1.5 text-2xl font-semibold text-[#172a24]">Sign in to your workspace</h2>
+          <p className="mt-1.5 text-sm leading-6 text-[#5b6d66]">
+            Use the company email and password you used when you created the workspace.
+          </p>
+
+          <form className="mt-7 space-y-4" onSubmit={onSubmit}>
+            <div className="space-y-1.5">
+              <label htmlFor="identifier" className="block text-xs font-semibold text-[#40534c]">
+                Company email or username
+              </label>
+              <input
+                id="identifier"
+                className="fp-input"
+                placeholder="you@company.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                autoComplete="username"
+              />
             </div>
 
-            <div className="space-y-3">
-              <div className="fp-nested-surface px-5 py-4 text-center sm:px-6">
-                <p className="text-xs text-slate-400">New workspace? Create the company account on the product site first.</p>
-                <a
-                  href={signupUrl}
-                  className="mt-1.5 inline-block text-sm font-medium text-sky-400 underline-offset-4 hover:underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Create company account →
-                </a>
-              </div>
-
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="block text-xs font-semibold text-[#40534c]">
+                Password
+              </label>
+              <input
+                id="password"
+                className="fp-input"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
             </div>
+
+            <button
+              disabled={isSubmitting}
+              className="glow-ring inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#087f72] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? 'Signing in...' : 'Enter control tower'}
+              {!isSubmitting ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
+            </button>
+          </form>
+
+          <LoginFeedbackPanels signInError={signInError} />
+
+          <div className="mt-6 border-t border-[#d7dfdc] pt-4">
+            <p className="text-xs text-[#63766f]">New workspace? Create the company account on the product site first.</p>
+            <a
+              href={signupUrl}
+              className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Create company account
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

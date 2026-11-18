@@ -1,0 +1,10 @@
+{
+  "name": "freightpilot-ops",
+  "compatibility_date": "2026-11-16",
+  "workers_dev": true,
+  "assets": {
+    "directory": "../../../apps/ops-console/dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "single-page-application"
+  }
+}

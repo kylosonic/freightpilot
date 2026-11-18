@@ -38,6 +38,6 @@ describe('internal navigation guard (NB-54 / NB-59)', () => {
 
   it('points the LoginPage signup fallback at the real product site (NB-59.5)', () => {
     const content = readFileSync(join(SRC_DIR, 'pages', 'LoginPage.tsx'), 'utf8');
-    expect(content).toContain('https://product-web-chi.vercel.app/launch');
+    expect(content).toContain('https://freightpilot.pages.dev/launch/');
   });
 });

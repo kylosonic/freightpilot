@@ -13,12 +13,12 @@ export default function ContactPage() {
         description="We read every message. Replies are manual and may take a few days."
       />
 
-      <section className="section-shell pb-16 pt-8 sm:pb-24 sm:pt-12">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:gap-16">
+      <section className="section-shell pb-16 pt-10 sm:pb-20 sm:pt-14">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-16">
           <div className="space-y-8">
             <div>
-              <h2 className="font-display text-2xl text-white">How can we help?</h2>
-              <p className="mt-3 text-sm leading-7 text-white/60">
+              <h2 className="text-xl font-semibold text-[#172a24]">How can we help?</h2>
+              <p className="mt-2 text-sm leading-7 text-[#5b6d66]">
                 Fill out the form and we will read your message. Replies are manual and may take a
                 few days. For technical questions, check the documentation links in the footer.
               </p>
@@ -26,19 +26,19 @@ export default function ContactPage() {
 
             <div className="space-y-4">
               <SpotlightCard className="flex items-start gap-4 p-5">
-                <div className="inline-flex rounded-lg bg-cyan-400/10 p-2.5">
-                  <Mail className="h-5 w-5 text-cyan-400" />
+                <div className="inline-flex border border-[#d7dfdc] bg-[#f8faf9] p-2.5">
+                  <Mail className="h-5 w-5 text-[#087f72]" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-white">Email us</h3>
-                  <p className="mt-1 text-sm text-white/60">nahomgwmichael@gmail.com</p>
+                  <h3 className="text-sm font-semibold text-[#172a24]">Email us</h3>
+                  <p className="mt-1 text-sm text-[#5b6d66]">nahomgwmichael@gmail.com</p>
                 </div>
               </SpotlightCard>
             </div>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 lg:p-10">
-            <h3 className="mb-6 font-display text-xl text-white">Send a message</h3>
+          <div className="border border-[#d7dfdc] bg-white p-5 sm:p-7">
+            <h3 className="mb-5 text-lg font-semibold text-[#172a24]">Send a message</h3>
             <ContactForm />
           </div>
         </div>

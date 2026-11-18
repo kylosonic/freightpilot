@@ -6,31 +6,29 @@ type StatusBadgeProps = {
 };
 
 const toneClasses: Record<StatusTone, string> = {
-  neutral: 'border-slate-700/60 bg-slate-900 text-slate-300',
-  info: 'border-sky-500/25 bg-sky-950/30 text-sky-300',
-  success: 'border-emerald-500/25 bg-emerald-950/30 text-emerald-300',
-  warning: 'border-amber-500/25 bg-amber-950/30 text-amber-300',
-  danger: 'border-rose-500/25 bg-rose-950/30 text-rose-300',
+  neutral: 'border-[#d7dfdc] bg-[#f1f4f2] text-[#4b5d56]',
+  info: 'border-[#bfd8e5] bg-[#edf6fa] text-[#17679b]',
+  success: 'border-[#b9dcd1] bg-[#edf8f3] text-[#14745f]',
+  warning: 'border-[#e7d1a8] bg-[#fcf6e9] text-[#885100]',
+  danger: 'border-[#e7c2be] bg-[#fcf0ef] text-[#a3342f]',
 };
 
 const dotColors: Record<StatusTone, string> = {
-  neutral: 'bg-slate-400',
-  info: 'bg-sky-400',
-  success: 'bg-emerald-400',
-  warning: 'bg-amber-400',
-  danger: 'bg-rose-400',
+  neutral: 'bg-[#71827b]',
+  info: 'bg-[#17679b]',
+  success: 'bg-[#16856b]',
+  warning: 'bg-[#a15b00]',
+  danger: 'bg-[#b93a36]',
 };
 
 export function StatusBadge({ label, tone = 'neutral' }: StatusBadgeProps) {
-  const isPulsing = tone === 'danger' || tone === 'warning';
-
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide ${toneClasses[tone]}`}
+      className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] ${toneClasses[tone]}`}
     >
       <span
-        className={`inline-block h-1.5 w-1.5 rounded-full ${dotColors[tone]}`}
-        style={isPulsing ? { animation: 'pulseRing 2s ease-in-out infinite' } : undefined}
+        className={`inline-block h-1.5 w-1.5 shrink-0 ${dotColors[tone]}`}
+        aria-hidden="true"
       />
       {label}
     </span>

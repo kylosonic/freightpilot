@@ -39,42 +39,53 @@ export function RouteFallback() {
 export function Layout() {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [railCompact, setRailCompact] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[var(--fp-black)] text-slate-100">
+    <div className="min-h-screen bg-[#f4f6f5] text-[#202b36]">
       <SessionLiveUpdates />
       <ScrollManager />
-      <div className="mx-auto flex max-w-[1520px] gap-5 px-4 py-4 lg:gap-6 lg:px-6">
-        <aside className="hidden w-[280px] shrink-0 lg:block">
-          <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col">
-            <ShellSidebar user={user} onLogout={logout} />
+      <a href="#main-content" className="skip-to-content">Skip to content</a>
+      <div className="flex min-h-screen">
+        <aside className={`hidden shrink-0 transition-[width] lg:block ${railCompact ? 'w-[68px]' : 'w-[236px]'}`}>
+          <div className="sticky top-0 flex h-screen flex-col">
+            <ShellSidebar
+              user={user}
+              onLogout={logout}
+              compact={railCompact}
+              onToggleCompact={() => setRailCompact((current) => !current)}
+            />
           </div>
         </aside>
 
         {sidebarOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-slate-950/80" onClick={() => setSidebarOpen(false)} />
-            <aside className="absolute inset-y-0 left-0 w-[320px] overflow-y-auto border-r border-slate-800/70 bg-[var(--fp-black)] p-4">
+            <button type="button" className="absolute inset-0 bg-[#20372f]/35" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
+            <aside className="absolute inset-y-0 left-0 w-[290px] overflow-y-auto bg-[#fbfcfb] shadow-xl">
               <ShellSidebar user={user} onLogout={logout} onNavigate={() => setSidebarOpen(false)} />
             </aside>
           </div>
         ) : null}
 
-        <div className="min-w-0 flex-1 space-y-5">
-          <ShellHeader
-            contextLabel={SHELL_CONTEXT_LABEL}
-            descriptor={SHELL_DESCRIPTOR}
-            user={user}
-            onOpenNavigation={() => setSidebarOpen(true)}
-          />
-          <CapPitchBanner />
-          <main className="space-y-5">
-            <Suspense fallback={<RouteFallback />}>
-              <PageTransition>
-                <Outlet />
-              </PageTransition>
-            </Suspense>
-          </main>
+        <div className="min-w-0 flex-1 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1440px]">
+            <ShellHeader
+              contextLabel={SHELL_CONTEXT_LABEL}
+              descriptor={SHELL_DESCRIPTOR}
+              user={user}
+              onOpenNavigation={() => setSidebarOpen(true)}
+            />
+            <div className="space-y-2 py-4">
+              <CapPitchBanner />
+              <main id="main-content" className="space-y-4">
+                <Suspense fallback={<RouteFallback />}>
+                  <PageTransition>
+                    <Outlet />
+                  </PageTransition>
+                </Suspense>
+              </main>
+            </div>
+          </div>
         </div>
       </div>
     </div>

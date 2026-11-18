@@ -35,8 +35,8 @@ def test_build_training_frame_aggregates_weekly_quantities():
     frame = build_training_frame(orders)
 
     assert len(frame) == 1
-    assert int(frame.iloc[0]['quantity']) == 25
-    assert 'week_of_year' in frame.columns
+    assert int(frame[0]['quantity']) == 25
+    assert 'week_of_year' in frame[0]
 
 
 def test_forecast_weekly_demand_returns_positive_predictions_for_horizon():
@@ -64,7 +64,7 @@ def test_forecast_weekly_demand_returns_positive_predictions_for_horizon():
 
     out = forecast_weekly_demand(orders=orders, warehouse_weather_lookup=weather_lookup, horizon_weeks=4)
 
-    assert out.model_name == 'RandomForestRegressor'
+    assert out.model_name == 'TrendRegressor'
     assert len(out.predictions) == 16
     assert all(p['predicted_demand'] >= 0 for p in out.predictions)
     assert out.quality['status'] == 'validated'
@@ -128,7 +128,7 @@ def test_training_hash_changes_when_distribution_changes_with_same_totals():
     first = build_training_frame([{**base, 'quantity': 10}, {**next_week, 'quantity': 10}])
     second = build_training_frame([{**base, 'quantity': 5}, {**next_week, 'quantity': 15}])
 
-    assert int(first['quantity'].sum()) == int(second['quantity'].sum())
+    assert sum(row['quantity'] for row in first) == sum(row['quantity'] for row in second)
     assert _training_frame_hash(first) != _training_frame_hash(second)
 
 
@@ -160,7 +160,7 @@ def test_zero_actual_holdout_does_not_claim_an_error_widened_range():
 
     assert out.quality['wape_percent'] is None
     assert out.quality['status'] == 'limited'
-    assert out.quality['range_basis'] == 'ensemble_p10_p90'
+    assert out.quality['range_basis'] == 'trend_residual_band'
     assert out.predictions[0]['planning_low'] == 0
     assert out.predictions[0]['planning_high'] == 0
 

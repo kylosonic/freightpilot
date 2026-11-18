@@ -277,6 +277,9 @@ export type SubscriptionPlan = {
   vehicle_limit: number | null;
   included_tasks_per_month: number | null;
   overage_unit_price_usd: number | null;
+  flat_price_etb?: string | null;
+  billing_cycle?: 'monthly' | 'quarterly' | null;
+  overage_unit_price_etb?: string | null;
   includes_sso: boolean;
   includes_priority_support: boolean;
 };
@@ -303,6 +306,7 @@ export type UsageSummary = {
   overage_units: number;
   utilization_percent: number | null;
   estimated_overage_cost_usd: number | null;
+  estimated_overage_cost_etb?: number | null;
 };
 
 export type ProviderKey = {

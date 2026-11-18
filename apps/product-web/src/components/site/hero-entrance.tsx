@@ -17,7 +17,7 @@ export function HeroEntrance() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="balanced-headline max-w-[18ch] font-display text-[clamp(2.3rem,4.8vw,4.4rem)] leading-[0.96] tracking-[-0.03em] text-white"
+      className="balanced-headline max-w-[20ch] font-display text-[clamp(2.25rem,4.6vw,4.2rem)] font-semibold leading-[1.02] text-[#17292d]"
     >
       {heroHeadline}
     </m.h1>

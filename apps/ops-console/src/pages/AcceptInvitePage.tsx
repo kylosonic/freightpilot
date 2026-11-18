@@ -5,8 +5,7 @@ import { apiErrorMessage } from '../services/authErrors';
 import { setStoredToken } from '../services/api';
 import { acceptInvitation } from '../services/teamApi';
 
-const FIELD =
-  'mt-1 min-h-12 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400';
+const FIELD = 'fp-input mt-1 min-h-10';
 
 export function AcceptInvitePage() {
   const navigate = useNavigate();
@@ -40,22 +39,23 @@ export function AcceptInvitePage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--fp-black)] px-4 py-10 text-slate-100">
-      <section className="fp-shell-surface w-full max-w-lg p-6 sm:p-8">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">FreightPilot workspace</p>
-        <h1 className="mt-3 font-['Space_Grotesk'] text-3xl font-semibold">Accept your invitation</h1>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
+    <main className="flex min-h-screen items-center justify-center bg-[#f4f6f5] px-4 py-10 text-[#202b36]">
+      <section className="w-full max-w-lg border border-[#d7dfdc] bg-white p-6 sm:p-8">
+        <span className="grid h-9 w-9 place-items-center bg-[#153f3a] text-xs font-bold text-white">FP</span>
+        <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">FreightPilot workspace</p>
+        <h1 className="mt-1.5 text-2xl font-semibold text-[#172a24]">Accept your invitation</h1>
+        <p className="mt-2 text-xs leading-5 text-[#63766f]">
           Create the account that will join the workspace. If the email already has an account,
           enter that account's existing password.
         </p>
 
         {!token ? (
-          <p className="mt-5 rounded-lg border border-rose-500/25 bg-rose-950/25 p-3 text-sm text-rose-200">
+          <p className="mt-5 border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm text-[#8f302a]">
             This invitation link is missing a token.
           </p>
         ) : (
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <label className="block text-xs font-medium text-slate-400">
+            <label className="block text-xs font-medium text-[#40534c]">
               Username
               <input
                 className={FIELD}
@@ -66,8 +66,8 @@ export function AcceptInvitePage() {
                 autoComplete="username"
               />
             </label>
-            <label className="block text-xs font-medium text-slate-400">
-              Full name <span className="font-normal text-slate-600">(optional)</span>
+            <label className="block text-xs font-medium text-[#40534c]">
+              Full name <span className="font-normal text-[#63766f]">(optional)</span>
               <input
                 className={FIELD}
                 value={fullName}
@@ -75,7 +75,7 @@ export function AcceptInvitePage() {
                 autoComplete="name"
               />
             </label>
-            <label className="block text-xs font-medium text-slate-400">
+            <label className="block text-xs font-medium text-[#40534c]">
               Password
               <input
                 className={FIELD}
@@ -87,9 +87,9 @@ export function AcceptInvitePage() {
                 autoComplete="new-password"
               />
             </label>
-            {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+            {error ? <p role="alert" className="text-sm text-[#8f302a]">{error}</p> : null}
             <button
-              className="w-full rounded-lg bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-60"
+              className="min-h-10 w-full bg-[#087f72] px-4 text-sm font-semibold text-white hover:bg-[#06675d] disabled:opacity-60"
               disabled={submitting}
             >
               {submitting ? 'Joining workspace…' : 'Join workspace'}

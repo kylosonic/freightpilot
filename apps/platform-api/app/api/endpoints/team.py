@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import secrets
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -35,8 +34,20 @@ from app.services.security import (
     verify_password,
 )
 
+if os.environ.get('CLOUDFLARE_WORKER') == '1':
+
+    class _WorkerLimiter:
+        def limit(self, *_args, **_kwargs):
+            return lambda function: function
+
+    limiter = _WorkerLimiter()
+else:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+
+    limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 _INVITATION_TTL_HOURS = 72
 _ROLE_RANK = {'viewer': 1, 'operator': 2, 'admin': 3}

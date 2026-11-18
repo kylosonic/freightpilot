@@ -4,9 +4,9 @@ import { PageHero } from '@/components/site/page-hero';
 export default function NotFound() {
   return (
     <PageHero
-      eyebrow="Lost in orbit"
-      title="This page drifted out of the launch path."
-      description="Return to the core narrative, explore the platform pages, or move directly into the workspace launch flow."
+      eyebrow="Page not found"
+      title="This page is not part of the workspace."
+      description="Return to the product overview, explore the platform, or create a workspace."
       actions={
         <>
           <MagneticLink href="/" variant="primary">
