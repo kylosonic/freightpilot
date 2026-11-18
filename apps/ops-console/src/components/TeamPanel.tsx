@@ -48,7 +48,7 @@ export function TeamPanel() {
 
   if (user?.role !== 'admin') {
     return (
-      <section className="border border-[#d7dfdc] bg-white p-4">
+      <section className="border-t border-[#e5e4e0] pt-4">
         <p className="text-xs text-[#63766f]">
           Workspace owners and admins can manage teammates. Ask an admin if you need access.
         </p>
@@ -103,22 +103,20 @@ export function TeamPanel() {
   }
 
   return (
-    <section className="space-y-4 border border-[#d7dfdc] bg-white p-4">
+    <section className="space-y-4 border-t border-[#e5e4e0] pt-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#087f72]">Workspace team</p>
-          <h2 className="mt-1.5 text-base font-semibold text-[#20372f]">
-            Invite the people who run the operation
-          </h2>
+          <p className="text-[11px] font-medium text-[#73736e]">Team</p>
+          <h2 className="mt-1 text-sm font-semibold text-[#252522]">People in this workspace</h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-[#63766f]">
-            Invitations are attached to this workspace only. The invite link expires after 72 hours.
-            An existing account must use its current password.
+            Invitations only work for this workspace. Each link expires after 72 hours.
+            If the person already has an account, they keep their current password.
           </p>
         </div>
         <button
           type="button"
           onClick={() => void refresh()}
-          className="min-h-8 border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] hover:bg-[#eef3f0]"
+          className="fp-action-quiet !min-h-8"
         >
           Refresh
         </button>
@@ -126,7 +124,7 @@ export function TeamPanel() {
 
       {error ? <p className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]">{error}</p> : null}
 
-      <form onSubmit={onInvite} className="grid gap-3 border border-[#d7dfdc] bg-[#f8faf9] p-3 md:grid-cols-[1fr_180px_auto]">
+      <form onSubmit={onInvite} className="grid gap-3 rounded-md bg-[#f7f7f5] p-3 md:grid-cols-[1fr_180px_auto]">
         <label className="grid gap-1.5 text-xs text-[#63766f]">
           Email
           <input
@@ -146,8 +144,8 @@ export function TeamPanel() {
             <option value="admin">Admin</option>
           </select>
         </label>
-        <button className="min-h-9 self-end bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">
-          Create invitation
+        <button className="fp-action-primary self-end">
+          Send invite
         </button>
       </form>
 
@@ -164,7 +162,7 @@ export function TeamPanel() {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="border border-[#d7dfdc] p-3">
+        <div className="border-t border-[#e5e4e0] pt-3">
           <h3 className="text-xs font-semibold text-[#20372f]">Members</h3>
           <div className="mt-3 space-y-2">
             {loading ? <p className="text-xs text-[#63766f]">Loading members…</p> : null}
@@ -205,7 +203,7 @@ export function TeamPanel() {
           </div>
         </div>
 
-        <div className="border border-[#d7dfdc] p-3">
+        <div className="border-t border-[#e5e4e0] pt-3">
           <h3 className="text-xs font-semibold text-[#20372f]">Pending invitations</h3>
           <div className="mt-3 space-y-2">
             {invitations.filter((item) => item.status === 'pending').length === 0 ? (

@@ -10,24 +10,24 @@ describe('public trust pages', () => {
   it('privacy page states the data boundary without claiming a certification', () => {
     const html = renderToString(<PrivacyPage />);
 
-    expect(html).toContain('Data we process');
-    expect(html).toContain('not a substitute for a signed customer data-processing agreement');
-    expect(html).toContain('not sold or used to train a shared public model');
+    expect(html).toContain('What we keep');
+    expect(html).toContain('Your signed data-processing agreement still applies');
+    expect(html).toContain('We do not sell them or use them to train a shared public model');
   });
 
   it('terms page keeps recommendations advisory', () => {
     const html = renderToString(<TermsPage />);
 
-    expect(html).toContain('decision support');
-    expect(html).toContain('An authorized operator remains responsible');
+    expect(html).toContain('Routes, demand estimates, cash warnings, and alerts are suggestions');
+    expect(html).toContain('An authorized person still makes the dispatch, payment, and customer decisions');
   });
 
   it('security page states current limits', () => {
     const html = renderToString(<SecurityPage />);
 
-    expect(html).toContain('Controls in place');
-    expect(html).toContain('not a claim of SOC 2');
-    expect(html).toContain('Report a vulnerability');
+    expect(html).toContain('What we protect');
+    expect(html).toContain('not a claim that we hold SOC 2');
+    expect(html).toContain('Report a security problem');
   });
 
   it('status page limits its health claim to the API and database', () => {

@@ -40,7 +40,7 @@ const launchOptions: Array<{ value: SignupTier; label: string }> = [
 ];
 
 const fieldClassName =
-  'peer min-h-12 w-full border border-[#cfd9d5] bg-white px-3 pb-2.5 pt-6 text-base text-[#202b36] outline-none transition placeholder:text-transparent focus:border-[#087f72] focus:ring-2 focus:ring-[#087f72]/15 sm:text-sm';
+  'peer min-h-12 w-full rounded-md border border-[#dfdeda] bg-white px-3 pb-2.5 pt-6 text-base text-[#252522] outline-none transition placeholder:text-transparent focus:border-[#176b5c] focus:ring-2 focus:ring-[#176b5c]/15 sm:text-sm';
 
 export function SignupForm() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -92,12 +92,11 @@ export function SignupForm() {
   });
 
   return (
-    <div className="border border-[#d7dfdc] bg-white px-5 py-5 sm:px-6 sm:py-6">
+    <div className="rounded-lg border border-[#e5e4e0] bg-white px-5 py-6 sm:px-7 sm:py-7">
       <div>
-        <p className="kicker">Launch</p>
-        <h2 className="mt-2 font-display text-2xl font-semibold text-[#172a24]">Start free</h2>
-        <p className="mt-1.5 text-sm leading-6 text-[#5b6d66]">{signupFormSubline}</p>
-        <p className="mt-1 text-xs text-[#63766f]">{signupFormNote}</p>
+        <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[#252522]">Start free</h2>
+        <p className="mt-2 text-sm leading-6 text-[#73736e]">{signupFormSubline}</p>
+        <p className="mt-1 text-xs text-[#85857e]">{signupFormNote}</p>
       </div>
 
       {/* noValidate: the zod schema is the single validation source
@@ -122,14 +121,14 @@ export function SignupForm() {
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">
-            Tier <span className="font-normal normal-case tracking-normal text-[#63766f]">— Optional — choose a tier later inside your workspace.</span>
+          <p className="text-[13px] font-medium text-[#454540]">
+            Tier <span className="font-normal text-[#85857e]">— Optional — choose a tier later inside your workspace.</span>
           </p>
           <div className="grid gap-3 lg:grid-cols-3">
             {launchOptions.map((option) => (
               <label
                 key={option.value}
-                className="cursor-pointer border border-[#d7dfdc] bg-[#f8faf9] px-3 py-3 text-xs text-[#52665e] transition has-[:checked]:border-[#087f72] has-[:checked]:bg-[#edf8f3] has-[:checked]:text-[#172a24]"
+                className="cursor-pointer rounded-md border border-[#e5e4e0] bg-white px-3 py-3 text-xs text-[#5f5f59] transition hover:bg-[#f9f9f7] has-[:checked]:border-[#7fae9f] has-[:checked]:bg-[#f3f8f5] has-[:checked]:text-[#252522]"
               >
                 <input type="radio" value={option.value} className="sr-only" {...register('subscription_tier')} />
                 <span className="block">{option.label}</span>
@@ -141,7 +140,7 @@ export function SignupForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="group inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#087f72] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+          className="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#087f72] px-5 text-sm font-medium text-white transition-colors hover:bg-[#176b5c] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
           {isSubmitting ? 'Creating workspace...' : 'Start free'}
@@ -151,7 +150,7 @@ export function SignupForm() {
           <div
             role="status"
             className={cn(
-              'border px-3 py-3 text-sm leading-6',
+              'rounded-md border px-3 py-3 text-sm leading-6',
               statusTone === 'success'
                 ? 'border-[#b9dcd1] bg-[#f3faf7] text-[#14745f]'
                 : 'border-[#e7c2be] bg-[#fff8f7] text-[#8f302a]',
@@ -177,7 +176,7 @@ function Field({
   return (
     <label className="relative block">
       {children}
-      <span className="pointer-events-none absolute left-3 top-2 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#63766f] transition peer-focus:text-[#087f72]">
+      <span className="pointer-events-none absolute left-3 top-2 text-[11px] font-medium text-[#73736e] transition peer-focus:text-[#176b5c]">
         {label}
       </span>
       {error ? <span className="mt-1.5 block text-xs text-[#8f302a]">{error}</span> : null}

@@ -85,15 +85,15 @@ function DeclareCashDialog({
 
   return (
     <Dialog
-      eyebrow="Cash declaration"
+      eyebrow="Cash on hand"
       title={`Record cash for ${record.shipment_no}`}
-      description={`Expected at the door: ${etb(record.expected_etb)}. Enter what the driver is actually holding — a shortfall is recorded, not hidden.`}
+      description={`We expect ${etb(record.expected_etb)}. Enter the amount the driver actually has. If it is less, we record the difference.`}
       actions={
         <>
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+            className="fp-action-secondary !min-h-8 text-xs"
           >
             Cancel
           </button>
@@ -101,7 +101,7 @@ function DeclareCashDialog({
             type="button"
             onClick={() => onConfirm(entered, note)}
             disabled={!Number.isFinite(entered) || entered < 0}
-            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+            className="fp-action-primary !min-h-8"
           >
             Record cash
           </button>
@@ -153,22 +153,22 @@ function SettleCashDialog({
 
   return (
     <Dialog
-      eyebrow="Office close"
+      eyebrow="Cash handover"
       title={`Settle cash for ${record.shipment_no}`}
-      description="Confirms the cash is in hand. Settling closes the record and keeps any shortfall on the books — write-offs are never erased from the month-end figure."
+      description="Use this after the office receives the cash. It closes the record and keeps any missing amount visible."
       actions={
         <>
           <button
             type="button"
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+            className="fp-action-secondary !min-h-8 text-xs"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(note)}
-            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
+            className="fp-action-primary !min-h-8"
           >
             Settle
           </button>
@@ -282,7 +282,7 @@ export function DriversPage() {
       await declareCash(declareTarget.id, { collected_etb: collected, note: note || undefined });
       await loadAll();
     } catch (err) {
-      setError(apiErrorMessage(err, 'Failed to record the cash declaration'));
+      setError(apiErrorMessage(err, 'Could not save the cash amount'));
     } finally {
       setDeclareTarget(null);
     }
@@ -324,11 +324,11 @@ export function DriversPage() {
 
       <PageHeader
         eyebrow="Fleet and cash"
-        title="Know who is carrying the load and what cash is coming back"
-        description="Track the driver roster, cash with each driver, and the end-of-day cash position."
+        title="Fleet and cash"
+        description="See who is on the road, how much cash they have, and what still needs to be handed in."
       />
 
-      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[#efeeea]">
         <MetricTile
           title="Active drivers"
           value={activeCount}
@@ -364,7 +364,7 @@ export function DriversPage() {
       <Panel
         eyebrow="Roster"
         title="Add a driver"
-        description="Phone number is how a driver is identified day to day, so it is the one field that must be right."
+        description="The phone number is how you will recognise each driver, so please check it carefully."
       >
         <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreateDriver}>
           <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
@@ -418,7 +418,7 @@ export function DriversPage() {
             <button
               type="submit"
               disabled={saving}
-              className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+              className="fp-action-primary"
             >
               {saving ? (
                 <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -434,7 +434,7 @@ export function DriversPage() {
       <Panel
         eyebrow="Roster"
         title="Who is on the fleet today"
-        description="Open a driver to see what they are carrying right now, without reading the whole shipment board."
+        description="Choose a driver to see their current deliveries and cash."
       >
         {loading ? (
           <div className="space-y-3">
@@ -451,7 +451,7 @@ export function DriversPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={driver.status} tone={driverTone(driver.status)} />
-                    <span className="font-mono text-[10px] text-[#63766f]">{driver.phone}</span>
+                    <span className="text-xs text-[#73736e]">{driver.phone}</span>
                   </div>
                   <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">
                     {driver.full_name}
@@ -471,7 +471,7 @@ export function DriversPage() {
                 <button
                   type="button"
                   onClick={() => onShowVan(driver)}
-                  className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+                  className="fp-action-secondary !min-h-8 text-xs"
                 >
                   What is on the van
                 </button>
@@ -479,7 +479,7 @@ export function DriversPage() {
                   <button
                     type="button"
                     onClick={() => onDeactivate(driver)}
-                    className="glow-ring min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
+                    className="fp-action-quiet !min-h-8 !text-[#a3342f]"
                   >
                     Deactivate
                   </button>
@@ -489,9 +489,9 @@ export function DriversPage() {
           ))}
 
           {!loading && drivers.length === 0 ? (
-            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
-              <p className="text-sm font-semibold text-[#40534c]">No drivers on the roster</p>
-              <p className="mt-1 text-xs text-[#63766f]">
+            <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
+              <p className="text-sm font-semibold text-[#454540]">No drivers on the roster</p>
+              <p className="mt-1 text-xs text-[#73736e]">
                 Add your first driver above. A fleet CSV upload does not create drivers — the roster is maintained here.
               </p>
             </div>
@@ -501,16 +501,16 @@ export function DriversPage() {
 
       {van ? (
         <Panel
-          eyebrow="Load in hand"
+          eyebrow="Current load"
           title={`What ${van.driverName} is carrying`}
           description="Open shipments assigned to this driver, newest schedule first."
         >
           <div className="space-y-3">
             {van.shipments.map((shipment) => (
-              <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
+              <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[#efeeea] py-2">
                 <div className="flex items-center gap-3">
                   <StatusBadge label={shipment.status} tone={shipment.status === 'delivered' ? 'success' : 'info'} />
-                  <span className="font-mono text-xs text-[#20372f]">{shipment.shipment_no}</span>
+                  <span className="text-xs text-[#252522]">{shipment.shipment_no}</span>
                 </div>
                 <span className="font-mono text-xs text-[#63766f] tabular-nums">
                   COD {etb(shipment.cod_amount_etb)}
@@ -524,7 +524,7 @@ export function DriversPage() {
               <button
                 type="button"
                 onClick={() => setVan(null)}
-                className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+                className="fp-action-secondary !min-h-8 text-xs"
               >
                 Close
               </button>
@@ -536,7 +536,7 @@ export function DriversPage() {
       <Panel
         eyebrow="End of day"
         title="Cash position"
-        description="Every delivery that expects cash at the door. Record what the driver is holding, then settle it once the office has the money."
+        description="Record what each driver has collected. Once the office receives the cash, mark it as handed in."
       >
         <div className="space-y-3">
           {collections.map((record) => (
@@ -545,7 +545,7 @@ export function DriversPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={record.status} tone={cashTone(record.status)} />
-                    <span className="font-mono text-[10px] text-[#63766f]">{record.shipment_no}</span>
+                    <span className="text-[11px] text-[#73736e]">{record.shipment_no}</span>
                   </div>
                   <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">
                     {record.driver_name || 'Unassigned driver'}
@@ -567,7 +567,7 @@ export function DriversPage() {
                   <button
                     type="button"
                     onClick={() => setDeclareTarget(record)}
-                    className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+                    className="fp-action-secondary !min-h-8 text-xs"
                   >
                     Record cash
                   </button>
@@ -576,7 +576,7 @@ export function DriversPage() {
                   <button
                     type="button"
                     onClick={() => setSettleTarget(record)}
-                    className="glow-ring min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f] transition hover:bg-[#edf8f3]"
+                    className="fp-action-quiet !min-h-8 !text-[#14745f]"
                   >
                     Settle
                   </button>
@@ -586,9 +586,9 @@ export function DriversPage() {
           ))}
 
           {!loading && collections.length === 0 ? (
-            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
-              <p className="text-sm font-semibold text-[#40534c]">No cash expected right now</p>
-              <p className="mt-1 text-xs text-[#63766f]">
+            <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
+            <p className="text-sm font-semibold text-[#454540]">No cash to collect right now</p>
+              <p className="mt-1 text-xs text-[#73736e]">
                 A cash record opens when a cash-on-delivery shipment is marked delivered on the Shipments board.
               </p>
             </div>

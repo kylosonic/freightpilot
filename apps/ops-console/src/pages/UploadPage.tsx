@@ -7,23 +7,22 @@ export function UploadPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Data intake"
-        title="Load a workspace in the right operational order"
-        description="Bring warehouses, items, fleet assets, inventory, and orders into the system in sequence so routing, forecasting, and exception logic have a stable base."
+        eyebrow="Import data"
+        title="Add your business data"
+        description="Add warehouses, items, fleet, inventory, and orders in the order shown."
       />
 
       <ActivationBanner mode="checklist" />
 
       <Panel
-        eyebrow="Import sequence"
         title="Recommended onboarding order"
-        description="Follow the steps top to bottom so downstream files can resolve against upstream warehouse, SKU, and fleet references."
+        description="Each file builds on the one before it."
       >
         <ol className="flex flex-wrap items-center gap-2">
           {['Warehouses', 'Items', 'Fleet', 'Inventory', 'Orders'].map((step, index) => (
-            <li key={step} className="inline-flex items-center gap-2 border border-[#d7dfdc] bg-[#f8faf9] px-2.5 py-1.5">
-              <span className="font-mono text-[10px] text-[#63766f]">0{index + 1}</span>
-              <span className="text-xs font-semibold text-[#20372f]">{step}</span>
+            <li key={step} className="inline-flex items-center gap-2 rounded-md bg-[#f7f7f5] px-2.5 py-1.5">
+              <span className="text-[11px] text-[#85857e]">0{index + 1}</span>
+              <span className="text-xs font-medium text-[#353530]">{step}</span>
             </li>
           ))}
         </ol>

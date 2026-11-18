@@ -87,13 +87,14 @@ export function ProvidersPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Carrier Integrations"
-        description="Manage secure API credentials for third-party logistics providers and external routing engines."
+        eyebrow="Integrations"
+        title="Connected services"
+        description="Connect the services your team uses and manage their access keys."
       />
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Panel eyebrow="Active Connections" title="Provider Keys" description="Keys configured for your workspace.">
+          <Panel eyebrow="Connected" title="Service keys" description="Keys set up for your workspace.">
             {isLoading ? (
               <div className="py-8 text-center text-xs text-[#63766f]">Loading keys...</div>
             ) : error ? (
@@ -102,7 +103,7 @@ export function ProvidersPage() {
               </div>
             ) : keys.length === 0 ? (
               <div className="py-8 text-center text-xs text-[#63766f]">
-                No provider keys configured. Add one to get started.
+                No service keys yet. Add one to connect a service.
               </div>
             ) : (
               <ul className="mt-4 grid gap-3">
@@ -140,10 +141,10 @@ export function ProvidersPage() {
 
         {isAdminOrOwner && (
           <div className="lg:col-span-1">
-            <Panel eyebrow="New Integration" title="Add Credentials">
+            <Panel eyebrow="New connection" title="Add a service key">
               <form onSubmit={onSubmit} className="mt-2 grid gap-4">
                 <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
-                  Provider Code
+                  Service name
                   <input
                     required
                     className="fp-input"
@@ -154,7 +155,7 @@ export function ProvidersPage() {
                 </label>
 
                 <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
-                  Key Name / Alias
+                  Key label
                   <input
                     required
                     className="fp-input"
@@ -165,7 +166,7 @@ export function ProvidersPage() {
                 </label>
 
                 <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
-                  API Key / Secret
+                  API key or secret
                   <input
                     required
                     type="password"
@@ -186,7 +187,7 @@ export function ProvidersPage() {
                   disabled={isSubmitting}
                   className="glow-ring mt-2 inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Validating connection...' : 'Securely Save Key'}
+                  {isSubmitting ? 'Testing connection...' : 'Save and test key'}
                 </button>
               </form>
             </Panel>

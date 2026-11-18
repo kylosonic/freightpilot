@@ -14,10 +14,10 @@ export function HeroEntrance() {
   return (
     <m.h1
       data-hero-entrance
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="balanced-headline max-w-[20ch] font-display text-[clamp(2.25rem,4.6vw,4.2rem)] font-semibold leading-[1.02] text-[#17292d]"
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="balanced-headline mx-auto max-w-[900px] text-[clamp(2.6rem,6vw,5.3rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#252522]"
     >
       {heroHeadline}
     </m.h1>

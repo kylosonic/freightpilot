@@ -28,9 +28,9 @@ export function InventoryCharts({ data }: Props) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Panel
-        eyebrow="Inventory intelligence"
-        title="Stock by Warehouse"
-        description="On-hand quantity versus safety stock levels across active warehouse locations."
+        eyebrow="Inventory"
+        title="Stock by warehouse"
+        description="Compare the stock you have with the minimum you want to keep."
       >
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -60,9 +60,9 @@ export function InventoryCharts({ data }: Props) {
       </Panel>
 
       <Panel
-        eyebrow="Capacity view"
-        title="Warehouse Utilization"
-        description="Capacity utilization percentage across tracked warehouse locations."
+        eyebrow="Capacity"
+        title="Warehouse space used"
+        description="See how much warehouse capacity is in use."
       >
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">

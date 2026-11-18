@@ -75,17 +75,13 @@ export function SiteChrome({ children }: PropsWithChildren) {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
-      <header className="sticky top-0 z-40 border-b border-[#d7dfdc] bg-[#fbfcfb]/95 backdrop-blur-sm">
-        <div className="section-shell flex min-h-[64px] items-center justify-between gap-3">
-          <Link href="/" className="inline-flex items-center gap-3 no-underline">
-              <span className="relative inline-grid h-8 w-8 place-items-center bg-[#153f3a] font-display text-xs font-bold text-white sm:h-9 sm:w-9">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md">
+        <div className="section-shell flex min-h-[60px] items-center justify-between gap-3">
+          <Link href="/" prefetch={false} className="inline-flex items-center gap-2.5 rounded-md no-underline">
+              <span className="inline-grid h-7 w-7 place-items-center rounded-md bg-[#2e4f47] font-display text-[11px] font-semibold text-white">
               FP
-              <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 border-2 border-[#fbfcfb] bg-[#d5a83e]" aria-hidden="true" />
             </span>
-            <span className="hidden sm:grid">
-              <strong className="font-display text-sm font-semibold text-[#172a24]">FreightPilot</strong>
-              <span className="text-[11px] text-[#63766f]">Logistics operations workspace</span>
-            </span>
+            <strong className="font-display text-[14px] font-semibold text-[#252522]">FreightPilot</strong>
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
@@ -95,9 +91,10 @@ export function SiteChrome({ children }: PropsWithChildren) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={cn(
-                    'relative inline-flex min-h-9 items-center px-3 text-sm text-[#52665e] transition hover:bg-[#eef3f0] hover:text-[#172a24]',
-                    active && 'font-semibold text-[#087f72]',
+                    'relative inline-flex min-h-8 items-center rounded-md px-3 text-[13px] text-[#5f5f59] transition hover:bg-[#f4f4f1] hover:text-[#252522]',
+                    active && 'bg-[#f4f4f1] font-medium text-[#252522]',
                   )}
                   aria-current={active ? 'page' : undefined}
                 >
@@ -111,6 +108,9 @@ export function SiteChrome({ children }: PropsWithChildren) {
             <MagneticLink href={externalLinks.docs} variant="ghost" showIcon={false}>
               Docs
             </MagneticLink>
+            <MagneticLink href={externalLinks.console} variant="ghost" showIcon={false}>
+              Sign in
+            </MagneticLink>
             <MagneticLink href="/launch" variant="primary">
               {startFreeCta}
             </MagneticLink>
@@ -119,7 +119,7 @@ export function SiteChrome({ children }: PropsWithChildren) {
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className="inline-flex h-10 w-10 items-center justify-center border border-[#cfd9d5] bg-white text-[#40534c] lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#454540] transition hover:bg-[#f4f4f1] lg:hidden"
             aria-expanded={menuOpen}
             aria-label="Toggle navigation"
           >
@@ -146,20 +146,21 @@ export function SiteChrome({ children }: PropsWithChildren) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-x-3 top-[72px] z-30 border border-[#d7dfdc] bg-white p-4 shadow-xl sm:inset-x-6 sm:top-[76px] lg:hidden"
+              className="fixed inset-x-3 top-[68px] z-30 rounded-lg border border-[#e5e4e0] bg-white p-3 shadow-xl sm:inset-x-6 lg:hidden"
             >
               <div className="grid gap-3">
                 {navigation.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     className={cn(
-                      'border border-[#d7dfdc] px-4 py-3 text-[#40534c] transition hover:bg-[#f4f8f6]',
-                      pathname === item.href && 'border-[#087f72] bg-[#eef7f3] text-[#172a24]',
+                      'rounded-md px-3 py-2.5 text-[#5f5f59] transition hover:bg-[#f7f7f5]',
+                      pathname === item.href && 'bg-[#f4f4f1] text-[#252522]',
                     )}
                   >
                     <span className="block text-sm font-semibold text-[#172a24]">{item.label}</span>
-                    <span className="mt-0.5 block text-xs text-[#63766f]">{item.description}</span>
+                    <span className="mt-0.5 block text-[11px] leading-5 text-[#85857e]">{item.description}</span>
                   </Link>
                 ))}
               </div>
@@ -176,25 +177,25 @@ export function SiteChrome({ children }: PropsWithChildren) {
         ) : null}
       </AnimatePresence>
 
-      <main id="main-content" className="relative z-10 pb-20 pt-4 sm:pb-24 sm:pt-6 lg:pt-8">{children}</main>
+      <main id="main-content" className="relative z-10 pb-20">{children}</main>
 
-      <footer className="relative z-10 mt-12 border-t border-[#d7dfdc] bg-[#fbfcfb] px-3 pb-10 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+      <footer className="relative z-10 mt-16 bg-[#f7f7f5] px-3 pb-10 pt-10 sm:px-6 sm:pt-14 lg:px-8">
         <div className="section-shell grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)] lg:gap-8">
           <div className="max-w-md space-y-6">
             <Link href="/" className="inline-flex items-center gap-3 no-underline">
-            <span className="inline-grid h-8 w-8 place-items-center bg-[#153f3a] font-display text-xs font-bold text-white sm:h-9 sm:w-9">
+            <span className="inline-grid h-8 w-8 place-items-center rounded-md bg-[#2e4f47] font-display text-xs font-semibold text-white">
                 FP
               </span>
               <span className="grid">
                 <strong className="font-display text-sm font-semibold text-[#172a24]">FreightPilot</strong>
-                <span className="text-[11px] text-[#63766f]">Logistics operations workspace</span>
+                <span className="text-[11px] text-[#73736e]">Logistics operations workspace</span>
               </span>
             </Link>
-            <p className="text-sm leading-7 text-[#5b6d66]">
-              Built to give operators one place to plan routes, handle exceptions, manage provider controls, and launch new workspaces securely and reliably.
+            <p className="text-sm leading-7 text-[#5f5f59]">
+              One place to plan routes, follow deliveries, fix problems, and manage your team.
             </p>
             <div className="flex gap-4 pt-2">
-              <Link href="/contact" className="text-sm font-medium text-[#40534c] underline-offset-4 transition hover:text-[#087f72] hover:underline">
+              <Link href="/contact" className="text-sm font-medium text-[#454540] underline-offset-4 transition hover:text-[#176b5c] hover:underline">
                 Contact
               </Link>
             </div>
@@ -205,13 +206,13 @@ export function SiteChrome({ children }: PropsWithChildren) {
               if (items.length === 0) return null;
               return (
                 <div key={key} className="space-y-4">
-                  <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#172a24]">{footerColumnTitles[key] ?? key}</h4>
+                  <h4 className="text-[13px] font-medium text-[#252522]">{footerColumnTitles[key] ?? key}</h4>
                   <ul className="space-y-3">
                     {items.map((item) => (
                       <li key={item.label}>
                         <Link
                           href={item.href}
-                          className="text-sm text-[#5b6d66] transition hover:text-[#087f72]"
+                          className="text-sm text-[#5f5f59] transition hover:text-[#176b5c]"
                           {...(item.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                         >
                           {item.label}
@@ -226,7 +227,7 @@ export function SiteChrome({ children }: PropsWithChildren) {
         </div>
 
         {/* Legal footer row */}
-        <div className="section-shell mt-10 flex flex-col items-center justify-between gap-4 border-t border-[#d7dfdc] pt-6 text-xs text-[#63766f] sm:flex-row">
+        <div className="section-shell mt-10 flex flex-col items-center justify-between gap-4 border-t border-[#e5e4e0] pt-6 text-xs text-[#85857e] sm:flex-row">
           <p>© {currentYear} FreightPilot. All rights reserved.</p>
         </div>
       </footer>

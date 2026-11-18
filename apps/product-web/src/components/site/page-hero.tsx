@@ -10,15 +10,15 @@ type PageHeroProps = {
 
 export function PageHero({ eyebrow, title, description, actions, aside }: PageHeroProps) {
   return (
-    <section className="section-shell pt-8 sm:pt-12">
-      <div className="grid grid-cols-1 gap-6 border-b border-[#d7dfdc] pb-8 sm:gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:pb-10">
-        <div className="space-y-4 sm:space-y-5">
+    <section className="section-shell pt-12 sm:pt-16">
+      <div className="grid grid-cols-1 gap-8 pb-8 sm:gap-12 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:items-start lg:pb-10">
+        <div className="space-y-4">
           <p className="kicker">{eyebrow}</p>
-          <h1 className="balanced-headline max-w-[17ch] font-display text-[clamp(2.25rem,4.5vw,4.1rem)] font-semibold leading-[1.02] text-[#172a24]">{title}</h1>
-          <p className="lede text-[0.98rem] sm:text-base">{description}</p>
-          {actions ? <div className="flex flex-col items-stretch gap-3 pt-3 sm:flex-row sm:flex-wrap sm:items-center [&>*]:w-full sm:[&>*]:w-auto">{actions}</div> : null}
+          <h1 className="balanced-headline max-w-[19ch] font-display text-[clamp(2.4rem,4.7vw,4.4rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-[#252522]">{title}</h1>
+          <p className="lede max-w-[600px] text-[16px] leading-7">{description}</p>
+          {actions ? <div className="flex flex-col items-stretch gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center [&>*]:w-full sm:[&>*]:w-auto">{actions}</div> : null}
         </div>
-        {aside ? <div className="relative min-w-0 lg:pt-2">{aside}</div> : null}
+        {aside ? <div className="relative min-w-0 lg:mt-7">{aside}</div> : null}
       </div>
     </section>
   );

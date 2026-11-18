@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import type { PropsWithChildren } from 'react';
-import { useMemo, useState } from 'react';
-import { m, useReducedMotion } from 'framer-motion';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
@@ -18,38 +16,17 @@ type MagneticLinkProps = PropsWithChildren<{
 
 const variantClasses: Record<NonNullable<MagneticLinkProps['variant']>, string> = {
   primary:
-    'bg-[#087f72] text-white transition-colors hover:bg-[#06675d]',
+    'rounded-full bg-[#087f72] text-white transition-colors hover:bg-[#176b5c]',
   secondary:
-    'border border-[#cfd9d5] bg-white text-[#40534c] transition-colors hover:bg-[#eef3f0]',
-  ghost: 'bg-transparent text-[#40534c] hover:text-[#087f72]',
+    'rounded-full border border-[#e5e4e0] bg-white text-[#454540] transition-colors hover:border-[#d7d6d1] hover:bg-[#f7f7f5]',
+  ghost: 'rounded-full bg-transparent text-[#454540] hover:bg-[#f4f4f1] hover:text-[#252522]',
 };
-
-function useMagnet() {
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const reduceMotion = useReducedMotion();
-
-  const handlers = useMemo(
-    () => ({
-      onMouseMove: (event: React.MouseEvent<HTMLElement>) => {
-        if (reduceMotion) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        const x = (event.clientX - rect.left - rect.width / 2) * 0.12;
-        const y = (event.clientY - rect.top - rect.height / 2) * 0.12;
-        setOffset({ x, y });
-      },
-      onMouseLeave: () => setOffset({ x: 0, y: 0 }),
-    }),
-    [reduceMotion],
-  );
-
-  return { offset, handlers };
-}
 
 function LinkContent({ children, showIcon = true }: Pick<MagneticLinkProps, 'showIcon'> & PropsWithChildren) {
   return (
     <span className="relative z-10 flex items-center justify-center gap-2 text-center sm:text-left">
       {children}
-      {showIcon ? <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /> : null}
+      {showIcon ? <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /> : null}
     </span>
   );
 }
@@ -62,32 +39,24 @@ function AnchorShell({
   variant = 'primary',
   showIcon = true,
 }: PropsWithChildren<MagneticLinkProps>) {
-  const { offset, handlers } = useMagnet();
   const content = <LinkContent showIcon={showIcon}>{children}</LinkContent>;
   const sharedClassName = cn(
-    'group inline-flex min-h-11 min-w-0 items-center justify-center overflow-hidden px-4 text-sm font-semibold transition will-change-transform sm:px-5',
+    'group inline-flex min-h-10 min-w-0 items-center justify-center px-4 text-sm font-medium transition-colors sm:px-5',
     variantClasses[variant],
     className,
   );
 
-  const motionProps = {
-    ...handlers,
-    animate: { x: offset.x, y: offset.y },
-    transition: { type: 'spring' as const, stiffness: 260, damping: 18, mass: 0.35 },
-    className: sharedClassName,
-  };
-
   if (external) {
     return (
-      <m.a href={href} target="_blank" rel="noopener noreferrer" {...motionProps}>
+      <a href={href} target="_blank" rel="noopener noreferrer" className={sharedClassName}>
         {content}
-      </m.a>
+      </a>
     );
   }
 
   return (
-    <Link href={href} className="inline-flex">
-      <m.span {...motionProps}>{content}</m.span>
+    <Link href={href} prefetch={false} className={sharedClassName}>
+      {content}
     </Link>
   );
 }

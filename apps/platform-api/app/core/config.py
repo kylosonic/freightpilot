@@ -14,6 +14,7 @@ DEFAULT_CORS_ORIGINS = [
     'http://127.0.0.1:5174',
     'http://127.0.0.1:8081',
     'https://freightpilot.pages.dev',
+    'https://freightpilot-ops.pages.dev',
     'https://freightpilot-ops.freightpilot.workers.dev',
 ]
 
@@ -90,7 +91,7 @@ class Settings(BaseSettings):
     smtp_use_ssl: bool = False
     smtp_timeout_seconds: float = 10.0
     sample_data_dir: str = 'sample-data'
-    console_url: str = 'https://freightpilot-ops.freightpilot.workers.dev'
+    console_url: str = 'https://freightpilot-ops.pages.dev'
 
     @property
     def effective_database_url(self) -> str:

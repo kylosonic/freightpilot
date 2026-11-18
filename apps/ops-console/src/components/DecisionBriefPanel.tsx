@@ -37,17 +37,17 @@ export function DecisionBriefContent({
 }) {
   if (isLoading) {
     return (
-      <Panel eyebrow="Decision brief" title="Reading the workspace">
-        <p className="text-xs text-[#63766f]">Building a record-grounded brief…</p>
+      <Panel eyebrow="Summary" title="Checking today's work">
+        <p className="text-xs text-[#73736e]">Reading your current records…</p>
       </Panel>
     );
   }
 
   if (error) {
     return (
-      <Panel eyebrow="Decision brief" title="Brief unavailable">
+      <Panel eyebrow="Summary" title="Summary unavailable">
         <p className="text-sm text-[#8f302a]">
-          The brief could not be built from workspace records. No recommendation is being shown.
+          We could not make a summary from your records. Nothing is being suggested.
         </p>
       </Panel>
     );
@@ -57,32 +57,32 @@ export function DecisionBriefContent({
 
   return (
     <Panel
-      eyebrow="Grounded decision brief"
+      eyebrow="Today's summary"
       title={brief.headline}
-      description="Every statement below comes from a workspace record or a calculated count. Recommendations are advisory and require human action."
+      description="These points come from your records. You still decide what to do."
     >
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
           <section>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">What changed</h3>
-            <ul className="mt-1.5 space-y-1 text-xs leading-5 text-[#40534c]">
-              {brief.what_changed.map((item) => <li key={item}>• {item}</li>)}
+            <h3 className="text-xs font-semibold text-[#73736e]">What changed</h3>
+            <ul className="mt-1.5 space-y-1 text-sm leading-6 text-[#454540]">
+              {brief.what_changed.map((item) => <li key={item}>{item}</li>)}
             </ul>
           </section>
 
           <section>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">What is at risk</h3>
+            <h3 className="text-xs font-semibold text-[#73736e]">What is at risk</h3>
             <div className="mt-2 space-y-2">
               {brief.risks.length === 0 ? (
-                <p className="text-xs text-[#14745f]">No grounded operating risk is currently recorded.</p>
+                <p className="text-xs text-[#14745f]">There are no open risks in your records.</p>
               ) : null}
               {brief.risks.map((risk) => (
                 <article key={risk.kind} className="border-t border-[#e6ebe8] py-2">
                   <div className="flex items-center gap-2">
                     <StatusBadge label={risk.severity} tone={tone(risk.severity)} />
-                    <span className="text-[10px] uppercase tracking-wide text-[#6b7d76]">{risk.kind}</span>
+                    <span className="text-xs text-[#73736e]">{risk.kind}</span>
                   </div>
-                  <p className="mt-1 text-xs text-[#40534c]">{risk.message}</p>
+                  <p className="mt-1 text-sm leading-6 text-[#454540]">{risk.message}</p>
                   <Evidence rows={risk.evidence} />
                 </article>
               ))}
@@ -90,10 +90,10 @@ export function DecisionBriefContent({
           </section>
 
           <section>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Recommended next actions</h3>
+            <h3 className="text-xs font-semibold text-[#73736e]">Next actions</h3>
             <div className="mt-2 space-y-2">
               {brief.actions.length === 0 ? (
-                <p className="text-xs text-[#63766f]">No action is recommended from the current records.</p>
+                <p className="text-xs text-[#73736e]">No action is needed from your current records.</p>
               ) : null}
               {brief.actions.map((action) => (
                 <article key={`${action.priority}:${action.action}`} className="border-t border-[#e6ebe8] py-2">
@@ -107,7 +107,7 @@ export function DecisionBriefContent({
                   <Evidence rows={action.evidence} />
                   {action.href ? (
                     <Link to={action.href} className="mt-1.5 inline-block text-[11px] font-semibold text-[#087f72] underline-offset-4 hover:underline">
-                      Review the record →
+                      View the record
                     </Link>
                   ) : null}
                 </article>
@@ -119,12 +119,12 @@ export function DecisionBriefContent({
         <div className="space-y-4">
           <section>
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Cash risk</h3>
+              <h3 className="text-xs font-semibold text-[#73736e]">Cash risk</h3>
               <span className="text-[10px] text-[#63766f]">Rules-based</span>
             </div>
             <div className="mt-2 space-y-2">
               {brief.cash_risk.length === 0 ? (
-                <p className="text-xs text-[#63766f]">No open driver cash exposure is recorded.</p>
+                <p className="text-xs text-[#73736e]">No driver has unaccounted cash.</p>
               ) : null}
               {brief.cash_risk.map((row) => (
                 <article key={row.driver_id ?? row.driver_name} className="border-t border-[#e6ebe8] py-2">
@@ -142,10 +142,10 @@ export function DecisionBriefContent({
           </section>
 
           <section>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Exception triage</h3>
+            <h3 className="text-xs font-semibold text-[#73736e]">Exception triage</h3>
             <div className="mt-2 space-y-2">
               {brief.triage.length === 0 ? (
-                <p className="text-xs text-[#63766f]">No open exception needs triage.</p>
+                <p className="text-xs text-[#73736e]">No open issue needs review.</p>
               ) : null}
               {brief.triage.map((row) => (
                 <article key={row.alert_id} className="border-t border-[#e6ebe8] py-2">
@@ -164,7 +164,7 @@ export function DecisionBriefContent({
         </div>
       </div>
       <p className="mt-3 border-t border-[#e6ebe8] pt-2.5 text-[10px] text-[#6b7d76]">
-        Source: {brief.generated_by} · generated {new Date(brief.generated_at).toLocaleString()}
+        From {brief.generated_by}, {new Date(brief.generated_at).toLocaleString()}
       </p>
     </Panel>
   );

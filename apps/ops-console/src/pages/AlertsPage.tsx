@@ -183,9 +183,9 @@ export function AlertsPage() {
       ) : null}
 
       <PageHeader
-        eyebrow="Exception center"
-        title="Triage, assign, and close operational risk quickly"
-        description="Triage open exceptions, assign ownership, and close risk."
+        eyebrow="Exceptions"
+        title="Resolve what needs attention"
+      description="See open issues first, take one when you can help, and add a note when it is fixed."
         actions={
           <button
             onClick={onScan}
@@ -200,18 +200,18 @@ export function AlertsPage() {
         }
       />
 
-      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile title="Open" value={counts.open} detail="Awaiting first response" tone={counts.open > 0 ? 'warning' : 'success'} />
-        <MetricTile title="Acknowledged" value={counts.acknowledged} detail="Owned, not closed" tone="info" />
-        <MetricTile title="Critical" value={counts.critical} detail="Highest urgency" tone={counts.critical > 0 ? 'danger' : 'neutral'} />
-        <MetricTile title="High severity" value={counts.high} detail="Service or cost at risk" tone={counts.high > 0 ? 'warning' : 'neutral'} />
+      <div className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[#efeeea]">
+        <MetricTile title="Open" value={counts.open} detail="Not yet handled" tone={counts.open > 0 ? 'warning' : 'success'} />
+        <MetricTile title="Acknowledged" value={counts.acknowledged} detail="Someone is handling it" tone="info" />
+        <MetricTile title="Critical" value={counts.critical} detail="Needs help now" tone={counts.critical > 0 ? 'danger' : 'neutral'} />
+        <MetricTile title="High" value={counts.high} detail="Could affect service or cost" tone={counts.high > 0 ? 'warning' : 'neutral'} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.85fr_1.15fr]">
         <Panel
-          eyebrow="Manual entry"
-          title="Create a manual operator alert"
-          description="Use manual alerts for cross-team coordination, handoff notes, or issues detected outside automated scans."
+          eyebrow="New issue"
+          title="Add an issue"
+          description="Add an issue you found outside the automatic checks."
         >
           <form className="grid grid-cols-1 gap-3" onSubmit={onCreate}>
             <input
@@ -249,7 +249,7 @@ export function AlertsPage() {
         <Panel
           eyebrow="Backlog"
           title="Alert queue"
-          description="Filter by lifecycle state and keep the highest-severity work visible first."
+          description="Filter by status. The most urgent issues appear first."
           actions={
             <select
               className="fp-input w-auto"

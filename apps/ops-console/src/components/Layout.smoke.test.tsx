@@ -71,33 +71,23 @@ describe('Layout shell smoke (TECH-72 / NB-55)', () => {
     // Sidebar brand block.
     expect(html).toContain('FreightPilot');
     expect(html).toContain('Operations workspace');
-    // Both navigation groups + codes.
-    expect(html).toContain('Control Tower');
-    expect(html).toContain('Route Studio');
+    // Plain-language navigation.
+    expect(html).toContain('Overview');
+    expect(html).toContain('Routes');
     expect(html).toContain('Shipments');
     expect(html).toContain('Exceptions');
     expect(html).toContain('Planning');
-    expect(html).toContain('Data Intake');
+    expect(html).toContain('Import data');
     expect(html).toContain('Payments');
-    expect(html).toContain('Verification Queue');
+    expect(html).toContain('Verify payments');
     expect(html).toContain('Integrations');
-    expect(html).toContain('CT');
-    expect(html).toContain('RT');
-    expect(html).toContain('SH');
-    expect(html).toContain('EX');
-    expect(html).toContain('PL');
-    expect(html).toContain('DI');
-    expect(html).toContain('PY');
-    expect(html).toContain('VQ');
-    expect(html).toContain('WS');
-    expect(html).toContain('IN');
     // Identity footer + logout.
-    expect(html).toContain('Logout');
+    expect(html).toContain('Log out');
     expect(html).toContain('captain@testco.com');
     expect(html).toContain('operator');
     // Top shell: context label + descriptor.
-    expect(html).toContain('Control tower');
-    expect(html).toContain('Routes, exceptions, planning, and workspace governance.');
+    expect(html).toContain('Freight operations');
+    expect(html).toContain('Your routes, deliveries, and workspace.');
     // Persistent banner mounted inside the shell.
     expect(html).toContain('data-testid="cap-pitch-banner"');
     // The Outlet content slot exists for page switching.

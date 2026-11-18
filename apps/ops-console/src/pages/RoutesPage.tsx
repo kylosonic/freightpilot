@@ -65,13 +65,13 @@ export function RoutesPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Route studio"
-        title="Build, compare, and operationalize route scenarios"
-        description="Model a route, compare results, and keep the saved schedule visible."
+        eyebrow="Routes"
+        title="Plan and save routes"
+        description="Enter delivery stops, compare options, and save the route your team will use."
         actions={
           <button
             onClick={handleRefresh}
-            className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
+            className="fp-action-secondary"
           >
             {isRefreshing ? (
               <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
@@ -104,14 +104,14 @@ export function RoutesPage() {
         {weatherMapUnlocked ? (
           <RouteMap stops={latestRouteStops} riskZones={riskZones} />
         ) : (
-          <Panel eyebrow="Simulated weather risk" title="Simulated weather risk zones">
-            <div className="grid h-full min-h-[240px] place-items-center border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
+          <Panel eyebrow="Coming later" title="Weather map">
+            <div className="grid h-full min-h-[240px] place-items-center rounded-md bg-[#f7f7f5] p-6 text-center">
               <div>
-                <p className="text-sm font-semibold text-[#40534c]">
-                  Unlocks after Milestone 5
+                <p className="text-sm font-semibold text-[#454540]">
+                  Available after step 5
                 </p>
-                <Link to="/upload" className="mt-1.5 inline-block text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
-                  Continue onboarding
+                <Link to="/upload" className="mt-1.5 inline-block text-xs font-medium text-[#176b5c] underline-offset-4 hover:underline">
+                  Continue setup
                 </Link>
               </div>
             </div>
@@ -120,17 +120,17 @@ export function RoutesPage() {
       </div>
 
       <Panel
-        eyebrow="Schedule library"
-        title="Saved route schedules"
-        description="Operational route outputs persist here so the team can reference the latest optimized plans."
+        eyebrow="Saved"
+        title="Saved routes"
+        description="Find the latest routes your team has saved."
       >
         <RouteSchedulesTable schedules={schedules} />
       </Panel>
 
       <Panel
-        eyebrow="Scenario history"
-        title="Recent route optimization runs"
-        description="Every optimization run now keeps a scenario record so the team can review what was modeled, what persisted, and where manual intervention was still required."
+        eyebrow="History"
+        title="Recent route plans"
+        description="Review earlier route plans, their costs, and any stops that still needed a driver."
       >
         <div className="space-y-3">
           {history.slice(0, 6).map((run) => (
@@ -138,9 +138,9 @@ export function RoutesPage() {
           ))}
 
           {history.length === 0 ? (
-            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
-              <p className="text-sm font-semibold text-[#40534c]">No optimization history</p>
-              <p className="mt-1 text-xs text-[#63766f]">Run a route optimization above to start building scenario history.</p>
+            <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
+              <p className="text-sm font-semibold text-[#454540]">No route plans yet</p>
+              <p className="mt-1 text-xs text-[#73736e]">Plan a route above and it will appear here.</p>
             </div>
           ) : null}
         </div>

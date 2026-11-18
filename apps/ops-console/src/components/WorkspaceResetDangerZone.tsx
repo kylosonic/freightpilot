@@ -30,9 +30,9 @@ export function WorkspaceResetDangerZone({
 
   return (
     <Panel
-      eyebrow="Danger zone"
+      eyebrow="Careful"
       title="Reset workspace to sample data"
-      description="Wipe every real CSV-uploaded row and restore the seeded sample workspace. This is nuclear and irreversible — the reset event is recorded in the audit timeline."
+      description="Delete all real uploaded data and restore the example data. This cannot be undone."
     >
       <button
         type="button"

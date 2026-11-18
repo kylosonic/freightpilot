@@ -48,7 +48,7 @@ export function FreightReconciliationPanel() {
   return (
     <div className="flex h-full flex-col">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-[#20372f]">Freight invoice reconciliation</h3>
+        <h3 className="text-sm font-semibold text-[#252522]">Carrier invoices</h3>
         <div>
           <input
             type="file"
@@ -58,29 +58,30 @@ export function FreightReconciliationPanel() {
             onChange={handleFileUpload}
           />
           <button
-            className="bg-[#087f72] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#06675d] disabled:opacity-50"
+            type="button"
+            className="fp-action-secondary !min-h-8 text-xs"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            {uploading ? 'Uploading...' : 'Upload Invoices'}
+            {uploading ? 'Uploading...' : 'Upload invoices'}
           </button>
         </div>
       </div>
 
       <div className="flex gap-4 mb-4">
         <div className="flex-1 border border-[#d7dfdc] bg-[#f8faf9] p-3">
-          <div className="text-[10px] uppercase tracking-wide text-[#63766f]">Flagged mismatches</div>
+          <div className="text-xs text-[#73736e]">Charges that differ</div>
           <div className="font-mono text-xl tabular-nums text-[#885100]">{mismatches.length}</div>
         </div>
         <div className="flex-1 border border-[#d7dfdc] bg-[#f8faf9] p-3">
-          <div className="text-[10px] uppercase tracking-wide text-[#63766f]">Total variance</div>
+          <div className="text-xs text-[#73736e]">Difference</div>
           <div className="font-mono text-xl tabular-nums text-[#a3342f]">${totalVariance.toFixed(2)}</div>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto border border-[#d7dfdc]">
         {loading ? (
-          <div className="flex h-full items-center justify-center p-4">Loading...</div>
+          <div className="flex h-full items-center justify-center p-4 text-sm text-[#73736e]">Loading invoices...</div>
         ) : (
           <table className="w-full text-left text-xs text-[#52665e]">
             <thead className="sticky top-0 bg-[#f5f8f6] text-[10px] font-semibold uppercase tracking-[0.06em] text-[#63766f]">
@@ -96,7 +97,7 @@ export function FreightReconciliationPanel() {
             <tbody className="divide-y divide-[#e6ebe8]">
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-4 text-center">No invoices uploaded</td>
+                  <td colSpan={6} className="px-4 py-4 text-center">No invoices yet.</td>
                 </tr>
               ) : (
                 invoices.map((inv) => (
@@ -118,7 +119,7 @@ export function FreightReconciliationPanel() {
                             : 'bg-[#f3faf7] text-[#14745f]'
                         }`}
                       >
-                        {inv.status === 'mismatch_flagged' ? 'Mismatch' : 'Matched'}
+                        {inv.status === 'mismatch_flagged' ? 'Check this' : 'Matches'}
                       </span>
                     </td>
                   </tr>

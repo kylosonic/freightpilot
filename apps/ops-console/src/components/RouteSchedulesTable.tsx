@@ -12,28 +12,30 @@ function scheduleTone(status: string) {
   return 'neutral';
 }
 
+const heading = 'px-3 py-2 text-[11px] font-medium text-[#73736e]';
+
 export function RouteSchedulesTable({ schedules }: Props) {
   return (
-    <div className="overflow-x-auto border border-[#d7dfdc]">
-      <table className="min-w-full divide-y divide-[#e2e8e5] text-sm">
-        <thead className="bg-[#f5f8f6]">
+    <div className="overflow-x-auto border-y border-[#e5e4e0]">
+      <table className="min-w-full divide-y divide-[#e5e4e0] text-sm">
+        <thead>
           <tr>
-            <th scope="col" className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Route</th>
-            <th scope="col" className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Date</th>
-            <th scope="col" className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Distance (km)</th>
-            <th scope="col" className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Cost units</th>
-            <th scope="col" className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Duration (min)</th>
-            <th scope="col" className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Status</th>
+            <th scope="col" className={`${heading} text-left`}>Route</th>
+            <th scope="col" className={`${heading} text-left`}>Date</th>
+            <th scope="col" className={`${heading} text-right`}>Distance (km)</th>
+            <th scope="col" className={`${heading} text-right`}>Cost units</th>
+            <th scope="col" className={`${heading} text-right`}>Duration (min)</th>
+            <th scope="col" className={`${heading} text-left`}>Status</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#e6ebe8] bg-white">
+        <tbody className="divide-y divide-[#efeeea] bg-white">
           {schedules.map((route) => (
-            <tr key={route.id} className="transition-colors hover:bg-[#f7faf8]">
-              <td className="px-3 py-2.5 font-medium text-[#20372f]">{route.route_name}</td>
-              <td className="px-3 py-2.5 text-[#52665e]">{route.schedule_date}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[#40534c]">{route.total_distance_km}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[#40534c]">{route.total_cost.toLocaleString()}</td>
-              <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[#40534c]">{route.estimated_duration_min}</td>
+            <tr key={route.id} className="transition-colors hover:bg-[#f7f7f5]">
+              <td className="px-3 py-3 font-medium text-[#252522]">{route.route_name}</td>
+              <td className="px-3 py-3 text-[#5f5f59]">{route.schedule_date}</td>
+              <td className="px-3 py-3 text-right tabular-nums text-[#454540]">{route.total_distance_km}</td>
+              <td className="px-3 py-3 text-right tabular-nums text-[#454540]">{route.total_cost.toLocaleString()}</td>
+              <td className="px-3 py-3 text-right tabular-nums text-[#454540]">{route.estimated_duration_min}</td>
               <td className="px-3 py-2.5">
                 <StatusBadge label={route.status} tone={scheduleTone(route.status)} />
               </td>

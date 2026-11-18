@@ -48,8 +48,13 @@ const copy = {
     offline: 'ኦፍላይን — ለውጦች በኋላ ይላካሉ',
     online: 'ኦንላይን',
     sync: 'በመላክ ላይ…',
-    noToken: 'የአሽከርካሪ ሊንክ አልተገኘም።',
+    noToken: 'ይህ የአሽከርካሪ ሊንክ አልተላከም። ከቢሮ አዲስ ሊንክ ይጠይቁ።',
     noStops: 'ዛሬ ምንም ጣቢያ የለም።',
+    proofSaved: 'ፎቶው ተቀምጧል',
+    queued: 'ይላካል',
+    choosePhoto: 'መጀመሪያ ፎቶ ይምረጡ።',
+    status: 'ሁኔታ',
+    collected: 'የተሰበሰበ ገንዘብ',
   },
   en: {
     title: "Today's route",
@@ -68,8 +73,13 @@ const copy = {
     offline: 'Offline — changes will sync later',
     online: 'Online',
     sync: 'Syncing…',
-    noToken: 'Driver link token is missing.',
+    noToken: 'This driver link did not work. Ask the office for a new link.',
     noStops: 'No stops scheduled today.',
+    proofSaved: 'Photo saved',
+    queued: 'waiting to send',
+    choosePhoto: 'Choose a photo first.',
+    status: 'Status',
+    collected: 'Cash collected',
   },
 } as const;
 
@@ -364,7 +374,7 @@ export function DriverPage() {
   async function onProof(stop: DispatchStop) {
     const file = proofFiles[stop.order_id];
     if (!file) {
-      setError('Choose a photo first.');
+      setError(t.choosePhoto);
       return;
     }
     if (!online) {
@@ -416,43 +426,43 @@ export function DriverPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f6f5] px-3 py-5 text-[#202b36]">
-      <div className="mx-auto max-w-2xl space-y-4">
-        <header className="border border-[#d7dfdc] border-t-4 border-t-[#087f72] bg-white p-4">
+    <main className="min-h-screen bg-[#f7f7f5] px-3 py-5 text-[#252522]">
+      <div className="mx-auto max-w-2xl space-y-3">
+        <header className="rounded-lg border border-[#e5e4e0] bg-white p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">FreightPilot Driver</p>
-              <h1 className="mt-1.5 text-2xl font-semibold text-[#172a24]">{t.title}</h1>
+              <p className="text-xs font-medium text-[#73736e]">FreightPilot</p>
+              <h1 className="mt-1 text-2xl font-semibold text-[#252522]">{t.title}</h1>
               {manifest ? <p className="mt-1 text-xs text-[#63766f]">{manifest.driver_name} · {manifest.start_label}</p> : null}
             </div>
-            <button type="button" onClick={() => setLang(lang === 'am' ? 'en' : 'am')} className="min-h-9 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c]">
+            <button type="button" onClick={() => setLang(lang === 'am' ? 'en' : 'am')} className="min-h-9 rounded-full border border-[#d7d7d2] bg-white px-3 text-xs font-medium text-[#454540]">
               {lang === 'am' ? 'EN' : 'አማ'}
             </button>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2 text-xs">
             <span className={online ? 'text-[#14745f]' : 'text-[#885100]'}>{online ? t.online : t.offline}</span>
-            {pendingCount + queuedProofs.length > 0 ? <span className="text-[#885100]">{pendingCount + queuedProofs.length} queued</span> : null}
+            {pendingCount + queuedProofs.length > 0 ? <span className="text-[#885100]">{pendingCount + queuedProofs.length} {t.queued}</span> : null}
             {busy ? <span className="text-[#17679b]">{t.sync}</span> : null}
           </div>
         </header>
 
-        {error ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]">{error}</p> : null}
-        {syncError ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-xs text-[#8f302a]">{syncError}</p> : null}
-        {notice ? <p role="status" className="border border-[#e7d1a8] bg-[#fffaf0] p-3 text-xs text-[#704500]">{notice}</p> : null}
+        {error ? <p role="alert" className="rounded-md bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{error}</p> : null}
+        {syncError ? <p role="alert" className="rounded-md bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{syncError}</p> : null}
+        {notice ? <p role="status" className="rounded-md bg-[#fffaf0] p-3 text-sm leading-6 text-[#704500]">{notice}</p> : null}
 
-        {manifest?.stops.length === 0 ? <p className="border border-[#d7dfdc] bg-white p-4 text-xs text-[#63766f]">{t.noStops}</p> : null}
+        {manifest?.stops.length === 0 ? <p className="rounded-lg border border-[#e5e4e0] bg-white p-4 text-sm text-[#73736e]">{t.noStops}</p> : null}
 
         <div className="space-y-3">
           {manifest?.stops.map((stop) => (
-            <article key={stop.order_id} className="border border-[#d7dfdc] bg-white p-4">
+            <article key={stop.order_id} className="rounded-lg border border-[#e5e4e0] bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] text-[#63766f]">#{stop.sequence} · {stop.order_no}</p>
-                  <h2 className="mt-1 text-base font-semibold text-[#172a24]">{stop.customer_name}</h2>
-                  <p className="mt-1 text-xs text-[#63766f]">{stop.address}</p>
+                  <p className="text-xs text-[#73736e]">Stop {stop.sequence} · {stop.order_no}</p>
+                  <h2 className="mt-1 text-lg font-semibold text-[#252522]">{stop.customer_name}</h2>
+                  <p className="mt-1 text-sm leading-6 text-[#5f5f59]">{stop.address}</p>
                   {stop.phone ? <a href={`tel:${stop.phone}`} className="mt-1 block text-xs font-medium text-[#087f72] underline">{stop.phone}</a> : null}
                 </div>
-                <span className="text-right font-mono text-xs text-[#40534c]">{stop.cod_amount_etb} ETB</span>
+                <span className="shrink-0 text-right font-mono text-sm text-[#454540]">{stop.cod_amount_etb} ETB</span>
               </div>
               {stop.window_start || stop.window_end ? (
                 <p className="mt-3 text-xs text-[#885100]">
@@ -487,7 +497,7 @@ export function DriverPage() {
                       note: cashNotes[stop.order_id]?.trim() || undefined,
                     })
                   }
-                  className="min-h-9 self-end bg-[#087f72] px-3 text-xs font-semibold text-white disabled:opacity-40"
+                  className="fp-action-primary self-end !min-h-9 !text-xs"
                 >
                   {t.saveCash}
                 </button>
@@ -518,13 +528,13 @@ export function DriverPage() {
                 </label>
                 <button type="button" disabled={busy || Boolean(stop.proof_id) || queuedProofs.some((proof) => proof.orderId === stop.order_id)} onClick={() => void onProof(stop)} className="min-h-9 self-end border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] disabled:opacity-40">
                   {stop.proof_id
-                    ? 'Proof saved'
+                    ? t.proofSaved
                     : queuedProofs.some((proof) => proof.orderId === stop.order_id)
                       ? t.proofQueued
                       : t.upload}
                 </button>
               </div>
-              <p className="mt-2 text-[11px] text-[#63766f]">Status: {stop.status} · {stop.collected_cash_etb} ETB declared</p>
+              <p className="mt-2 text-xs text-[#73736e]">{t.status}: {stop.status} · {t.collected}: {stop.collected_cash_etb} ETB</p>
             </article>
           ))}
         </div>

@@ -103,7 +103,7 @@ export function AccountPage() {
       setSubscription(updated);
       setStatusMessage(`Subscription updated to ${updated.tier}.`);
     } catch {
-      setStatusMessage('Failed to update subscription tier.');
+      setStatusMessage('Could not change your plan.');
     }
   }
 
@@ -116,7 +116,7 @@ export function AccountPage() {
       await refresh();
       setStatusMessage('Provider key added successfully.');
     } catch {
-      setStatusMessage('Failed to add provider key.');
+      setStatusMessage('Could not add the API key.');
     }
   }
 
@@ -126,7 +126,7 @@ export function AccountPage() {
       const result = await testProviderKey(keyId);
       setStatusMessage(result.message);
     } catch {
-      setStatusMessage('Failed to test provider key.');
+      setStatusMessage('Could not test the API key.');
     }
   }
 
@@ -137,7 +137,7 @@ export function AccountPage() {
       await refresh();
       setStatusMessage('Provider key revoked.');
     } catch {
-      setStatusMessage('Failed to revoke provider key.');
+      setStatusMessage('Could not remove the API key.');
     }
   }
 
@@ -152,7 +152,7 @@ export function AccountPage() {
       setStatusMessage(`Preferred AI provider set to ${updated.provider_name}.`);
       await refresh();
     } catch {
-      setStatusMessage('Failed to update preferred AI provider.');
+      setStatusMessage('Could not change the AI provider.');
     }
   }
 
@@ -162,7 +162,7 @@ export function AccountPage() {
       const usageData = await getCurrentUsage();
       setUsage(usageData);
     } catch {
-      setStatusMessage('Failed to refresh usage data.');
+      setStatusMessage('Could not load usage. Try again.');
     }
   }
 
@@ -171,15 +171,15 @@ export function AccountPage() {
     try {
       const updated = await updateContactPhone(contactPhone);
       setSubscription(updated);
-      setStatusMessage('Escalation contact phone saved.');
+      setStatusMessage('Support phone number saved.');
     } catch {
-      setStatusMessage('Failed to save escalation contact phone.');
+      setStatusMessage('Could not save the support phone number.');
     }
   }
 
   const tierLabel = useMemo(() => {
-    if (!subscription) return 'Unknown';
-    return `${subscription.tier} (${subscription.status})`;
+    if (!subscription) return 'Not loaded';
+    return subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1);
   }, [subscription]);
 
   const progressPercent = useMemo(() => usageProgressPercent(usage), [usage]);
@@ -208,16 +208,16 @@ export function AccountPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Workspace controls"
-        title="Workspace controls"
-        description="Manage the plan, usage, team access, and provider connections."
+        eyebrow="Settings"
+        title="Workspace settings"
+        description="Manage your plan, usage, team access, and connected services."
       />
 
-      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile title="Current plan" value={subscription?.tier ?? 'Unknown'} detail={`Status: ${subscription?.status ?? 'unknown'}`} tone="info" />
-        <MetricTile title="Usage" value={usage ? `${usage.used_units.toLocaleString()}` : 'N/A'} detail={metricLabel} tone={progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'success'} />
-        <MetricTile title="Preferred provider" value={subscription?.preferred_ai_provider ?? 'None'} detail="For dashboard workflows" tone="neutral" />
-        <MetricTile title="Active keys" value={activeKeyCount} detail="Available provider credentials" tone={activeKeyCount > 0 ? 'success' : 'warning'} />
+      <div className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[#efeeea]">
+        <MetricTile title="Plan" value={tierLabel} detail={subscription?.status ?? 'Not loaded'} tone="info" />
+        <MetricTile title="Tasks used" value={usage ? usage.used_units.toLocaleString() : 'Not loaded'} detail={usage ? 'This month' : 'Try again later'} tone={progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'success'} />
+        <MetricTile title="AI provider" value={subscription?.preferred_ai_provider ?? 'None'} detail="Used for AI features" tone="neutral" />
+        <MetricTile title="API keys" value={activeKeyCount} detail="Ready to use" tone={activeKeyCount > 0 ? 'success' : 'warning'} />
       </div>
 
       {statusMessage ? (
@@ -226,29 +226,29 @@ export function AccountPage() {
         </Panel>
       ) : null}
 
-      {/* Section 1 — plan + usage posture (dominant, full width) */}
+      {/* Plan and usage take the full width because they affect what every teammate can use. */}
       <Panel
-        eyebrow="Subscription"
-        title="Current plan and usage posture"
-          description="Switch tiers, monitor included task capacity, and keep the commercial model legible to workspace operators."
+        eyebrow="Billing"
+        title="Plan and usage"
+          description="Change your plan, check how much you have used, and review what each tier includes."
           actions={
             <button
               type="button"
               onClick={onRefreshUsage}
-              className="inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
+              className="fp-action-quiet !min-h-8"
             >
               Refresh usage
             </button>
           }
         >
-          <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
-            <p className="text-xs font-semibold text-[#20372f]">Current plan: {tierLabel}</p>
-            <p className="mt-1 text-xs text-[#63766f]">Organization: {subscription?.organization_name ?? 'Unknown'}</p>
+          <div className="rounded-md bg-[#f7f7f5] p-3">
+            <p className="text-sm font-semibold text-[#252522]">{tierLabel} plan</p>
+            <p className="mt-1 text-xs text-[#63766f]">{subscription?.organization_name ?? 'Workspace name not loaded'}</p>
           </div>
 
-          <div className="mt-3 border border-[#d7dfdc] bg-[#f8faf9] p-3">
-            <p className="text-xs font-semibold text-[#20372f]">Usage meter</p>
-            <p className="mt-0.5 text-[11px] text-[#63766f]">{metricLabel}</p>
+          <div className="mt-3 border-t border-[#e5e4e0] pt-3">
+            <p className="text-xs font-semibold text-[#252522]">Tasks used this month</p>
+            <p className="mt-0.5 text-[11px] text-[#63766f]">{metricLabel} counts toward your plan limit.</p>
 
             {usage ? (
               <div className="mt-4 space-y-4">
@@ -274,19 +274,19 @@ export function AccountPage() {
                       <div className="h-full bg-[#087f72]" style={{ width: `${progressPercent}%` }} />
                     </div>
                     <p className="text-xs text-[#63766f]">
-                      Utilization: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.utilization_percent ?? 0}%</span>
+                      Used: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.utilization_percent ?? 0}%</span>
                     </p>
                   </>
                 ) : (
-                  <p className="text-xs text-[#63766f]">No monthly cap on this plan.</p>
+                  <p className="text-xs text-[#63766f]">This plan has no monthly task limit.</p>
                 )}
 
                 <div className="grid gap-2 text-xs text-[#63766f] md:grid-cols-2">
                   <p>
-                    Overage units: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.overage_units.toLocaleString()}</span>
+                    Extra tasks: <span className="font-mono font-semibold tabular-nums text-[#40534c]">{usage.overage_units.toLocaleString()}</span>
                   </p>
                   <p>
-                    Estimated overage cost:{' '}
+                    Estimated extra cost:{' '}
                     <span className="font-mono font-semibold tabular-nums text-[#40534c]">
                       {overageCostLabel(usage)}
                     </span>
@@ -294,16 +294,16 @@ export function AccountPage() {
                 </div>
               </div>
             ) : (
-              <p className="mt-3 text-xs text-[#63766f]">Usage endpoint unavailable. Run the latest backend migration and refresh.</p>
+              <p className="mt-3 text-xs text-[#63766f]">Usage could not be loaded. Refresh in a moment.</p>
             )}
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {plans.map((plan) => (
-              <div key={plan.tier} className="border border-[#d7dfdc] bg-white p-3">
+              <div key={plan.tier} className="border-t border-[#e5e4e0] pt-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-sm font-semibold text-[#20372f]">{plan.title}</h2>
+                    <h2 className="text-sm font-semibold text-[#252522]">{plan.title}</h2>
                     <p className="font-mono tabular-nums text-xs text-[#63766f]">{planPriceLabel(plan)}</p>
                   </div>
                   {currentTier === plan.tier ? <StatusBadge label="Current" tone="info" /> : null}
@@ -312,13 +312,13 @@ export function AccountPage() {
                   <p>Seats: <span className="font-mono tabular-nums">{plan.seat_limit ?? 'Unlimited'}</span></p>
                   <p>Vehicles: <span className="font-mono tabular-nums">{plan.vehicle_limit ?? 'Unlimited'}</span></p>
                   <p>Included tasks: <span className="font-mono tabular-nums">{includedTasksLabel(plan)}</span></p>
-                  <p>Overage rate: <span className="font-mono tabular-nums">{overageRateLabel(plan)}</span></p>
+                  <p>Extra task rate: <span className="font-mono tabular-nums">{overageRateLabel(plan)}</span></p>
                 </div>
                 <button
                   type="button"
                   disabled={currentTier === plan.tier}
                   onClick={() => onSelectTier(plan.tier)}
-                  className="mt-3 inline-flex min-h-8 w-full items-center justify-center border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="fp-action-secondary mt-3 w-full !min-h-8 text-xs"
                 >
                   {currentTier === plan.tier ? 'Current plan' : 'Switch to plan'}
                 </button>
@@ -331,11 +331,11 @@ export function AccountPage() {
             side-by-side secondary work areas */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Panel
-          eyebrow="Escalation contact"
-          title="Escalation SMS phone"
-          description="Receipt escalations are sent to this number. The workspace can be locked exactly when escalation matters — owners and admins can update it anytime."
+          eyebrow="Support"
+          title="Support phone number"
+          description="We send payment or access problems to this number. Owners and admins can change it at any time."
         >
-          <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+          <div>
             <label htmlFor="contactPhone" className="text-xs font-semibold text-[#20372f]">
               Contact phone
             </label>
@@ -345,18 +345,18 @@ export function AccountPage() {
                 value={contactPhone}
                 onChange={(event) => setContactPhone(event.target.value)}
                 className={`${fieldClassName} min-w-0 flex-1 sm:min-w-[240px]`}
-                placeholder="Escalation phone"
+                placeholder="Phone number"
               />
               <button
                 type="button"
                 onClick={onSaveContactPhone}
-                className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
+                className="fp-action-primary"
               >
-                Save phone number
+                Save phone
               </button>
             </div>
-            <p className="mt-2 text-[11px] text-[#63766f]">
-              Current: {subscription?.contact_phone ?? 'Not set'}
+          <p className="mt-2 text-[11px] text-[#63766f]">
+            {subscription?.contact_phone ? `Current: ${subscription.contact_phone}` : 'No phone number set.'}
             </p>
           </div>
         </Panel>
@@ -364,12 +364,12 @@ export function AccountPage() {
       <TeamPanel />
 
         <Panel
-          eyebrow="AI provider control"
-          title="Bring your own provider keys"
-          description="Set the preferred provider for dashboard workflows, test active keys, and rotate credentials without leaving the workspace."
+          eyebrow="AI settings"
+          title="AI provider keys"
+          description="Choose which AI provider to use, test a key, and replace it when needed."
         >
-          <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
-            <p className="text-xs font-semibold text-[#20372f]">Preferred AI provider for the dashboard</p>
+          <div>
+            <p className="text-xs font-semibold text-[#252522]">Preferred AI provider</p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <select value={preferredKeyId} onChange={(event) => setPreferredKeyId(event.target.value)} className={`${fieldClassName} min-w-0 flex-1 sm:min-w-[240px]`}>
                 <option value="">Select active provider key</option>
@@ -382,12 +382,14 @@ export function AccountPage() {
               <button
                 type="button"
                 onClick={onSetPreferredKey}
-                className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
+                className="fp-action-primary"
               >
-                Save preferred provider
+                Save provider
               </button>
             </div>
-            <p className="mt-2 text-[11px] text-[#63766f]">Current: {subscription?.preferred_ai_provider ?? 'Not configured'}</p>
+            <p className="mt-2 text-[11px] text-[#63766f]">
+              {subscription?.preferred_ai_provider ? `Using ${subscription.preferred_ai_provider}` : 'No AI provider selected.'}
+            </p>
           </div>
 
           <form onSubmit={onAddKey} className="mt-4 grid gap-3 md:grid-cols-3">
@@ -395,7 +397,7 @@ export function AccountPage() {
             <input value={keyName} onChange={(event) => setKeyName(event.target.value)} className={fieldClassName} placeholder="Key label" />
             <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} className={fieldClassName} placeholder="API key" />
             <div className="md:col-span-3">
-              <button type="submit" className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]">
+              <button type="submit" className="fp-action-primary">
                 Save key
               </button>
             </div>
@@ -408,24 +410,24 @@ export function AccountPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge label={key.status} tone={keyTone(key.status)} />
-                      <span className="text-[10px] uppercase tracking-wide text-[#6b7d76]">{key.provider_name}</span>
+                      <span className="text-xs text-[#73736e]">{key.provider_name}</span>
                     </div>
-                    <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">{key.key_name}</h3>
-                    <p className="mt-0.5 font-mono text-[10px] text-[#63766f]">{key.masked_key}</p>
+                    <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">{key.key_name}</h3>
+                    <p className="mt-0.5 text-[11px] text-[#73736e]">{key.status === 'active' ? 'Key is ready to use.' : 'This key no longer works.'}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => onTestKey(key.id)}
-                      className="min-h-8 border border-[#cfd9d5] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+                      className="fp-action-quiet !min-h-8"
                     >
-                      Test
+                      Check key
                     </button>
                     {key.status === 'active' ? (
                       <button
                         type="button"
                         onClick={() => onRevokeKey(key.id)}
-                        className="min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
+                        className="fp-action-quiet !min-h-8 !text-[#a3342f]"
                       >
                         Revoke
                       </button>
@@ -435,33 +437,30 @@ export function AccountPage() {
               </article>
             ))}
 
-            {keys.length === 0 ? <p className="text-xs text-[#63766f]">No provider keys configured yet.</p> : null}
+            {keys.length === 0 ? <p className="text-xs text-[#63766f]">No API keys yet.</p> : null}
           </div>
         </Panel>
       </div>
 
       <Panel
-        eyebrow="Audit timeline"
-        title="Recent workspace events"
-        description="Subscription changes, provider-key actions, routing decisions, and planning events are recorded here for operator review."
+        eyebrow="History"
+        title="Workspace activity"
+        description="See recent changes to your plan, settings, routes, and stock plans."
       >
         <div className="space-y-3">
           {auditEvents.slice(0, 8).map((event) => (
             <article key={event.id} className="border-t border-[#e6ebe8] py-2.5 first:border-t-0 first:pt-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge label={event.entity_type} tone="info" />
-                    <span className="text-[10px] uppercase tracking-wide text-[#6b7d76]">{event.event_type}</span>
-                  </div>
-                  <h3 className="mt-1.5 text-xs font-semibold text-[#20372f]">{event.description}</h3>
+                  <h3 className="text-xs font-semibold text-[#20372f]">{event.description}</h3>
+                  <p className="mt-0.5 text-[11px] text-[#73736e]">{event.entity_type} · {event.event_type.replace(/_/g, ' ')}</p>
                 </div>
                 <span className="text-[10px] text-[#63766f]">{new Date(event.created_at).toLocaleString()}</span>
               </div>
             </article>
           ))}
 
-          {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No audit events recorded yet.</p> : null}
+          {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No recent changes.</p> : null}
         </div>
       </Panel>
 

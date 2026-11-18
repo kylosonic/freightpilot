@@ -18,12 +18,12 @@ type Props = {
   modelName?: string;
 };
 
-const axisStyle = { fill: '#63766f', fontSize: 11 };
+const axisStyle = { fill: '#73736e', fontSize: 11 };
 const tooltipStyle = {
   backgroundColor: '#ffffff',
-  border: '1px solid #d7dfdc',
-  borderRadius: '4px',
-  color: '#20372f',
+  border: '1px solid #e5e4e0',
+  borderRadius: '6px',
+  color: '#252522',
 };
 
 export function ForecastChart({ points, quality, modelName }: Props) {
@@ -64,28 +64,28 @@ export function ForecastChart({ points, quality, modelName }: Props) {
 
   return (
     <Panel
-      eyebrow="Demand intelligence"
-      title="Predicted Weekly Demand"
-      description="Point demand, a planning range derived from the available model evidence, and the limits behind the output."
+      eyebrow="Demand"
+      title="Expected weekly demand"
+      description="See the expected amount and a range. Treat this as a planning estimate, not a promise."
     >
-      <div className="mb-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Model</p>
-          <p className="mt-1 text-xs font-semibold text-[#20372f]">{modelName ?? 'Demand model'}</p>
+      <div className="mb-5 grid grid-cols-2 gap-x-5 gap-y-3 border-y border-[#e5e4e0] py-3 lg:grid-cols-4">
+        <div>
+          <p className="text-[11px] text-[#73736e]">Model</p>
+          <p className="mt-1 text-xs font-semibold text-[#252522]">{modelName ?? 'Demand model'}</p>
         </div>
-        <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Backtest error</p>
-          <p className="mt-1 font-mono text-xs font-semibold tabular-nums text-[#20372f]">{backtestLabel}</p>
+        <div>
+          <p className="text-[11px] text-[#73736e]">Backtest error</p>
+          <p className="mt-1 text-xs font-semibold tabular-nums text-[#252522]">{backtestLabel}</p>
         </div>
-        <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#6b7d76]">Demand history</p>
-          <p className="mt-1 font-mono text-xs font-semibold tabular-nums text-[#20372f]">
+        <div>
+          <p className="text-[11px] text-[#73736e]">Demand history</p>
+          <p className="mt-1 text-xs font-semibold tabular-nums text-[#252522]">
             {quality ? `${quality.history_weeks} wk` : 'Unknown'}
           </p>
         </div>
-        <div className={`border px-3 py-2 ${qualityTone}`}>
-          <p className="text-[10px] uppercase tracking-wide opacity-70">Forecast evidence</p>
-          <p className="mt-1 text-xs font-semibold capitalize">{evidenceLabel}</p>
+        <div>
+          <p className="text-[11px] text-[#73736e]">Forecast evidence</p>
+          <p className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${qualityTone}`}>{evidenceLabel}</p>
         </div>
       </div>
       <div className="h-80">

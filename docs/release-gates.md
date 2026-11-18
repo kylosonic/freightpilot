@@ -51,6 +51,6 @@ After deploying:
 - The product site and operations console load.
 - Both frontend origins pass an API CORS preflight. The product site is
   `https://freightpilot.pages.dev`; the console is
-  `https://freightpilot-ops.freightpilot.workers.dev`.
+  `https://freightpilot-ops.pages.dev`.
 - The production smoke workflow passes.
 - Runtime logs show no new error spike.

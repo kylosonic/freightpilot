@@ -9,7 +9,7 @@ import { startFreeCta } from '@/lib/site-content';
 export const metadata: Metadata = {
   title: 'Documentation',
   description:
-    'FreightPilot getting-started guide, CSV schemas, core API surfaces, authentication, and data limitations.',
+    'FreightPilot setup guide, file formats, API basics, sign-in, and current data limits.',
 };
 
 const apiBase = (
@@ -47,8 +47,8 @@ export default function DocsPage() {
     <>
       <PageHero
         eyebrow="Documentation"
-        title="Start with a real operating loop"
-        description="This guide covers the fastest path from a new workspace to a route plan, real data import, and bank-transfer receipt evidence. It also states which calculations are real and which are still simulated."
+        title="Set up your workspace"
+        description="Start with sample data, plan a route, add your own files, and upload a bank receipt. This guide also explains what the numbers can and cannot tell you."
         actions={
           <MagneticLink href="/launch" variant="primary">
             {startFreeCta}
@@ -59,16 +59,16 @@ export default function DocsPage() {
       <section className="section-shell pt-10 sm:pt-14">
         <SectionHeading
           eyebrow="Getting started"
-          title="Five steps to a useful workspace"
-          description="Use the sample workspace for the first route. Replace it with real operational data only after the workflow is understood."
+          title="Five steps to get started"
+          description="Try the sample route first. Add your own data when you are ready."
         />
         <div className="mt-7 grid gap-4 md:grid-cols-2">
           {[
-            ['01', 'Create a workspace', 'Use a company email domain on the launch page. The workspace starts on the Free tier with sample data.'],
-            ['02', 'Run a sample route', 'Open Route Studio, keep the seeded warehouses, and run one optimization. Review the map, stops, and decision brief.'],
-            ['03', 'Import real CSVs', 'Import warehouses, items, fleet assets, inventory, then orders. Fix row-level upload errors before moving on.'],
-            ['04', 'Assign drivers and cash', 'Add drivers from the workspace, assign shipments, and record expected cash on delivery.'],
-            ['05', 'Close the day', 'Review outstanding, collected, and settled cash. Escalate shortfalls and keep the audit trail intact.'],
+            ['01', 'Create a workspace', 'Use your work email on the launch page. You start on the Free plan with sample data.'],
+            ['02', 'Plan a sample route', 'Open Routes, keep the sample warehouses, and plan one route. Check the map and stop order.'],
+            ['03', 'Add your data', 'Upload warehouses, items, fleet, inventory, and orders. Fix any file errors before you continue.'],
+            ['04', 'Assign drivers and cash', 'Add drivers, assign deliveries, and enter the cash expected at each stop.'],
+            ['05', 'Close the day', 'Check cash that is still out, collected, or handed in. Record any missing amount.'],
           ].map(([step, title, body]) => (
             <SpotlightCard key={step}>
               <p className="kicker">{step}</p>
@@ -81,9 +81,9 @@ export default function DocsPage() {
 
       <section className="section-shell pt-10 sm:pt-14">
         <SectionHeading
-          eyebrow="CSV schemas"
-          title="Import in dependency order"
-          description="Warehouses and items are required before inventory and orders. Fleet assets are required before driver assignment."
+          eyebrow="File formats"
+          title="Upload files in this order"
+          description="Add warehouses and items before inventory and orders. Add fleet data before you assign drivers."
         />
         <div className="mt-7 grid border-t border-[#d7dfdc]">
           {csvSchemas.map((schema) => (
@@ -101,16 +101,16 @@ export default function DocsPage() {
       <section id="api" className="section-shell pt-10 sm:pt-14">
         <SectionHeading
           eyebrow="API"
-          title="Use the same data contract as the console"
-          description="The API is versioned under /api/v1. Multi-workspace users should send X-Organization-Id when selecting a workspace."
+          title="Connect to the same data"
+          description="The API is available under /api/v1. If you belong to more than one workspace, send X-Organization-Id to choose one."
         />
         <div className="mt-7 grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
             <h3 className="text-base font-semibold text-[#172a24]">Authentication</h3>
             <p className="mt-2 text-sm leading-6 text-[#5b6d66]">
-              Sign in through the console or call POST /api/v1/auth/login with a company email and password.
-              Send the returned token as a Bearer token. Business endpoints require an active workspace
-              membership; an unaffiliated account is denied.
+              Sign in through the console, or send a company email and password to
+              POST /api/v1/auth/login. Add the returned token to later requests as a Bearer token.
+              You must belong to the workspace you are using.
             </p>
             <div className="mt-5">
               <MagneticLink href={apiDocsUrl} variant="secondary" external>
@@ -119,13 +119,13 @@ export default function DocsPage() {
             </div>
           </SpotlightCard>
           <SpotlightCard>
-            <h3 className="text-base font-semibold text-[#172a24]">Core surfaces</h3>
+          <h3 className="text-base font-semibold text-[#172a24]">Main API actions</h3>
             <ul className="mt-2 space-y-2 text-sm leading-7 text-[#5b6d66]">
               <li><code className="text-[#087f72]">POST /routes/optimize</code> — plan a route from warehouse demand.</li>
               <li><code className="text-[#087f72]">GET /routes/history</code> — review previous route runs and explanations.</li>
               <li><code className="text-[#087f72]">POST /receipts/upload</code> — submit bank-transfer evidence.</li>
               <li><code className="text-[#087f72]">GET /cash-collections/ledger</code> — review driver cash position.</li>
-              <li><code className="text-[#087f72]">GET /ops/exception-feed</code> — review open operational exceptions.</li>
+              <li><code className="text-[#087f72]">GET /ops/exception-feed</code> — review open issues.</li>
             </ul>
           </SpotlightCard>
         </div>
@@ -133,17 +133,17 @@ export default function DocsPage() {
 
       <section className="section-shell py-10 sm:py-14">
         <SpotlightCard>
-          <h3 className="text-lg font-semibold text-[#172a24]">Data and calculation limitations</h3>
+          <h3 className="text-lg font-semibold text-[#172a24]">What the numbers mean</h3>
           <div className="mt-3 grid gap-4 text-sm leading-7 text-[#5b6d66] lg:grid-cols-2">
             <p>
-              Route optimization and route explanations are deterministic calculations over the data in
-              the workspace. Demand forecasting uses a deterministic trend model with a held-out
-              quality check; the displayed planning range is an estimate, not a guarantee.
+              Route plans are calculated from the warehouse, demand, and vehicle data you enter.
+              Demand forecasts use past trends and a separate accuracy check. The range is an
+              estimate, not a promise.
             </p>
             <p>
-              Weather risk and any rerouting candidate remain simulated or saved-route candidates until a
-              live provider is connected. They must not be treated as live traffic, live weather, or a
-              confirmed carrier commitment. Receipt extraction is advisory and requires human verification.
+              Weather risks and alternate routes are examples until a live service is connected.
+              Do not treat them as live traffic or weather. Always check extracted receipt details
+              yourself.
             </p>
           </div>
           <p className="mt-4 text-sm leading-7 text-[#5b6d66]">

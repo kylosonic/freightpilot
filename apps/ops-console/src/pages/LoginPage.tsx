@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowRight, Boxes, CircleAlert, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 import { LoginFeedbackPanels } from '../components/login/LoginFeedbackPanels';
@@ -18,21 +18,6 @@ function getErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-const VALUE_POINTS = [
-  {
-    label: 'Routes',
-    title: 'Model dispatch decisions before they cost money.',
-  },
-  {
-    label: 'Exceptions',
-    title: 'Keep operational risks visible and actionable.',
-  },
-  {
-    label: 'Workspace',
-    title: 'Control billing, AI providers, and launch readiness in one place.',
-  },
-];
-
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const signupUrl =
@@ -41,6 +26,39 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [signInError, setSignInError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Production static hosting can retain the login chunk from an earlier
+  // deploy for a few minutes. Reloading avoids waiting on that stale bundle.
+  useEffect(() => {
+    let reloading = false;
+
+    function reloadOnce() {
+      if (reloading) return;
+      reloading = true;
+      window.location.reload();
+    }
+
+    function onChunkError(event: ErrorEvent) {
+      const message = String(event.error?.message ?? event.message ?? '');
+      if (/dynamically imported module|Importing a module script failed|Loading chunk/i.test(message)) {
+        reloadOnce();
+      }
+    }
+
+    function onUnhandledRejection(event: PromiseRejectionEvent) {
+      const reason = event.reason as { name?: string; message?: string } | undefined;
+      if (reason?.name === 'ChunkLoadError' || /dynamically imported module|Importing a module script failed|Loading chunk/i.test(reason?.message ?? '')) {
+        reloadOnce();
+      }
+    }
+
+    window.addEventListener('error', onChunkError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+    return () => {
+      window.removeEventListener('error', onChunkError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
+  }, []);
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -53,60 +71,61 @@ export function LoginPage() {
     try {
       await login(identifier, password);
     } catch (err: unknown) {
-      setSignInError(getErrorMessage(err, 'Login failed'));
+      setSignInError(getErrorMessage(err, 'Sign-in failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="grid min-h-screen bg-[#f4f6f5] xl:grid-cols-[minmax(0,1.05fr)_minmax(400px,0.95fr)]">
-      <section className="flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#153f3a] px-6 py-8 text-white sm:px-10 lg:px-14 lg:py-12">
-        <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center bg-white text-[13px] font-bold text-[#153f3a]">FP</span>
-          <div>
-            <p className="text-base font-semibold">FreightPilot</p>
-            <p className="text-xs text-[#c2d7d1]">Freight operations workspace</p>
+    <div className="grid min-h-screen bg-white lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.72fr)]">
+      <section className="hidden min-h-screen flex-col bg-[#f7f7f5] px-10 py-8 lg:flex xl:px-16 xl:py-12">
+        <a href="https://freightpilot.pages.dev/" className="inline-flex w-fit items-center gap-2.5 rounded-md no-underline">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-[#2e4f47] text-[12px] font-semibold text-white">FP</span>
+          <span className="text-[15px] font-semibold text-[#252522]">FreightPilot</span>
+        </a>
+        <div className="my-auto max-w-[650px] pb-16 pt-16">
+          <p className="text-sm text-[#73736e]">FreightPilot</p>
+          <h1 className="mt-3 text-[clamp(2.8rem,4.5vw,4.4rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-[#252522]">
+            Your delivery day, in one place.
+          </h1>
+          <p className="mt-5 max-w-[520px] text-[17px] leading-8 text-[#5f5f59]">
+            Plan routes, follow deliveries, fix problems, and check payments.
+          </p>
+          <div className="mt-12 max-w-[540px] divide-y divide-[#e5e4e0] border-y border-[#e5e4e0]">
+            {[
+              ['See what needs attention', 'Open the overview to see late deliveries and open issues.'],
+              ['Get work moving', 'Go straight to the next shipment, route, or approval.'],
+              ['Keep a clear record', 'Payment checks and past changes stay in one place.'],
+            ].map(([title, detail], index) => (
+              <div key={title} className="grid grid-cols-[24px_minmax(0,1fr)] gap-3 py-4">
+                <span className="text-[12px] text-[#85857e]">{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <p className="text-sm font-medium text-[#353530]">{title}</p>
+                  <p className="mt-0.5 text-sm leading-6 text-[#85857e]">{detail}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="mt-10 max-w-[600px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9cfc5]">Operations workspace</p>
-          <h1 className="mt-2 text-[clamp(1.8rem,3vw,2.7rem)] font-semibold leading-tight">
-            Enter the control tower with the same calm surface you saw on the site.
-          </h1>
-          <p className="mt-3 max-w-[520px] text-sm leading-6 text-[#c2d7d1]">
-            Sign in with the company account you created during launch. Once inside, your routes,
-            exceptions, onboarding progress, and provider controls all live in one operator surface.
-          </p>
-        </div>
-        <div className="mt-10 hidden grid-cols-3 divide-x divide-[#3c625c] border-t border-[#3c625c] pt-5 xl:grid">
-          {VALUE_POINTS.map((point, index) => {
-            const Icon = [Boxes, CircleAlert, ShieldCheck][index];
-            return (
-              <div key={point.label} className={index === 0 ? 'pr-4' : 'px-4'}>
-                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#c2d7d1]">
-                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                  {point.label}
-                </div>
-                <p className="mt-2 text-xs leading-5 text-white">{point.title}</p>
-              </div>
-            );
-          })}
-        </div>
+        <p className="text-xs text-[#85857e]">Less searching. More getting done.</p>
       </section>
 
-      <section className="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-10">
-        <div className="w-full max-w-[430px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">Control tower login</p>
-          <h2 className="mt-1.5 text-2xl font-semibold text-[#172a24]">Sign in to your workspace</h2>
-          <p className="mt-1.5 text-sm leading-6 text-[#5b6d66]">
-            Use the company email and password you used when you created the workspace.
+      <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8 lg:border-l lg:border-[#e5e4e0] lg:px-12">
+        <div className="w-full max-w-[400px]">
+          <a href="https://freightpilot.pages.dev/" className="mb-14 inline-flex items-center gap-2 rounded-md no-underline lg:hidden">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-[#2e4f47] text-[11px] font-semibold text-white">FP</span>
+            <span className="text-sm font-semibold text-[#252522]">FreightPilot</span>
+          </a>
+          <h2 className="text-[28px] font-semibold leading-tight tracking-[-0.02em] text-[#252522]">Sign in</h2>
+          <p className="mt-2 text-sm leading-6 text-[#73736e]">
+            Welcome back. Use your company account to continue.
           </p>
 
-          <form className="mt-7 space-y-4" onSubmit={onSubmit}>
+          <form className="mt-8 space-y-4" onSubmit={onSubmit}>
             <div className="space-y-1.5">
-              <label htmlFor="identifier" className="block text-xs font-semibold text-[#40534c]">
-                Company email or username
+              <label htmlFor="identifier" className="block text-[13px] font-medium text-[#454540]">
+                Email or username
               </label>
               <input
                 id="identifier"
@@ -125,7 +144,7 @@ export function LoginPage() {
               <input
                 id="password"
                 className="fp-input"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -134,21 +153,22 @@ export function LoginPage() {
             </div>
 
             <button
+              type="submit"
               disabled={isSubmitting}
-              className="glow-ring inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#087f72] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+              className="glow-ring fp-action-primary min-h-11 w-full"
             >
-              {isSubmitting ? 'Signing in...' : 'Enter control tower'}
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
               {!isSubmitting ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
             </button>
           </form>
 
           <LoginFeedbackPanels signInError={signInError} />
 
-          <div className="mt-6 border-t border-[#d7dfdc] pt-4">
-            <p className="text-xs text-[#63766f]">New workspace? Create the company account on the product site first.</p>
+          <div className="mt-8 border-t border-[#e5e4e0] pt-5">
+            <p className="text-[13px] text-[#73736e]">No workspace yet?</p>
             <a
               href={signupUrl}
-              className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline"
+              className="mt-1 inline-flex items-center gap-1 rounded-sm text-[13px] font-medium text-[#176b5c] underline-offset-4 hover:underline"
               target="_blank"
               rel="noreferrer"
             >

@@ -38,7 +38,7 @@ function RejectDialog({
     <Dialog
       eyebrow="Plan rejection"
       title={`Reject plan for ${sku}`}
-      description="Provide a rejection reason so the planning team can understand what needs review or correction."
+      description="Add a short reason so the planning team knows what to change."
       actions={
         <>
           <button
@@ -79,6 +79,15 @@ export function PlanningPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [rejectDialog, setRejectDialog] = useState<{ plan: ReplenishmentPlan } | null>(null);
 
+  const approvePlan = async (planId: string) => {
+    try {
+      await approveReplenishmentPlan(planId);
+      await loadPlans();
+    } catch (err) {
+      setError(apiErrorMessage(err, 'Failed to approve plan'));
+    }
+  };
+
   async function loadPlans() {
     try {
       setError(null);
@@ -105,15 +114,6 @@ export function PlanningPage() {
       setError(apiErrorMessage(err, 'Failed to generate plans'));
     } finally {
       setIsGenerating(false);
-    }
-  }
-
-  async function onApprove(planId: string) {
-    try {
-      await approveReplenishmentPlan(planId);
-      await loadPlans();
-    } catch (err) {
-      setError(apiErrorMessage(err, 'Failed to approve plan'));
     }
   }
 
@@ -147,13 +147,13 @@ export function PlanningPage() {
 
       <PageHeader
         eyebrow="Planning"
-        title="Generate and approve replenishment actions"
-        description="Review demand pressure, suggested quantities, and pending approvals."
+        title="Plan inventory replenishment"
+      description="Review stock demand, suggested amounts, and plans waiting for approval."
       />
 
-      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[#efeeea]">
         <MetricTile title="Horizon" value={`${horizon} weeks`} detail="Next planning run" tone="info" />
-        <MetricTile title="Pending" value={counts.pending} detail="Awaiting admin review" tone={counts.pending > 0 ? 'warning' : 'success'} />
+        <MetricTile title="Pending" value={counts.pending} detail="Waiting for admin" tone={counts.pending > 0 ? 'warning' : 'success'} />
         <MetricTile title="Approved" value={counts.approved} detail="Accepted into operations" tone="success" />
         <MetricTile title="Rejected" value={counts.rejected} detail="Returned for review" tone="danger" />
       </div>
@@ -161,9 +161,9 @@ export function PlanningPage() {
       <Panel
         eyebrow="Generate"
         title="Run replenishment planning"
-        description="Generate a fresh suggestion set using the selected horizon and the latest inventory and forecast posture."
+        description="Create new stock suggestions using the time period and latest inventory and demand data."
       >
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <label className="grid gap-1.5 text-xs font-medium text-[#40534c]" htmlFor="horizon">
             Horizon (weeks)
             <input
@@ -209,7 +209,7 @@ export function PlanningPage() {
         <Panel
           eyebrow="Approval board"
           title="Current replenishment plans"
-          description="Review average demand, suggested quantity, and approval status before committing inventory moves."
+          description="Check the expected demand, suggested amount, and approval status before ordering stock."
         >
           <div className="space-y-6">
             {plans.filter((plan) => plan.status === 'pending_approval').length > 0 ? (
@@ -217,7 +217,7 @@ export function PlanningPage() {
                 {plans
                   .filter((plan) => plan.status === 'pending_approval')
                   .map((plan) => (
-                    <PlanRow key={plan.id} plan={plan} userRole={user?.role} onApprove={onApprove} onReject={() => setRejectDialog({ plan })} />
+                    <PlanRow key={plan.id} plan={plan} userRole={user?.role} onApprove={approvePlan} onReject={() => setRejectDialog({ plan })} />
                   ))}
               </div>
             ) : null}
@@ -227,7 +227,7 @@ export function PlanningPage() {
                 {plans
                   .filter((plan) => plan.status !== 'pending_approval')
                   .map((plan) => (
-                    <PlanRow key={plan.id} plan={plan} userRole={user?.role} onApprove={onApprove} onReject={() => setRejectDialog({ plan })} />
+                    <PlanRow key={plan.id} plan={plan} userRole={user?.role} onApprove={approvePlan} onReject={() => setRejectDialog({ plan })} />
                   ))}
               </div>
             ) : null}
@@ -262,7 +262,7 @@ function PlanRow({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge label={plan.status} tone={statusTone(plan.status)} />
-            <span className="text-[10px] uppercase tracking-[0.08em] text-[#6b7d76]">{plan.warehouse_code}</span>
+            <span className="text-xs text-[#73736e]">{plan.warehouse_code}</span>
           </div>
           <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">{plan.sku}</h3>
         </div>
@@ -280,13 +280,13 @@ function PlanRow({
           <>
             <button
               onClick={() => onApprove(plan.id)}
-              className="glow-ring min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f] transition hover:bg-[#edf8f3]"
+              className="fp-action-secondary !min-h-8 !text-[#14745f]"
             >
               Approve
             </button>
             <button
               onClick={onReject}
-              className="glow-ring min-h-8 border border-[#e7c2be] bg-white px-2.5 text-[11px] font-semibold text-[#a3342f] transition hover:bg-[#fcf0ef]"
+              className="fp-action-quiet !text-[#a3342f]"
             >
               Reject
             </button>

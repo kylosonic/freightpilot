@@ -37,7 +37,7 @@ function DelayReasonDialog({
     <Dialog
       eyebrow="Delay reason"
       title={`Mark ${shipmentNo} as delayed`}
-      description="Provide a reason for the delay so the team can track root causes and take corrective action."
+      description="Add a short reason so the team knows what caused the delay."
       actions={
         <>
           <button
@@ -312,22 +312,22 @@ export function ShipmentsPage() {
       ) : null}
 
       <PageHeader
-        eyebrow="Shipment board"
-        title="Track movement health across every lane"
-        description="Track lane progress, exceptions, and delivery status."
+        eyebrow="Shipments"
+        title="Track every delivery"
+      description="See what is on the road, what is late, and what has arrived."
       />
 
-      <div className="grid overflow-hidden border border-[#d7dfdc] bg-white sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile title="Planned" value={counts.planned} detail="Queued, not moving" tone="neutral" />
-        <MetricTile title="In transit" value={counts.inTransit} detail="Active movement" tone="info" />
-        <MetricTile title="Delayed" value={counts.delayed} detail="Needs intervention" tone={counts.delayed > 0 ? 'danger' : 'success'} />
-        <MetricTile title="Delivered" value={counts.delivered} detail="Completed movements" tone="success" />
+      <div className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[#efeeea]">
+        <MetricTile title="Planned" value={counts.planned} detail="Not started yet" tone="neutral" />
+        <MetricTile title="On the way" value={counts.inTransit} detail="Currently moving" tone="info" />
+        <MetricTile title="Late" value={counts.delayed} detail="Needs attention" tone={counts.delayed > 0 ? 'danger' : 'success'} />
+        <MetricTile title="Delivered" value={counts.delivered} detail="Completed" tone="success" />
       </div>
 
       <Panel
-        eyebrow="Manual entry"
+          eyebrow="New shipment"
         title="Create a shipment"
-        description="Use this for direct movement creation when the order flow does not originate from a bulk CSV load."
+        description="Add a shipment here when it was not created from an imported order."
       >
         <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreate}>
           <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
@@ -389,9 +389,9 @@ export function ShipmentsPage() {
       </Panel>
 
       <Panel
-        eyebrow="Movement board"
-        title="Shipment lifecycle"
-        description="Keep each lane visible and progress status deliberately when a movement changes state."
+        eyebrow="All shipments"
+        title="Shipment status"
+        description="Update a shipment when its status changes."
       >
         {error ? <p role="alert" className="mb-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
         {loading ? (

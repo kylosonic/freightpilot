@@ -27,7 +27,7 @@ function readLoginFeedbackPanels(): string {
 }
 
 const BANNED_LOW_CONTRAST_UTILITIES = ['text-slate-500', 'text-slate-600'] as const;
-const LOGIN_MUTED = '#63766f';
+const LOGIN_MUTED = '#73736e';
 const LOGIN_ERROR = '#8f302a';
 
 const LOGIN_FILES: ReadonlyArray<{ name: string; read: () => string }> = [

@@ -4,7 +4,7 @@ const path = require('path');
 
 const DEFAULT_CONFIG = {
   opsConsoleUrl:
-    process.env.OPS_CONSOLE_URL || 'https://freightpilot-ops.freightpilot.workers.dev/login',
+    process.env.OPS_CONSOLE_URL || 'https://freightpilot-ops.pages.dev/login',
   productSignupUrl:
     process.env.PRODUCT_SIGNUP_URL || 'https://freightpilot.pages.dev#signup',
   docsUrl: process.env.DOCS_URL || 'https://freightpilot.pages.dev',

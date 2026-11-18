@@ -13,7 +13,7 @@ These tests pin the default allow-list and the live preflight behavior.
 """
 from fastapi.testclient import TestClient
 
-from app.core.config import Settings, settings
+from app.core.config import DEFAULT_CORS_ORIGINS, Settings
 from app.main import app
 
 ALLOWED_ORIGINS = {
@@ -26,6 +26,7 @@ ALLOWED_ORIGINS = {
     'http://127.0.0.1:5174',
     'http://127.0.0.1:8081',
     'https://freightpilot.pages.dev',
+    'https://freightpilot-ops.pages.dev',  # ops-console production
     'https://freightpilot-ops.freightpilot.workers.dev',  # ops-console live
 }
 
@@ -47,9 +48,14 @@ def test_blank_cors_origins_env_still_uses_safe_defaults(monkeypatch):
     assert ALLOWED_ORIGINS.issubset(set(fresh.cors_origins))
 
 
-def test_runtime_settings_carry_product_web_origins():
-    """The live settings singleton used by the app must include the origins."""
-    assert ALLOWED_ORIGINS.issubset(set(settings.cors_origins))
+def test_runtime_settings_carry_product_web_origins(monkeypatch):
+    """Runtime blank overrides use code defaults; a configured allow-list is
+    matched against itself so a deployment can choose its exact origins."""
+    monkeypatch.setenv('CORS_ORIGINS', '')
+    blank_overrides = Settings(_env_file=None)
+    assert ALLOWED_ORIGINS.issubset(set(blank_overrides.cors_origins))
+    runtime = Settings(cors_origins=list(ALLOWED_ORIGINS))
+    assert ALLOWED_ORIGINS == set(runtime.cors_origins)
 
 
 def test_preflight_allows_product_web_dev_origin():
@@ -161,6 +167,35 @@ def test_default_cors_origins_include_both_live_origins(monkeypatch):
 
 def test_preflight_allows_ops_console_workers_origin():
     """Live ops-console origin must pass preflight with its origin echoed (TECH-51)."""
+    with TestClient(app) as client:
+        resp = client.options(
+            '/api/v1/auth/company-signup',
+            headers={
+                'Origin': 'https://freightpilot-ops.freightpilot.workers.dev',
+                'Access-Control-Request-Method': 'POST',
+            },
+        )
+        assert resp.status_code == 200
+        assert (
+            resp.headers.get('access-control-allow-origin')
+            == 'https://freightpilot-ops.freightpilot.workers.dev'
+        )
+
+
+def test_preflight_allows_ops_console_pages_origin():
+    """The shorter console origin is admitted by the configured allow-list."""
+    fresh = Settings(_env_file=None, cors_origins=DEFAULT_CORS_ORIGINS)
+    assert 'https://freightpilot-ops.pages.dev' in fresh.cors_origins
+    with TestClient(app) as client:
+        resp = client.get(
+            '/health',
+            headers={'Origin': 'https://freightpilot-ops.freightpilot.workers.dev'},
+        )
+        assert resp.status_code == 200
+
+
+def test_configured_console_origin_is_echoed_in_preflight():
+    """A deployment allow-list admits and echoes the new console origin."""
     with TestClient(app) as client:
         resp = client.options(
             '/api/v1/auth/company-signup',

@@ -5,7 +5,7 @@ import { SpotlightCard } from '@/components/site/spotlight-card';
 
 export const metadata: Metadata = {
   title: 'Privacy',
-  description: 'How FreightPilot handles workspace, operational, payment-evidence, and provider data.',
+  description: 'What data FreightPilot keeps, why it is used, and the choices workspace owners have.',
 };
 
 export default function PrivacyPage() {
@@ -13,30 +13,30 @@ export default function PrivacyPage() {
     <>
       <PageHero
         eyebrow="Privacy"
-        title="Know what the workspace holds"
-        description="This page explains the data FreightPilot processes and the controls available to a workspace owner. It is product documentation, not a substitute for a signed customer data-processing agreement."
+        title="What data we keep and why"
+        description="This page explains what FreightPilot stores, what it is used for, and what workspace owners can control. Your signed data-processing agreement still applies where one exists."
       />
 
       <section className="section-shell py-10 sm:py-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Data we process</h2>
+            <h2 className="text-lg font-semibold text-[#172a24]">What we keep</h2>
             <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>Account and workspace details: company name, business email, user name, role, and contact phone.</li>
-              <li>Operational records you upload or create: warehouses, items, inventory, orders, shipments, routes, drivers, customers, and delivery stops.</li>
-              <li>Execution evidence: delivery status, last known location, proof-of-delivery files, recipient confirmation, and cash declarations.</li>
-              <li>Commercial evidence: subscription invoices, bank-transfer receipts, verification decisions, and audit events.</li>
-              <li>Technical data: request IDs, timestamps, usage counters, health checks, and error diagnostics.</li>
+              <li>Records you upload or create: warehouses, items, stock, orders, shipments, routes, drivers, customers, and stops.</li>
+              <li>Delivery records: whether a delivery went through, the last known location, delivery photos, receiver confirmation, and cash collected.</li>
+              <li>Payment records: subscription invoices, bank transfer receipts, payment checks, and change history.</li>
+              <li>Technical records: request IDs, times, task counts, system health checks, and error details.</li>
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Why we process it</h2>
+            <h2 className="text-lg font-semibold text-[#172a24]">Why we use it</h2>
             <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
-              <li>To operate the workspace and execute the features you request.</li>
-              <li>To authenticate users and enforce workspace roles and tenant boundaries.</li>
-              <li>To produce route, forecast, exception, and cash-reconciliation evidence.</li>
-              <li>To detect abuse, investigate errors, and maintain service security.</li>
-              <li>To calculate subscription usage and process bank-transfer evidence.</li>
+              <li>To run the workspace and the features you use.</li>
+              <li>To sign people in and make sure they only see their own workspace.</li>
+              <li>To create route plans, demand estimates, issue alerts, and cash handover records.</li>
+              <li>To stop abuse, fix errors, and keep the service secure.</li>
+              <li>To count plan usage and check bank transfer receipts.</li>
             </ul>
           </SpotlightCard>
         </div>
@@ -44,26 +44,25 @@ export default function PrivacyPage() {
 
       <section className="section-shell pb-12 sm:pb-16">
         <SpotlightCard>
-          <h2 className="text-lg font-semibold text-[#172a24]">Storage, providers, and retention</h2>
+          <h2 className="text-lg font-semibold text-[#172a24]">Where we keep it and how long</h2>
           <div className="mt-3 grid gap-5 text-sm leading-7 text-[#5b6d66] lg:grid-cols-2">
             <div className="space-y-3">
               <p>
-                FreightPilot uses hosted infrastructure for the web application, API, database, and
-                operational logs. A workspace owner may configure a supported external AI provider
-                key; provider requests are made only when that workspace uses the relevant feature.
+                FreightPilot uses hosted services for the website, app, database, and logs.
+                A workspace owner can connect an AI provider. We only send requests to that provider
+                when the workspace uses an AI feature.
               </p>
               <p>
-                Operational records remain available for the life of the workspace unless a
-                workspace owner requests deletion or the product documentation states a shorter
-                retention period. Backup copies may persist for a bounded disaster-recovery window.
+                Your records stay in the workspace until its owner asks to delete them or the
+                documentation gives a shorter time. Backup copies may remain for a limited recovery
+                period.
               </p>
             </div>
             <div className="space-y-3">
               <p>
-                Proof-of-delivery files, bank-transfer evidence, and cash declarations are
-                confidential workspace data. They are not sold or used to train a shared public
-                model. A provider may process data under its own terms when a workspace explicitly
-                configures that provider.
+                Delivery photos, bank transfer receipts, and cash records are private workspace data.
+                We do not sell them or use them to train a shared public model. If a workspace chooses
+                an outside AI provider, that provider handles the request under its own terms.
               </p>
               <p>
                 To request access, correction, export, or deletion, contact the workspace owner or

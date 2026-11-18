@@ -51,9 +51,9 @@ describe('RouteDecisionBrief', () => {
     expect(html).toContain('Travel time led this plan');
     expect(html).toContain('52.0%');
     expect(html).toContain('Vehicle capacity (180 units) excluded 1 candidate stop');
-    expect(html).toContain('Runner-up scenario');
+    expect(html).toContain('Next best route');
     expect(html).toContain('Starting with WH-003 instead');
-    expect(html).toContain('Decision-by-decision evidence (1)');
+    expect(html).toContain('Why each stop came next (1)');
     expect(html).toContain('WH-003 was the runner-up');
     expect(html).toContain('does not prove global optimality');
   });
@@ -61,7 +61,7 @@ describe('RouteDecisionBrief', () => {
   it('states honestly when an older run has no explanation', () => {
     const html = strip(renderToString(<RouteDecisionBrief explanation={null} />));
 
-    expect(html).toContain('No explanation was recorded for this run.');
-    expect(html).toContain('New optimizations include one automatically.');
+    expect(html).toContain('This plan has no explanation.');
+    expect(html).toContain('New plans include one automatically.');
   });
 });

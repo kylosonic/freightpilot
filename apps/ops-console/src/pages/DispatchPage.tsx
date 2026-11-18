@@ -317,7 +317,7 @@ export function DispatchPage() {
         note: cashCloseForm.note.trim() || undefined,
       });
       setNotice(
-        `Cash closed. Shortfall: ${result.shortfall_etb} ETB. Overage: ${result.overage_etb} ETB.`,
+        `Cash recorded. Short by ${result.shortfall_etb} ETB. Over by ${result.overage_etb} ETB.`,
       );
       setCashCloseTarget(null);
       await refresh();
@@ -363,23 +363,23 @@ export function DispatchPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Customer dispatch"
-        title="Customer dispatch"
-        description="Plan customer stops, hand off the driver manifest, and close the day's cash."
+        eyebrow="Dispatch"
+        title="Dispatch deliveries"
+        description="Add customers and orders, assign them to drivers, and record cash at the end of the day."
       />
 
-      {error ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm text-[#8f302a]">{error}</p> : null}
-      {notice ? <p role="status" className="border border-[#b9dcd1] bg-[#f3faf7] p-3 text-sm text-[#14745f]">{notice}</p> : null}
+      {error ? <p role="alert" className="rounded-md bg-[#fff8f7] p-3 text-sm text-[#8f302a]">{error}</p> : null}
+      {notice ? <p role="status" className="rounded-md bg-[#f3faf7] p-3 text-sm text-[#14745f]">{notice}</p> : null}
       {driverLink ? (
-        <div className="border border-[#bfd8e5] bg-[#f3f9fc] p-3">
+        <div className="rounded-md bg-[#f3f9fc] p-3">
           <p className="text-xs font-semibold text-[#17679b]">Driver link created</p>
-          <code className="mt-2 block break-all border border-[#d7dfdc] bg-white p-2 text-[11px] text-[#25483f]">{driverLink}</code>
+          <code className="mt-2 block break-all rounded border border-[#dde7ec] bg-white p-2 text-[11px] text-[#25483f]">{driverLink}</code>
         </div>
       ) : null}
       {customerTrackingLink ? (
-        <div className="border border-[#b9dcd1] bg-[#f3faf7] p-3">
+        <div className="rounded-md bg-[#f3faf7] p-3">
           <p className="text-xs font-semibold text-[#14745f]">Customer tracking link created</p>
-          <code className="mt-2 block break-all border border-[#d7dfdc] bg-white p-2 text-[11px] text-[#25483f]">{customerTrackingLink}</code>
+          <code className="mt-2 block break-all rounded border border-[#dde7e2] bg-white p-2 text-[11px] text-[#25483f]">{customerTrackingLink}</code>
         </div>
       ) : null}
 
@@ -394,7 +394,7 @@ export function DispatchPage() {
               <input className={FIELD} aria-label="Latitude" value={customerForm.latitude} onChange={(event) => setCustomerForm({ ...customerForm, latitude: event.target.value })} />
               <input className={FIELD} aria-label="Longitude" value={customerForm.longitude} onChange={(event) => setCustomerForm({ ...customerForm, longitude: event.target.value })} />
             </div>
-            <button className="min-h-9 bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">Add customer</button>
+            <button className="fp-action-primary w-full">Add customer</button>
           </form>
         </Panel>
 
@@ -419,32 +419,32 @@ export function DispatchPage() {
               <label className="text-xs text-[#63766f]">Window ends</label>
               <input className={FIELD} type="datetime-local" value={orderForm.window_end} onChange={(event) => setOrderForm({ ...orderForm, window_end: event.target.value })} />
             </div>
-            <button className="min-h-9 bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">Add delivery order</button>
+            <button className="fp-action-primary w-full">Add delivery order</button>
           </form>
         </Panel>
 
-        <Panel eyebrow="Drivers" title="Driver" description="Create the driver who will receive the signed manifest link.">
+        <Panel eyebrow="Driver" title="Add a driver" description="The driver will receive a link to the delivery list.">
           <form className="grid gap-3" onSubmit={onCreateDriver}>
             <input className={FIELD} placeholder="Driver full name" required value={driverForm.full_name} onChange={(event) => setDriverForm({ ...driverForm, full_name: event.target.value })} />
             <input className={FIELD} placeholder="Phone" required value={driverForm.phone} onChange={(event) => setDriverForm({ ...driverForm, phone: event.target.value })} />
             <input className={FIELD} placeholder="Vehicle plate (optional)" value={driverForm.vehicle_plate} onChange={(event) => setDriverForm({ ...driverForm, vehicle_plate: event.target.value })} />
-            <button className="min-h-9 bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">Add driver</button>
+            <button className="fp-action-primary w-full">Add driver</button>
           </form>
         </Panel>
       </div>
 
       <Panel
         eyebrow="Planning"
-        title="Plan the day"
-        description="Select planned orders. The planner is a transparent time-window heuristic, not a promise of global optimality."
+        title="Plan deliveries"
+        description="Choose orders and drivers. The plan follows the delivery windows you entered."
       >
         <form className="grid gap-4" onSubmit={onPlan}>
-          <div className="inline-flex w-fit border border-[#d7dfdc] bg-[#f5f8f6] p-0.5" role="group" aria-label="Planning mode">
+          <div className="inline-flex w-fit rounded-lg bg-[#f1f1ef] p-0.5" role="group" aria-label="Planning mode">
             <button
               type="button"
               aria-pressed={planMode === 'single'}
               onClick={() => setPlanMode('single')}
-              className={`min-h-8 px-3 text-xs font-semibold ${planMode === 'single' ? 'bg-white text-[#087f72] shadow-sm' : 'text-[#63766f]'}`}
+              className={`min-h-8 rounded-md px-3 text-xs font-medium ${planMode === 'single' ? 'bg-white text-[#252522] shadow-sm' : 'text-[#73736e]'}`}
             >
               Single vehicle
             </button>
@@ -452,7 +452,7 @@ export function DispatchPage() {
               type="button"
               aria-pressed={planMode === 'fleet'}
               onClick={() => setPlanMode('fleet')}
-              className={`min-h-8 px-3 text-xs font-semibold ${planMode === 'fleet' ? 'bg-white text-[#087f72] shadow-sm' : 'text-[#63766f]'}`}
+              className={`min-h-8 rounded-md px-3 text-xs font-medium ${planMode === 'fleet' ? 'bg-white text-[#252522] shadow-sm' : 'text-[#73736e]'}`}
             >
               Fleet plan
             </button>
@@ -476,8 +476,8 @@ export function DispatchPage() {
             <input className={FIELD} aria-label={planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'} type="number" min="1" max="100" value={planForm.max_stops} onChange={(event) => setPlanForm({ ...planForm, max_stops: event.target.value })} />
           </div>
           {planMode === 'fleet' ? (
-            <div className="space-y-2 border border-[#d7dfdc] p-3">
-              <p className="text-xs font-semibold text-[#20372f]">Drivers and vehicle capacity</p>
+            <div className="space-y-2 border-t border-[#e5e4e0] pt-3">
+              <p className="text-xs font-semibold text-[#252522]">Drivers and vehicle capacity</p>
               {drivers.length === 0 ? (
                 <p className="text-xs text-[#63766f]">No active drivers available.</p>
               ) : null}
@@ -518,8 +518,8 @@ export function DispatchPage() {
               })}
             </div>
           ) : null}
-          <div className="border border-[#d7dfdc] p-3">
-            <p className="text-xs font-semibold text-[#20372f]">Planned orders</p>
+          <div className="border-t border-[#e5e4e0] pt-3">
+            <p className="text-xs font-semibold text-[#252522]">Planned orders</p>
             {plannedOrders.length === 0 ? <p className="mt-2 text-xs text-[#63766f]">No planned orders yet.</p> : null}
             <div className="mt-2 grid gap-2">
               {plannedOrders.map((order) => (
@@ -534,7 +534,7 @@ export function DispatchPage() {
               ))}
             </div>
           </div>
-          <button className="min-h-9 w-fit bg-[#087f72] px-4 text-xs font-semibold text-white hover:bg-[#06675d]">
+          <button className="fp-action-primary w-fit">
             {planMode === 'fleet' ? 'Plan across selected vehicles' : 'Plan selected orders'}
           </button>
         </form>
@@ -555,7 +555,7 @@ export function DispatchPage() {
           </div>
           {runs.length === 0 ? <p className="text-xs text-[#63766f]">No dispatch runs yet.</p> : null}
           {runs.map((run) => (
-            <article key={run.id} className="border border-[#d7dfdc] p-3">
+            <article key={run.id} className="border-b border-[#e5e4e0] pb-3 last:border-b-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -567,11 +567,11 @@ export function DispatchPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void onToggleRun(run.id)} className="min-h-8 border border-[#cfd9d5] bg-white px-2.5 text-[11px] font-semibold text-[#40534c]">
+                  <button type="button" onClick={() => void onToggleRun(run.id)} className="fp-action-secondary !min-h-8 text-xs">
                     {expandedRunId === run.id ? 'Hide stops' : 'View stops'}
                   </button>
-                  {run.driver_id ? <button type="button" onClick={() => void onDriverLink(run.id)} className="min-h-8 border border-[#bfd8e5] bg-white px-2.5 text-[11px] font-semibold text-[#17679b]">Create driver link</button> : null}
-                  {run.status !== 'closed' && user?.role === 'admin' ? <button type="button" onClick={() => openCashClose(run)} className="min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f]">Close cash</button> : null}
+                  {run.driver_id ? <button type="button" onClick={() => void onDriverLink(run.id)} className="fp-action-quiet !min-h-8 !text-[#17679b]">Create driver link</button> : null}
+                  {run.status !== 'closed' && user?.role === 'admin' ? <button type="button" onClick={() => openCashClose(run)} className="fp-action-quiet !min-h-8 !text-[#14745f]">Close cash</button> : null}
                 </div>
               </div>
               {expandedRunId === run.id ? (
@@ -589,11 +589,11 @@ export function DispatchPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => void onCustomerTrackingLink(stop.order_id)} className="min-h-7 border border-[#b9dcd1] bg-white px-2 text-[10px] font-semibold text-[#14745f]">
+                        <button type="button" onClick={() => void onCustomerTrackingLink(stop.order_id)} className="fp-action-quiet !min-h-8 !text-[#14745f]">
                           Customer link
                         </button>
                         {stop.proof_id ? (
-                          <button type="button" onClick={() => void onViewProof(stop.order_id, stop.proof_id!)} className="min-h-7 border border-[#bfd8e5] bg-white px-2 text-[10px] font-semibold text-[#17679b]">
+                          <button type="button" onClick={() => void onViewProof(stop.order_id, stop.proof_id!)} className="fp-action-quiet !min-h-8 !text-[#17679b]">
                             View proof
                           </button>
                         ) : <span className="text-[10px] text-[#6b7d76]">No proof</span>}
@@ -602,8 +602,8 @@ export function DispatchPage() {
                   ))}
                   {expandedRun && expandedRun.stops?.length === 0 ? <p className="text-xs text-[#63766f]">No stops recorded.</p> : null}
                   {expandedRun?.unassigned && expandedRun.unassigned.length > 0 ? (
-                    <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#885100]">
+                    <div className="rounded-md bg-[#fffaf0] p-3">
+                      <p className="text-xs font-semibold text-[#885100]">
                         Unassigned to this run
                       </p>
                       <ul className="mt-1 space-y-1 text-[11px] text-[#704500]">
@@ -627,7 +627,7 @@ export function DispatchPage() {
           description="Record what the office actually received and attach the bank deposit reference when available."
         >
           <form className="grid gap-3" onSubmit={onCloseCash}>
-            <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2 text-xs text-[#40534c]">
+            <div className="rounded-md bg-[#f7f7f5] px-3 py-2 text-xs text-[#454540]">
               Expected: <span className="font-semibold text-[#20372f]">{cashCloseTarget.expected_cash_etb} ETB</span>
               {cashCloseTarget.cash_declared_etb ? (
                 <span className="ml-3 text-[#63766f]">Declared: {cashCloseTarget.cash_declared_etb} ETB</span>

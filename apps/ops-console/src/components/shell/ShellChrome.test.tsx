@@ -17,7 +17,7 @@ const fixtureUser: UserRead = {
 };
 
 describe('Shell chrome', () => {
-  it('renders the branded navigation groups, routes, codes, and footer identity', () => {
+  it('renders the plain-language navigation groups, routes, and footer identity', () => {
     const html = renderToString(
       <StaticRouter location="/routes">
         <ShellSidebar user={fixtureUser} onLogout={() => undefined} />
@@ -28,26 +28,16 @@ describe('Shell chrome', () => {
     expect(html).toContain('Operations workspace');
     expect(html).toContain('Operations');
     expect(html).toContain('Workspace');
-    expect(html).toContain('Control Tower');
-    expect(html).toContain('Route Studio');
+    expect(html).toContain('Overview');
+    expect(html).toContain('Routes');
     expect(html).toContain('Shipments');
     expect(html).toContain('Exceptions');
     expect(html).toContain('Planning');
-    expect(html).toContain('Data Intake');
+    expect(html).toContain('Import data');
     expect(html).toContain('Payments');
-    expect(html).toContain('Verification Queue');
+    expect(html).toContain('Verify payments');
     expect(html).toContain('Integrations');
-    expect(html).toContain('CT');
-    expect(html).toContain('RT');
-    expect(html).toContain('SH');
-    expect(html).toContain('EX');
-    expect(html).toContain('PL');
-    expect(html).toContain('DI');
-    expect(html).toContain('PY');
-    expect(html).toContain('VQ');
-    expect(html).toContain('WS');
-    expect(html).toContain('IN');
-    expect(html).toContain('Logout');
+    expect(html).toContain('Log out');
     expect(html).toContain('captain@testco.com');
     expect(html).toContain('operator');
     expect(html).toContain('aria-current="page"');
@@ -57,16 +47,16 @@ describe('Shell chrome', () => {
     const html = renderToString(
       <StaticRouter location="/">
         <ShellHeader
-          contextLabel="Control tower"
-          descriptor="Routes, exceptions, planning, and workspace governance."
+          contextLabel="Freight operations"
+          descriptor="Your routes, deliveries, and workspace."
           user={fixtureUser}
           onOpenNavigation={() => undefined}
         />
       </StaticRouter>,
     );
 
-    expect(html).toContain('Control tower');
-    expect(html).toContain('Routes, exceptions, planning, and workspace governance.');
+    expect(html).toContain('Freight operations');
+    expect(html).toContain('Your routes, deliveries, and workspace.');
     expect(html).toContain('operator');
     expect(html).toContain('captain@testco.com');
     expect(html).toContain('Open navigation');

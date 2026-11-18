@@ -13,7 +13,7 @@ describe('driver surface', () => {
     );
 
     expect(html).toContain('የዛሬ ጉዞ');
-    expect(html).toContain('FreightPilot Driver');
+    expect(html).toContain('FreightPilot');
     expect(html).toContain('>EN<');
   });
 });

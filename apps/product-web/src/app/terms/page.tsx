@@ -5,7 +5,7 @@ import { SpotlightCard } from '@/components/site/spotlight-card';
 
 export const metadata: Metadata = {
   title: 'Terms',
-  description: 'FreightPilot workspace and service terms.',
+  description: 'How you can use FreightPilot, what each side is responsible for, and how plans work.',
 };
 
 export default function TermsPage() {
@@ -13,30 +13,30 @@ export default function TermsPage() {
     <>
       <PageHero
         eyebrow="Terms"
-        title="Clear terms for an operational system"
-        description="These terms describe the baseline use of FreightPilot. A paid or enterprise engagement may add a signed order form, data-processing terms, or service-level terms."
+        title="Terms for using FreightPilot"
+        description="These are the basic rules for using FreightPilot. A paid or business agreement can add an order form, data terms, or service commitments."
       />
 
       <section className="section-shell py-10 sm:py-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Using the service</h2>
+            <h2 className="text-lg font-semibold text-[#172a24]">Your responsibilities</h2>
             <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
-              <li>You must have authority to create or administer the company workspace.</li>
-              <li>You are responsible for the accuracy of the operational data you import and for the actions you approve.</li>
-              <li>You must keep workspace credentials and provider keys secure and remove access when a teammate leaves.</li>
-              <li>Do not use the service to violate law, infringe rights, distribute malware, or attempt unauthorized access to another workspace.</li>
-              <li>Route, forecast, cash-risk, and exception recommendations are decision support. An authorized operator remains responsible for dispatch, payment, and customer decisions.</li>
+              <li>You need permission to create or manage the company workspace.</li>
+              <li>You are responsible for the data you import and the changes you approve.</li>
+              <li>Keep sign-in details and provider keys safe. Remove a teammate's access when they leave.</li>
+              <li>Do not use FreightPilot to break the law, harm others, spread malicious software, or access another company's workspace.</li>
+              <li>Routes, demand estimates, cash warnings, and alerts are suggestions. An authorized person still makes the dispatch, payment, and customer decisions.</li>
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Commercial terms</h2>
+            <h2 className="text-lg font-semibold text-[#172a24]">Plans and payments</h2>
             <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
-              <li>Published Free and paid tiers are described on the pricing page.</li>
-              <li>Bank-transfer evidence is reviewed by the operator; a submitted receipt does not by itself prove settlement.</li>
-              <li>The workspace may be locked for billing, security, or operational reasons while preserving read access where documented.</li>
-              <li>Tier, usage, and overage terms may change with notice; a signed enterprise order takes precedence over this page.</li>
-              <li>Features described as simulated, limited, or planned are not a promise of production availability.</li>
+              <li>The pricing page shows what each plan includes.</li>
+              <li>A person reviews bank transfer receipts. Sending a receipt does not by itself mean the payment has cleared.</li>
+              <li>We may lock a workspace for payment, security, or service problems. Where documented, you can still view your data.</li>
+              <li>We may change plans, usage limits, and extra charges with notice. A signed business order takes priority over this page.</li>
+              <li>If a feature is marked as an example, limited, or planned, it may not be ready for production use.</li>
             </ul>
           </SpotlightCard>
         </div>
@@ -44,15 +44,14 @@ export default function TermsPage() {
 
       <section className="section-shell pb-16">
         <SpotlightCard>
-          <h2 className="text-lg font-semibold text-[#172a24]">Availability, liability, and termination</h2>
+          <h2 className="text-lg font-semibold text-[#172a24]">Service availability and ending use</h2>
           <p className="mt-3 max-w-[62rem] text-sm leading-7 text-[#5b6d66]">
-            We work to keep the service available and recoverable, but the public site does not
-            promise an enterprise service-level objective. To the extent permitted by applicable
-            law, FreightPilot is not liable for indirect or consequential loss, lost profit, or
-            decisions made without operator review. A workspace owner may stop using the service at
-            any time. We may suspend a workspace for abuse, non-payment, or a security risk. Before
-            termination, export the operational data you need to retain; deletion and backup
-            windows are described on the privacy page.
+            We work to keep FreightPilot available and to recover it quickly after a problem, but
+            this public page does not promise an enterprise uptime target. To the extent the law
+            allows, FreightPilot is not responsible for indirect losses, lost profit, or decisions
+            made without a person reviewing them. A workspace owner can stop using FreightPilot at
+            any time. We may suspend a workspace for abuse, non-payment, or a security risk. Export
+            any data you need before you stop. The privacy page explains deletion and backup copies.
           </p>
           <p className="mt-3 text-sm leading-7 text-[#5b6d66]">
             Questions about these terms can be sent through the contact page.

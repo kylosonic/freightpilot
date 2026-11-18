@@ -24,7 +24,7 @@ export function RouteDecisionBrief({
       <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] px-3 py-2.5">
         <p className="text-xs font-semibold text-[#40534c]">Why this route</p>
         <p className="mt-1 text-sm text-[#63766f]">
-          No explanation was recorded for this run. New optimizations include one automatically.
+          This plan has no explanation. New plans include one automatically.
         </p>
       </div>
     );
@@ -34,13 +34,13 @@ export function RouteDecisionBrief({
     <section className="border border-[#bfd8e5] bg-[#f8fbfc] p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#17679b]">Why this route</p>
+          <p className="text-xs font-semibold text-[#17679b]">Why this route</p>
           <h3 className="mt-1 text-lg font-semibold text-[#172a24]">
             {FACTOR_LABELS[explanation.dominant_factor] ?? explanation.dominant_factor} led this plan
           </h3>
         </div>
         <span className="border border-[#d7dfdc] bg-white px-2 py-0.5 text-[10px] font-medium text-[#63766f]">
-          derived from run inputs
+          Based on this plan
         </span>
       </div>
 
@@ -67,7 +67,7 @@ export function RouteDecisionBrief({
 
       {explanation.constraints.length > 0 ? (
         <div className="mt-2 border border-[#e7d1a8] bg-[#fffaf0] px-2.5 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#885100]">Constraints in effect</p>
+          <p className="text-xs font-semibold text-[#885100]">Rules followed</p>
           <ul className="mt-1 space-y-1 text-xs text-[#704500]">
             {explanation.constraints.map((constraint) => (
               <li key={constraint}>{constraint}</li>
@@ -78,7 +78,7 @@ export function RouteDecisionBrief({
 
       {explanation.runner_up ? (
         <div className="mt-2 border border-[#d7dfdc] bg-white px-2.5 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#63766f]">Runner-up scenario</p>
+          <p className="text-xs font-semibold text-[#63766f]">Next best route</p>
           <p className="mt-1 text-xs text-[#40534c]">{explanation.runner_up.summary}</p>
         </div>
       ) : null}
@@ -86,7 +86,7 @@ export function RouteDecisionBrief({
       {explanation.decision_points.length > 0 ? (
         <details className="mt-2 border border-[#d7dfdc] bg-white px-2.5 py-2">
           <summary className="cursor-pointer text-xs font-semibold text-[#40534c]">
-            Decision-by-decision evidence ({explanation.decision_points.length})
+            Why each stop came next ({explanation.decision_points.length})
           </summary>
           <ol className="mt-3 space-y-2">
             {explanation.decision_points.map((point) => (

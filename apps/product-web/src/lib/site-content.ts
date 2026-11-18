@@ -170,7 +170,7 @@ export const faqItems: FaqItem[] = [
 
 export const externalLinks = {
   console:
-    process.env.NEXT_PUBLIC_APP_CONSOLE_URL || 'https://freightpilot-ops.freightpilot.workers.dev',
+    process.env.NEXT_PUBLIC_APP_CONSOLE_URL || 'https://freightpilot-ops.pages.dev',
   docs: '/docs',
   desktop: process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL || 'https://example.com/download',
 };
@@ -214,71 +214,71 @@ export const platformStacks: FeatureCard[] = [
   {
     icon: Layers3,
     title: 'Control Tower',
-    description: 'One workspace for routes, alerts, shipments, planning, and governance.',
-    detail: 'Keep the operator in one system instead of splitting planning and response across separate tools.',
+    description: 'One place to plan routes, follow shipments, and handle problems.',
+    detail: 'Your team can plan the day and respond to changes without switching between tools.',
   },
   {
     icon: Workflow,
-    title: 'Decision Studio',
-    description: 'Compare route tradeoffs with time, cost, and execution impact still visible.',
-    detail: 'Scenario work stays close to live operations instead of becoming a disconnected planning exercise.',
+    title: 'Route planning',
+    description: 'Compare routes by time, cost, and the stops they can cover.',
+    detail: 'Use the same route plan when you dispatch deliveries.',
   },
   {
     icon: Orbit,
-    title: 'Launch Workstation',
-    description: 'Run onboarding as a controlled rollout with explicit milestones and owners.',
-    detail: 'Keep operators, data owners, and security leads aligned before the first live production window.',
+    title: 'Guided setup',
+    description: 'See each setup step and know who needs to do it.',
+    detail: 'Start with sample data, then add your own as your team is ready.',
   },
   {
     icon: TimerReset,
-    title: 'Revenue Guard',
-    description: 'Review task usage, service failures, and platform limits during daily operations.',
-    detail: 'Commercial visibility is built into the workflow instead of treated as a separate reporting task.',
+    title: 'Usage and billing',
+    description: 'See how many tasks you use and what your plan includes.',
+    detail: 'Know when you are close to a plan limit before it affects your work.',
   },
 ];
 
 export const operatingLoop: TimelineItem[] = [
   {
     label: '01',
-    title: 'Surface issues before they spread',
-    detail: 'Watch live exceptions, shipment drift, and stock pressure while there is still time to respond cleanly.',
+    title: 'See problems early',
+    detail: 'Find late deliveries, route changes, and low stock before they cause bigger problems.',
   },
   {
     label: '02',
-    title: 'Make decisions with the full picture in view',
-    detail: 'Route options, workload, approvals, and workspace posture stay visible while the team decides what to do next.',
+    title: 'Decide with the full picture',
+    detail: 'Compare routes, delivery loads, and approvals in one place.',
   },
   {
     label: '03',
-    title: 'Record actions and handoffs clearly',
-    detail: 'Every important workspace action can be reviewed through audit history and route scenario records.',
+    title: 'Keep a clear record',
+    detail: 'Review who changed a route or payment and when it happened.',
   },
 ];
 
 export const technologyLayers: FeatureCard[] = [
   {
     icon: Radar,
-    title: 'Operational signal layer',
-    description: 'Live feeds, routing constraints, inventory posture, and workspace usage are captured together.',
-    detail: 'Decision quality improves when the product works from shared operational signal instead of isolated screens.',
+    title: 'Live work data',
+    description: 'Bring route, delivery, stock, and usage data together.',
+    detail: 'Your team sees the same information when making a decision.',
   },
   {
     icon: Cpu,
-    title: 'AI provider controls',
-    description: 'Provider choice, model routing, and automation settings remain visible to the workspace owner.',
-    detail: 'The system can assist decisions without turning approvals and provider behavior into a black box.',
+    title: 'Your choice of AI',
+    description: 'Owners choose which AI provider to use.',
+    detail: 'AI can help suggest a decision, but your team still approves it.',
   },
   {
     icon: ShieldCheck,
-    title: 'Governance by default',
-    description: 'Workspace changes, provider actions, and route decisions are recorded and reviewable.',
-    detail: 'The platform is designed to support accountable operations, not just fast interaction.',
+    title: 'Changes are recorded',
+    description: 'Review changes to routes, settings, and connected services.',
+    detail: 'You can see who made a change and when.',
   },
   {
     icon: Cable,
-    title: 'Coordinated rollout',
-    description: 'Desktop, web, and operator surfaces are built to support one launch process.',
-    detail: 'Each layer reinforces the rollout workflow instead of forcing the team to improvise one.',
+    title: 'Easy to connect',
+    description: 'Use FreightPilot on the web and desktop.',
+    detail: 'Your team sees the same workspace on both.',
   },
 ];
 
@@ -314,4 +314,4 @@ export const iconLinks = [
   { label: 'Read docs', href: externalLinks.docs, icon: BadgeCheck },
 ];
 
-export const trustRibbon = ['Audit key changes', 'Control provider access', 'Roll out teams in stages'];
+export const trustRibbon = ['See key changes', 'Control AI access', 'Add your team in stages'];

@@ -64,7 +64,7 @@ function GatePlaceholder({ milestone }: { milestone: number }) {
     <div className="grid h-full min-h-[130px] place-items-center border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-5 text-center">
       <div>
         <p className="text-sm font-semibold text-[#40534c]">
-          Unlocks after Milestone {milestone}
+          Available after setup step {milestone}
         </p>
         <Link to="/upload" className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
           Continue onboarding
@@ -97,7 +97,17 @@ function DashboardSkeleton() {
   );
 }
 
-export function DashboardPage() {
+type DashboardPageProps = {
+  referenceNow?: Date;
+};
+
+function greetingFor(hour: number): string {
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps = {}) {
   const invalidateDashboard = useInvalidateDashboard();
 
   const inventoryQ = useInventoryOverview();
@@ -194,9 +204,9 @@ export function DashboardPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Control tower"
-        title="Today's operation"
-        description="Exceptions, movement, and decisions that need attention now."
+        eyebrow="Overview"
+        title={greetingFor(referenceNow.getHours())}
+        description="Here is what needs your attention today."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {livePayload ? (
@@ -209,7 +219,7 @@ export function DashboardPage() {
               type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="glow-ring inline-flex h-9 w-9 items-center justify-center border border-[#cfd9d5] bg-white text-[#40534c] transition-colors hover:bg-[#eef3f0] disabled:opacity-60"
+              className="fp-action-secondary h-9 w-9 !px-0"
               aria-label={isRefreshing ? 'Refreshing data' : 'Refresh data'}
               title={isRefreshing ? 'Refreshing data' : 'Refresh data'}
             >
@@ -221,21 +231,21 @@ export function DashboardPage() {
 
       <ActivationBanner mode="compact" />
 
-      <section aria-label="Operational summary" className="grid grid-cols-2 overflow-hidden border border-[#d7dfdc] bg-white lg:grid-cols-5">
-        <div className="col-span-2 border-b border-[#e2e8e5] bg-[#fffaf0] px-4 py-3 lg:col-span-1 lg:border-b-0 lg:border-r">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a5b09]">Needs attention</p>
-          <p className="mt-1 font-mono text-[25px] leading-7 text-[#5f3c00]">{feedSummary?.open_alerts ?? 0}</p>
-          <p className="mt-1 text-xs text-[#6f5b3c]">Open exceptions</p>
+      <section aria-label="Today at a glance" className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 lg:grid-cols-5 lg:divide-x lg:divide-[#efeeea]">
+        <div className="border-b border-[#efeeea] px-4 py-3.5 lg:border-b-0">
+          <p className="text-[12px] font-medium text-[#73736e]">Needs attention</p>
+          <p className="mt-1.5 text-[28px] font-semibold leading-8 tabular-nums tracking-[-0.02em] text-[#252522]">{feedSummary?.open_alerts ?? 0}</p>
+          <p className="mt-1 text-[12px] text-[#85857e]">Open exceptions</p>
         </div>
-        <div className="border-b border-r border-[#e2e8e5] px-4 py-3 lg:border-b-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#63766f]">In-transit</p>
-          <p className="mt-1 font-mono text-[25px] leading-7 text-[#172a24]">{summary.inTransitShipments.length}</p>
-          <p className="mt-1 text-xs text-[#63766f]">Active shipments</p>
+        <div className="border-b border-[#efeeea] px-4 py-3.5 lg:border-b-0">
+          <p className="text-[12px] font-medium text-[#73736e]">In transit</p>
+          <p className="mt-1.5 text-[28px] font-semibold leading-8 tabular-nums tracking-[-0.02em] text-[#252522]">{summary.inTransitShipments.length}</p>
+          <p className="mt-1 text-[12px] text-[#85857e]">Active shipments</p>
         </div>
-        <div className="border-b border-[#e2e8e5] px-4 py-3 lg:border-b-0 lg:border-r">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#63766f]">Delayed</p>
-          <p className="mt-1 font-mono text-[25px] leading-7 text-[#172a24]">{feedSummary?.delayed_shipments ?? summary.delayedShipments.length}</p>
-          <p className="mt-1 text-xs text-[#63766f]">Shipments past plan</p>
+        <div className="border-b border-[#efeeea] px-4 py-3.5 lg:border-b-0">
+          <p className="text-[12px] font-medium text-[#73736e]">Delayed</p>
+          <p className="mt-1.5 text-[28px] font-semibold leading-8 tabular-nums tracking-[-0.02em] text-[#252522]">{feedSummary?.delayed_shipments ?? summary.delayedShipments.length}</p>
+          <p className="mt-1 text-[12px] text-[#85857e]">Shipments past plan</p>
         </div>
         {milestone >= gateMilestone('forecast-demand') ? (
           <MetricTile
@@ -248,7 +258,7 @@ export function DashboardPage() {
           <MetricTile
             title="Forecast demand"
             value="Locked"
-            detail="Unlocks after Milestone 5."
+            detail="Available after setup step 5."
             tone="neutral"
             cta={{ label: 'Continue onboarding', href: '/upload' }}
           />
@@ -264,16 +274,17 @@ export function DashboardPage() {
           <MetricTile
             title="Simulated weather risk"
             value="Locked"
-            detail="After Milestone 5"
+            detail="After setup step 5"
             tone="neutral"
             cta={{ label: 'Continue onboarding', href: '/upload' }}
           />
         )}
         <MetricTile
-          title="Usage posture"
+          title="Plan usage"
           value={summary.usagePercent == null ? 'N/A' : `${summary.usagePercent}%`}
           detail={summary.usagePercent == null ? 'Usage unavailable' : 'Monthly task volume'}
           tone={summary.usagePercent != null && summary.usagePercent >= 100 ? 'danger' : summary.usagePercent != null && summary.usagePercent >= 80 ? 'warning' : 'success'}
+          className="sm:col-span-2 lg:col-span-4 xl:col-span-1 xl:border-l xl:border-[#efeeea]"
         />
       </section>
 
@@ -289,9 +300,9 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
         <Panel
-          eyebrow="Exception queue"
-          title="What needs operator action"
-          description="Unified feed: alerts, pending approvals, and route interventions."
+          eyebrow="Priority"
+          title="Needs attention"
+          description="Open exceptions, approvals, and route issues."
         >
           <div className="divide-y divide-[#e6ebe8]">
             {feedItems.slice(0, 6).map((item) => (
@@ -302,7 +313,7 @@ export function DashboardPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={item.severity} tone={severityTone(item.severity)} />
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-[#6b7d76]">{item.source_type}</span>
+                    <span className="text-[11px] font-medium text-[#85857e]">{item.source_type}</span>
                     <h3 className="text-sm font-semibold text-[#20372f]">{item.title}</h3>
                   </div>
                   <span className="text-xs text-[#6b7d76]">{new Date(item.created_at).toLocaleString()}</span>
@@ -311,8 +322,8 @@ export function DashboardPage() {
               </article>
             ))}
             {feedItems.length === 0 ? (
-              <div className="border border-[#b9dcd1] bg-[#f3faf7] p-5 text-center">
-                <p className="text-sm font-semibold text-[#14745f]">Queue clear</p>
+              <div className="py-8 text-center">
+                <p className="text-sm font-medium text-[#353530]">You're all caught up</p>
                 <p className="mt-1 text-xs text-[#4f6e63]">No open alerts requiring operator attention.</p>
               </div>
             ) : null}
@@ -320,56 +331,56 @@ export function DashboardPage() {
         </Panel>
 
         <div className="grid gap-4">
-          <Panel eyebrow="Execution posture" title="Workspace readiness">
+          <Panel title="Workspace at a glance">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <div className="border-t border-[#e2e8e5] pt-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Inventory on hand</p>
-                <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{summary.stock.toLocaleString()}</p>
-                <p className="mt-0.5 text-xs text-[#63766f]">Safety stock: {summary.safety.toLocaleString()} units</p>
+              <div className="border-t border-[#efeeea] pt-3">
+                <p className="text-[12px] text-[#73736e]">Inventory on hand</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{summary.stock.toLocaleString()}</p>
+                <p className="mt-0.5 text-[12px] text-[#85857e]">Safety stock: {summary.safety.toLocaleString()} units</p>
               </div>
               {milestone >= gateMilestone('utilization') ? (
-                <div className="border-t border-[#e2e8e5] pt-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Capacity utilization</p>
-                  <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{summary.avgUtil}%</p>
-                  <p className="mt-0.5 text-xs text-[#63766f]">Average across inventory.</p>
+                <div className="border-t border-[#efeeea] pt-3">
+                  <p className="text-[12px] text-[#73736e]">Warehouse space used</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{inventory.length ? `${summary.avgUtil}%` : 'No stock yet'}</p>
+                  <p className="mt-0.5 text-[12px] text-[#85857e]">Average across inventory.</p>
                 </div>
               ) : (
-                <div className="border-t border-dashed border-[#c8d4cf] pt-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Capacity utilization</p>
-                  <p className="mt-1 text-xs text-[#63766f]">After Milestone 4.</p>
+                <div className="border-t border-[#efeeea] pt-3">
+                  <p className="text-[12px] text-[#73736e]">Warehouse space used</p>
+                  <p className="mt-1 text-xs text-[#63766f]">Available after setup step 4.</p>
                   <Link to="/upload" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
                     Continue onboarding
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
                 </div>
               )}
-              <div className="border-t border-[#e2e8e5] pt-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Pending approvals</p>
-                <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{summary.pendingPlans.length}</p>
-                <p className="mt-0.5 text-xs text-[#63766f]">Plans awaiting sign-off.</p>
+              <div className="border-t border-[#efeeea] pt-3">
+                <p className="text-[12px] text-[#73736e]">Pending approvals</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{summary.pendingPlans.length}</p>
+                <p className="mt-0.5 text-[12px] text-[#85857e]">Plans awaiting sign-off.</p>
               </div>
-              <div className="border-t border-[#e2e8e5] pt-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Route schedules</p>
-                <p className="mt-1 font-mono text-xl tabular-nums text-[#172a24]">{schedules.length}</p>
-                <p className="mt-0.5 text-xs text-[#63766f]">Saved optimization output.</p>
+              <div className="border-t border-[#efeeea] pt-3">
+                <p className="text-[12px] text-[#73736e]">Route schedules</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{schedules.length}</p>
+            <p className="mt-0.5 text-[12px] text-[#85857e]">Saved route plans.</p>
               </div>
             </div>
           </Panel>
 
-          <Panel eyebrow="Audit timeline" title="Latest workspace actions">
+          <Panel title="Recent activity">
             <div className="space-y-3">
               {auditEvents.slice(0, 4).map((event) => (
-                <article key={event.id} className="border-t border-[#e2e8e5] pt-2.5">
+                <article key={event.id} className="border-t border-[#efeeea] pt-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h3 className="text-xs font-semibold text-[#20372f]">{event.description}</h3>
-                      <p className="mt-0.5 font-mono text-[10px] text-[#63766f]">{event.event_type}</p>
+                      <p className="mt-0.5 text-[11px] text-[#85857e]">{event.event_type}</p>
                     </div>
                     <span className="text-[11px] text-[#6b7d76]">{new Date(event.created_at).toLocaleString()}</span>
                   </div>
                 </article>
               ))}
-              {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No audit events yet.</p> : null}
+              {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No recent changes.</p> : null}
             </div>
           </Panel>
         </div>
@@ -377,12 +388,12 @@ export function DashboardPage() {
 
       {milestone >= gateMilestone('dock-gantt') ? (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <Panel eyebrow="Dock Management" title="Live Capacity Setup">
+          <Panel title="Dock capacity">
             <div className="h-[400px]">
               <DockGanttChart appointments={appointments} />
             </div>
           </Panel>
-          <Panel eyebrow="Finance" title="Freight Invoice Reconciliation">
+          <Panel title="Invoice and freight charge checks">
             <div className="h-[400px]">
               <FreightReconciliationPanel />
             </div>
@@ -390,15 +401,15 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="xl:col-span-1">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,2.45fr)] xl:items-start">
+        <div className="xl:pr-6">
           <FeedbackForm />
         </div>
-        <div className="xl:col-span-2 space-y-4">
+        <div className="min-w-0 space-y-4">
           {milestone >= gateMilestone('inventory-charts') ? (
             <InventoryCharts data={inventory} />
           ) : (
-            <Panel eyebrow="Inventory" title="Stock position by warehouse">
+            <Panel title="Stock position by warehouse">
               <GatePlaceholder milestone={gateMilestone('inventory-charts')} />
             </Panel>
           )}
@@ -409,7 +420,7 @@ export function DashboardPage() {
               modelName={forecastQ.data?.model_name}
             />
           ) : (
-            <Panel eyebrow="Forecast" title="4-week demand projection">
+            <Panel title="4-week demand projection">
               <GatePlaceholder milestone={gateMilestone('forecast-chart')} />
             </Panel>
           )}

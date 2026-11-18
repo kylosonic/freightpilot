@@ -59,7 +59,8 @@ beforeEach(() => {
 describe('Fleet & Cash surface (NB-86)', () => {
   it('leads with the two questions the operator actually asks', () => {
     const html = render(<DriversPage />, '/drivers');
-    expect(html).toContain('Know who is carrying the load and what cash is coming back');
+    expect(html).toContain('Fleet and cash');
+    expect(html).toContain('Who is on the fleet today');
   });
 
   it('shows the end-of-day cash position as four tiles', () => {
@@ -80,26 +81,27 @@ describe('Fleet & Cash surface (NB-86)', () => {
     const html = render(<DriversPage />, '/drivers');
     expect(html).toContain('Add a driver');
     expect(html).toContain('+251911000001');
-    expect(html).toContain('Phone number is how a driver is identified day to day');
+    expect(html).toContain('The phone number is how you will recognise each driver');
   });
 
   it('frames the roster around the morning question', () => {
     const html = render(<DriversPage />, '/drivers');
     expect(html).toContain('Who is on the fleet today');
-    expect(html).toContain('Open a driver to see what they are carrying right now');
+    expect(html).toContain('Choose a driver to see their current deliveries and cash.');
   });
 
   it('frames the ledger around the end-of-day close', () => {
     const html = render(<DriversPage />, '/drivers');
     expect(html).toContain('Cash position');
-    expect(html).toContain('Every delivery that expects cash at the door');
+    expect(html).toContain('Record what each driver has collected.');
     expect(html).toContain('Settled to date:');
   });
 
   it('renders for an operator as well as an admin', () => {
     authUserState.user = { role: 'operator', email: 'dispatch@addisfreight.et' };
     const html = render(<DriversPage />, '/drivers');
-    expect(html).toContain('Know who is carrying the load and what cash is coming back');
+    expect(html).toContain('Fleet and cash');
+    expect(html).toContain('Who is on the fleet today');
   });
 
   it('renders when no user is present at all', () => {
@@ -119,8 +121,9 @@ describe('Shipments board cash capture (NB-86)', () => {
 
   it('keeps the existing shipment lifecycle controls', () => {
     const html = render(<ShipmentsPage />, '/shipments');
-    expect(html).toContain('Track movement health across every lane');
-    expect(html).toContain('Shipment lifecycle');
+    expect(html).toContain('Shipments');
+    expect(html).toContain('On the way');
+    expect(html).toContain('Shipment status');
     expect(html).toContain('Create a shipment');
   });
 });

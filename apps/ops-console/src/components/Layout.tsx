@@ -9,8 +9,8 @@ import { SessionLiveUpdates } from './shell/SessionLiveUpdates';
 import { ShellHeader } from './shell/ShellHeader';
 import { ShellSidebar } from './shell/ShellSidebar';
 
-const SHELL_CONTEXT_LABEL = 'Control tower';
-const SHELL_DESCRIPTOR = 'Routes, exceptions, planning, and workspace governance.';
+const SHELL_CONTEXT_LABEL = 'Freight operations';
+const SHELL_DESCRIPTOR = 'Your routes, deliveries, and workspace.';
 
 /** Lazy-chunk fallback rendered INSIDE the shell so the layout stays mounted
  *  while a page chunk loads (TECH-72). Also reused by App.tsx at the top
@@ -42,12 +42,12 @@ export function Layout() {
   const [railCompact, setRailCompact] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f4f6f5] text-[#202b36]">
+    <div className="min-h-screen bg-white text-[#252522]">
       <SessionLiveUpdates />
       <ScrollManager />
       <a href="#main-content" className="skip-to-content">Skip to content</a>
       <div className="flex min-h-screen">
-        <aside className={`hidden shrink-0 transition-[width] lg:block ${railCompact ? 'w-[68px]' : 'w-[236px]'}`}>
+        <aside className={`hidden shrink-0 bg-[#f7f7f5] transition-[width] lg:block ${railCompact ? 'w-[64px]' : 'w-[240px]'}`}>
           <div className="sticky top-0 flex h-screen flex-col">
             <ShellSidebar
               user={user}
@@ -61,7 +61,7 @@ export function Layout() {
         {sidebarOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button type="button" className="absolute inset-0 bg-[#20372f]/35" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
-            <aside className="absolute inset-y-0 left-0 w-[290px] overflow-y-auto bg-[#fbfcfb] shadow-xl">
+            <aside className="absolute inset-y-0 left-0 w-[290px] overflow-y-auto bg-[#f7f7f5] shadow-xl">
               <ShellSidebar user={user} onLogout={logout} onNavigate={() => setSidebarOpen(false)} />
             </aside>
           </div>
@@ -75,9 +75,9 @@ export function Layout() {
               user={user}
               onOpenNavigation={() => setSidebarOpen(true)}
             />
-            <div className="space-y-2 py-4">
+            <div className="space-y-4 pb-10 pt-6">
               <CapPitchBanner />
-              <main id="main-content" className="space-y-4">
+              <main id="main-content" className="space-y-5">
                 <Suspense fallback={<RouteFallback />}>
                   <PageTransition>
                     <Outlet />

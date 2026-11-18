@@ -74,7 +74,7 @@ describe('DecisionBriefPanel evidence rendering', () => {
     expect(html).toContain('50/100');
     expect(html).toContain('Customer has not confirmed receipt');
     expect(html).toContain('2.5h open');
-    expect(html).toContain('Source: grounded_rules');
+    expect(html).toContain('From grounded_rules');
   });
 
   it('does not turn an empty fact bundle into a recommendation', () => {
@@ -89,10 +89,10 @@ describe('DecisionBriefPanel evidence rendering', () => {
       }),
     );
 
-    expect(html).toContain('No grounded operating risk is currently recorded.');
-    expect(html).toContain('No action is recommended from the current records.');
-    expect(html).toContain('No open driver cash exposure is recorded.');
-    expect(html).toContain('No open exception needs triage.');
+    expect(html).toContain('There are no open risks in your records.');
+    expect(html).toContain('No action is needed from your current records.');
+    expect(html).toContain('No driver has unaccounted cash.');
+    expect(html).toContain('No open issue needs review.');
   });
 
   it('shows a fail-closed state when the brief cannot be loaded', () => {
@@ -102,6 +102,6 @@ describe('DecisionBriefPanel evidence rendering', () => {
       </StaticRouter>,
     );
 
-    expect(html).toContain('No recommendation is being shown.');
+    expect(html).toContain('We could not make a summary from your records.');
   });
 });

@@ -37,7 +37,7 @@ describe('product-web next home smoke (phase 5 locked copy)', () => {
 describe('product-web page smoke tests', () => {
   it('renders the platform page', () => {
     const html = renderToString(<PlatformPage />);
-    expect(html).toContain('FreightPilot');
+    expect(html).toContain('Everything you need to run deliveries');
     expect(html.length).toBeGreaterThan(500);
     expect(html.length).toBeLessThan(120_000);
   });

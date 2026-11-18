@@ -58,7 +58,7 @@ const FORBIDDEN_SLATE_OVERLAYS = ['bg-slate-950', 'bg-slate-900', 'bg-slate-800'
 
 describe('shared surface token guard (TECH-77 / NB-60, NB-62 seed)', () => {
   it('declares the --fp-placeholder token in :root', () => {
-    expect(tokenBlock(readIndexCss())).toContain('--fp-placeholder: #63716c;');
+    expect(tokenBlock(readIndexCss())).toContain('--fp-placeholder: #73736e;');
   });
 
   it('declares the five load-bearing light-theme color tokens in :root', () => {
@@ -66,8 +66,8 @@ describe('shared surface token guard (TECH-77 / NB-60, NB-62 seed)', () => {
     expect(tokens).toContain('--fp-surface: #ffffff;');
     expect(tokens).toContain('--fp-elevated: #ffffff;');
     expect(tokens).toContain('--fp-input: #ffffff;');
-    expect(tokens).toContain('--fp-border: #d7dfdc;');
-    expect(tokens).toContain('--fp-primary: #202b36;');
+    expect(tokens).toContain('--fp-border: #e5e4e0;');
+    expect(tokens).toContain('--fp-primary: #252522;');
   });
 
   it.each(FIVE_CLASSES.map((selector) => [selector]))(

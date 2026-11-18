@@ -22,8 +22,8 @@ describe('team panel', () => {
   it('renders the invite flow and explains the link lifetime', () => {
     const html = renderToString(<TeamPanel />);
 
-    expect(html).toContain('Invite the people who run the operation');
-    expect(html).toContain('The invite link expires after 72 hours.');
-    expect(html).toContain('Create invitation');
+    expect(html).toContain('People in this workspace');
+    expect(html).toContain('Each link expires after 72 hours.');
+    expect(html).toContain('Send invite');
   });
 });

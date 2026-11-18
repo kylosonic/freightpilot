@@ -26,14 +26,14 @@ export function CapPitchBanner() {
       <div
         role="banner"
         data-testid="cap-pitch-banner"
-        className="mb-2 flex flex-wrap items-center justify-between gap-3 border border-[#e7c2be] border-l-4 border-l-[#b93a36] bg-[#fff8f7] px-4 py-2.5"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#fff5f3] px-4 py-3"
       >
         <p className="text-sm font-semibold leading-6 text-[#7d2924]">
           {state.free_cap?.message ?? P100_MESSAGE}
         </p>
         <Link
           to="/account"
-          className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#b93a36] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#9f2f2b]"
+          className="inline-flex min-h-8 items-center justify-center rounded-full bg-[#a83b33] px-3 text-xs font-medium text-white transition-colors hover:bg-[#8f302a]"
         >
           Upgrade now
         </Link>
@@ -46,14 +46,14 @@ export function CapPitchBanner() {
       <div
         role="banner"
         data-testid="cap-pitch-banner"
-        className="mb-2 flex flex-wrap items-center justify-between gap-3 border border-[#e7d1a8] border-l-4 border-l-[#a15b00] bg-[#fffaf0] px-4 py-2.5"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#fff9ee] px-4 py-3"
       >
         <p className="text-sm font-semibold leading-6 text-[#704500]">
           You&apos;ve used 80% of your Free tier tasks. Consider upgrading before writes lock.
         </p>
         <Link
           to="/account"
-          className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#c89743] bg-white px-3 text-xs font-semibold text-[#704500] transition hover:bg-[#fcf3df]"
+          className="inline-flex min-h-8 items-center justify-center rounded-full bg-white px-3 text-xs font-medium text-[#704500] shadow-sm transition hover:bg-[#fcf3df]"
         >
           See pricing
         </Link>
@@ -65,7 +65,7 @@ export function CapPitchBanner() {
     <div
       role="banner"
       data-testid="cap-pitch-banner"
-      className="mb-2 flex flex-wrap items-center justify-between gap-3 border border-[#d7dfdc] border-l-4 border-l-[#087f72] bg-white px-4 py-2.5"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#f1f5f3] px-4 py-3"
     >
       <p className="text-sm font-medium leading-6 text-[#40534c]">
         You&apos;ve used 60% of your Free tier tasks this month.
@@ -73,7 +73,7 @@ export function CapPitchBanner() {
       <button
         type="button"
         onClick={() => dismiss.mutate('p60')}
-        className="border border-[#cfd9d5] bg-white px-3 py-1 text-xs font-semibold text-[#52665e] transition hover:bg-[#eef3f0]"
+        className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#5f5f59] shadow-sm transition hover:bg-[#f7f7f5]"
       >
         Dismiss
       </button>
@@ -100,7 +100,7 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
       <div
         role="banner"
         data-testid="activation-banner"
-        className="flex flex-wrap items-center justify-between gap-3 border border-[#c8ddd5] border-l-4 border-l-[#087f72] bg-[#f7fbf9] px-4 py-3"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#f2f7f4] px-4 py-3"
       >
         <div>
           {n < 5 ? (
@@ -124,7 +124,7 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
         </div>
         <Link
           to={state.banner.cta ?? '/upload'}
-          className="glow-ring inline-flex min-h-9 items-center justify-center bg-[#087f72] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
+          className="inline-flex min-h-9 items-center justify-center rounded-full bg-[#176b5c] px-3.5 text-xs font-medium text-white transition-colors hover:bg-[#115449]"
         >
           {n < 5 ? 'Continue setup' : 'Run your first route'}
         </Link>
@@ -136,7 +136,7 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
     <div
       role="banner"
       data-testid="activation-checklist"
-      className="border border-[#c8ddd5] bg-[#f7fbf9] p-4"
+      className="rounded-lg bg-[#f2f7f4] p-4"
     >
       {n < 5 ? (
         <p className="text-sm font-semibold leading-6 text-[#25483f]">
@@ -151,7 +151,7 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
           </p>
           <Link
             to="/routes"
-            className="glow-ring inline-flex min-h-9 items-center justify-center bg-[#087f72] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
+            className="inline-flex min-h-9 items-center justify-center rounded-full bg-[#176b5c] px-3.5 text-xs font-medium text-white transition-colors hover:bg-[#115449]"
           >
             Run your first route
           </Link>
@@ -162,27 +162,27 @@ export function ActivationBanner({ mode }: { mode: 'compact' | 'checklist' }) {
         {state.milestones.map((milestone, index) => {
           const chipTone =
             milestone.status === 'real'
-              ? 'border-[#b9dcd1] bg-[#edf8f3] text-[#14745f]'
+              ? 'bg-[#e8f3ed] text-[#14745f]'
               : milestone.status === 'sample'
-                ? 'border-[#e7d1a8] bg-[#fcf6e9] text-[#885100]'
-                : 'border-[#d7dfdc] bg-white text-[#63766f]';
+                ? 'bg-[#fcf5e8] text-[#885100]'
+                : 'bg-white text-[#73736e]';
           return (
             <div
               key={milestone.category}
               data-testid={`milestone-chip-${milestone.category}`}
-              className={`border px-3 py-2.5 ${chipTone}`}
+              className={`rounded-md px-3 py-2.5 ${chipTone}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wide">
                   Step {index + 1}
                 </p>
-                <span className="border border-current/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">
-                  {milestone.status}
+                <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-medium capitalize">
+                  {milestone.status === 'real' ? 'yours' : milestone.status}
                 </span>
               </div>
               <p className="mt-2 text-sm font-semibold">{milestone.label}</p>
               {index === n && !state.m6_completed ? (
-                <p className="mt-1 text-[11px] font-semibold text-[#087f72]">next step</p>
+                <p className="mt-1 text-[11px] font-medium text-[#176b5c]">Next step</p>
               ) : null}
             </div>
           );

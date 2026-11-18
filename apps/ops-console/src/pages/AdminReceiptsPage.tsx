@@ -20,10 +20,35 @@ import type {
   VerifiedReceiptAudit,
 } from '../types/api';
 
-const CASH_FLAG = 'Cash deposit — confirm with customer that this was their intended transfer.';
-const LARGE_SURPLUS_FLAG = 'Large surplus — admin manual decision required';
-const LOW_CONFIDENCE_HINT = 'low confidence — please manually verify';
-const REVERSED_CREDIT_CHIP = 'This sender has a reversed credit on file';
+const CASH_FLAG = 'Cash deposit. Ask the customer to confirm this was the transfer they intended to make.';
+const LARGE_SURPLUS_FLAG = 'This amount is much higher than expected. An admin must review it.';
+const LOW_CONFIDENCE_HINT = 'was hard to read. Please check it.';
+const REVERSED_CREDIT_CHIP = 'An earlier credit from this sender was reversed';
+
+const FIELD_LABELS: Record<string, string> = {
+  sender_name: 'Sender name',
+  sender_account_number: 'Sender account',
+  receiver_account_number: 'Receiver account',
+  receiver_name: 'Receiver name',
+  transfer_amount: 'Amount',
+  transfer_date: 'Transfer date',
+  reference_number: 'Reference',
+  bank_identifier: 'Bank',
+};
+
+const VERDICT_LABELS: Record<Verdict, string> = {
+  verify: 'Verify payment',
+  reject_wrong_bank: 'Wrong bank',
+  reject_duplicate: 'Duplicate payment',
+  reject_illegible: 'Can not read receipt',
+  escalate: 'Ask the customer',
+};
+
+const SURPLUS_LABELS: Record<LargeSurplusDecision, string> = {
+  credit_forward: 'Keep the extra credit',
+  credit_backward: 'Apply it to an older bill',
+  partial_ignore: 'Credit only part of the payment',
+};
 
 function verdictTone(status: ReceiptQueueItem['status']) {
   if (status === 'escalated') return 'warning';
@@ -44,8 +69,8 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
 
   if (row.reversal_status) {
     return (
-      <span className="border border-[#d7dfdc] bg-[#f5f8f6] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#63766f]">
-        {row.reversal_status}
+      <span className="fp-pill capitalize">
+        {row.reversal_status === 'reversed' ? 'Payment reversed' : 'Payment undone'}
       </span>
     );
   }
@@ -57,16 +82,16 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
           <button
             type="button"
             onClick={() => setMode('undo')}
-            className="min-h-7 border border-[#b9dcd1] bg-white px-2 text-[10px] font-semibold text-[#14745f] transition-colors hover:bg-[#edf8f3]"
+            className="fp-action-quiet !min-h-8 !text-[#14745f]"
           >
-            Undo (≤24h)
+            Undo
           </button>
         ) : null}
         {row.reverse_available ? (
           <button
             type="button"
             onClick={() => setMode('reverse')}
-            className="min-h-7 border border-[#e7d1a8] bg-white px-2 text-[10px] font-semibold text-[#885100] transition-colors hover:bg-[#fffaf0]"
+            className="fp-action-quiet !min-h-8 !text-[#885100]"
           >
             Reverse
           </button>
@@ -102,9 +127,9 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
           type="button"
           disabled={!canSubmit}
           onClick={onSubmit}
-          className="inline-flex min-h-8 items-center justify-center bg-[#a15b00] px-3 text-[11px] font-semibold text-white transition-colors hover:bg-[#885100] disabled:cursor-not-allowed disabled:opacity-50"
+          className="fp-action-primary !min-h-8 !bg-[#a15b00] text-xs hover:!bg-[#885100]"
         >
-          {isReverse ? 'Confirm reverse' : 'Confirm undo'}
+          {isReverse ? 'Reverse payment' : 'Undo payment'}
         </button>
         <button
           type="button"
@@ -112,7 +137,7 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
             setMode('idle');
             setText('');
           }}
-          className="inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+          className="fp-action-secondary !min-h-8 text-xs"
         >
           Cancel
         </button>
@@ -124,25 +149,25 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
 function AuditEventsDrawer({ receiptId }: { receiptId: string }) {
   const { data: events = [] } = useReceiptAuditEvents(receiptId);
   if (events.length === 0) {
-    return <p className="text-xs text-[#63766f]">No audit events.</p>;
+    return <p className="text-xs text-[#63766f]">No history yet.</p>;
   }
   return (
-    <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+    <div className="max-h-56 divide-y divide-[#efeeea] overflow-y-auto border-t border-[#efeeea]">
       {events.map((event) => (
         <div
           key={event.id}
-          className="border border-[#d7dfdc] bg-[#f8faf9] px-2.5 py-2 text-xs"
+          className="py-2.5 text-xs"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-mono font-semibold text-[#17679b]">{event.event_type}</span>
-            <span className="text-[10px] text-[#63766f]">
+            <span className="text-[11px] text-[#73736e]">
               {new Date(event.created_at).toLocaleString()}
             </span>
           </div>
           <p className="mt-1 text-[#40534c]">{event.description}</p>
           {event.available_actions.length > 0 ? (
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#63766f]">
-              Actions: {event.available_actions.join(', ')}
+            <p className="mt-1 text-[11px] text-[#73736e]">
+              Allowed: {event.available_actions.join(', ')}
             </p>
           ) : null}
         </div>
@@ -165,12 +190,12 @@ function ReversalsPanel({
 
   return (
     <Panel
-      eyebrow="Audit & reversibility"
-      title="Verified & reversible"
-      description="Every verification is permanently auditable. Undo within 24 hours (silent); Reverse after 24 hours (customer notice, mandatory reason). Server-enforced."
+      eyebrow="Payment history"
+      title="Verified payments"
+      description="You can undo a verified payment within 24 hours. After that, reversing it sends the customer a notice and requires a reason."
     >
       {rows.length === 0 ? (
-        <p className="text-xs text-[#63766f]">No verified receipts.</p>
+        <p className="text-xs text-[#73736e]">No verified receipts.</p>
       ) : (
         <div className="grid gap-2">
           {rows.map((row) => (
@@ -190,7 +215,7 @@ function ReversalsPanel({
                   </p>
                   {row.undo_available_until && row.undo_available ? (
                     <p className="mt-0.5 text-[10px] text-[#6b7d76]">
-                      Undo window closes {new Date(row.undo_available_until).toLocaleString()}
+                      You can undo this until {new Date(row.undo_available_until).toLocaleString()}
                     </p>
                   ) : null}
                 </div>
@@ -201,7 +226,7 @@ function ReversalsPanel({
                     onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
                     className="min-h-7 border border-[#cfd9d5] bg-white px-2 text-[10px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
                   >
-                    {expandedId === row.id ? 'Hide events' : 'Audit events'}
+                    {expandedId === row.id ? 'Hide history' : 'View history'}
                   </button>
                 </div>
               </div>
@@ -222,7 +247,7 @@ function ReversalsPanel({
         }}
         className="mt-3 min-h-7 border border-[#cfd9d5] bg-white px-2.5 text-[10px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
       >
-        Refresh audit
+        Refresh history
       </button>
     </Panel>
   );
@@ -239,7 +264,7 @@ type DetailProps = {
 function AdminDetail({ item, onRendered, onError }: DetailProps) {
   // Pre-fill ONLY when the service actually recommends verify (trusted payer
   // or wrong-bank-within-portfolio). CASH and new-sender receipts must NOT
-  // pre-fill — the admin picks a verdict explicitly.
+  // pre-fill. An admin must choose an outcome for these receipts.
   const [verdict, setVerdict] = useState<Verdict | null>(item.recommended_verdict);
   const [note, setNote] = useState('');
   const [adminNote, setAdminNote] = useState('');
@@ -291,7 +316,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
       onRendered();
     } catch (error: unknown) {
       const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      onError(detail ?? 'Failed to render verdict.');
+      onError(detail ?? 'Could not save the decision.');
     } finally {
       setBusy(false);
     }
@@ -320,14 +345,14 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
           admin controls (display-only, never blocks — NB-21.4/21.6) */}
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
-        {item.sender_has_reversed_credit ? (
-          <span className="inline-flex items-center border border-[#d8c8e5] bg-[#faf5fd] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#6b4688]">
+                      {item.sender_has_reversed_credit ? (
+          <span className="inline-flex items-center rounded-full border border-[#e2d4eb] bg-[#faf5fd] px-2.5 py-1 text-xs font-medium text-[#6b4688]">
             {REVERSED_CREDIT_CHIP}
           </span>
         ) : null}
         {item.is_new_sender ? (
-          <span className="inline-flex items-center border border-[#e7c2be] bg-[#fff8f7] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#a3342f]">
-            NEW SENDER
+          <span className="inline-flex items-center rounded-full border border-[#e7c2be] bg-[#fff8f7] px-2.5 py-1 text-xs font-medium text-[#a3342f]">
+            New sender
           </span>
         ) : null}
         {item.is_cash_sender ? (
@@ -337,7 +362,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         ) : null}
         {item.is_wrong_bank_within_portfolio ? (
           <span className="inline-flex items-center border border-[#bfd8e5] bg-[#f3f9fc] px-2 py-1 text-[10px] font-semibold text-[#17679b]">
-            Wrong-bank-within-portfolio — pre-filled Verify
+            Paid into a different bank in your group. Verify is already selected.
           </span>
         ) : null}
         {item.is_large_surplus ? (
@@ -346,12 +371,12 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
           </span>
         ) : null}
         {item.has_zero_confidence ? (
-          <span className="inline-flex items-center border border-[#d7dfdc] bg-[#f5f8f6] px-2 py-1 text-[10px] font-semibold text-[#40534c]">
+          <span className="fp-pill">
             {item.zero_confidence_warning}
           </span>
         ) : null}
         {item.low_confidence_fields.map((field) => (
-          <span key={field} className="inline-flex items-center border border-[#d7dfdc] bg-[#f5f8f6] px-2 py-1 text-[10px] font-semibold text-[#52665e]">
+          <span key={field} className="fp-pill">
             {field} {LOW_CONFIDENCE_HINT}
           </span>
         ))}
@@ -363,12 +388,12 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         </div>
 
         {item.sender_has_reversed_credit ? (
-          <div className="border border-[#d8c8e5] bg-[#faf5fd] p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6b4688]">
+          <div className="rounded-md bg-[#faf5fd] p-3">
+            <p className="text-xs font-semibold text-[#6b4688]">
               {REVERSED_CREDIT_CHIP}
             </p>
             <p className="mt-1 text-[11px] text-[#63766f]">
-              This badge is informational — you can still verify or escalate this receipt normally.
+              This is a warning, not a block. You can still verify the payment or ask the customer.
               {item.fraud_risk_since
                 ? ` Flagged since ${new Date(item.fraud_risk_since).toLocaleString()}.`
                 : ''}
@@ -377,7 +402,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
               type="button"
               disabled={removing}
               onClick={onRemoveTrustedPayer}
-              className="mt-2 inline-flex min-h-8 items-center justify-center border border-[#e7c2be] bg-white px-3 text-[11px] font-semibold text-[#a3342f] transition-colors hover:bg-[#fcf0ef] disabled:cursor-not-allowed disabled:opacity-50"
+              className="fp-action-quiet mt-2 !text-[#a3342f]"
             >
               {removing ? 'Removing…' : 'Remove sender from trusted-payer list'}
             </button>
@@ -388,10 +413,10 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
       {/* Segment 2 — extracted fields with confidence bars */}
       <div className="grid grid-cols-1 gap-2 border-t border-[#e6ebe8] pt-3 md:grid-cols-2">
         {fieldRows.map(([label, value, confidence]) => (
-          <div key={label} className="border border-[#d7dfdc] bg-[#f8faf9] p-2.5">
+          <div key={label} className="border-b border-[#efeeea] py-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-[#6b7d76]">{label}</span>
-              <span className="font-mono text-[10px] tabular-nums text-[#63766f]">{Math.round(confidence * 100)}%</span>
+              <span className="text-xs font-medium text-[#73736e]">{FIELD_LABELS[label] ?? label}</span>
+              <span className="text-[11px] tabular-nums text-[#73736e]">{Math.round(confidence * 100)}%</span>
             </div>
             <p className="mt-1 break-all font-mono text-xs text-[#20372f]">{value ?? '—'}</p>
             <div className="mt-2 h-1 overflow-hidden bg-[#dce8e3]">
@@ -405,11 +430,11 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
       </div>
 
       {/* Segment 3 — file preview */}
-      <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+      <div className="rounded-md bg-[#f7f7f5] p-3">
         <button
           type="button"
           onClick={onPreview}
-          className="min-h-8 border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+          className="fp-action-secondary !min-h-8 text-xs"
         >
           {fileUrl ? 'Preview loaded' : 'Preview receipt file'}
         </button>
@@ -424,14 +449,11 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         ) : null}
       </div>
 
-      {/* Segment 4 — verdict controls */}
+      {/* Choose the outcome for this receipt. */}
       <div className="grid gap-3 border-t border-[#e6ebe8] pt-3">
-        <label className="text-[10px] font-semibold uppercase tracking-wide text-[#6b7d76]">Verdict</label>
+        <p className="text-xs font-semibold text-[#73736e]">What should happen?</p>
         <div className="flex flex-wrap gap-2">
           {(['verify', 'reject_wrong_bank', 'reject_duplicate', 'reject_illegible', 'escalate'] as Verdict[]).map((v) => {
-            // Three-tier hierarchy: verify = dominant primary (solid cyan),
-            // escalate = warning secondary (amber outline), rejects = muted
-            // danger group (rose outline). Selection stays obvious in all tiers.
             const isVerify = v === 'verify';
             const isEscalate = v === 'escalate';
             const active = verdict === v;
@@ -453,7 +475,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
                 onClick={() => setVerdict(v)}
                 className={`min-h-8 border px-2.5 text-[11px] font-semibold transition ${tierClass}`}
               >
-                {v === 'verify' ? 'Verify' : v.replace('_', ' ')}
+                {VERDICT_LABELS[v]}
               </button>
             );
           })}
@@ -461,7 +483,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
 
         {verdict === 'verify' && item.is_large_surplus ? (
           <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#885100]">{LARGE_SURPLUS_FLAG}</p>
+            <p className="text-xs font-semibold text-[#885100]">{LARGE_SURPLUS_FLAG}</p>
             <div className="mt-2 grid gap-3 md:grid-cols-3">
               {(['credit_forward', 'credit_backward', 'partial_ignore'] as LargeSurplusDecision[]).map((d) => (
                 <button
@@ -474,7 +496,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
                       : 'border-[#d7dfdc] bg-white text-[#63766f] hover:border-[#a9bbb4]'
                   }`}
                 >
-                  {d.replace('_', ' ')}
+                  {SURPLUS_LABELS[d]}
                 </button>
               ))}
             </div>
@@ -482,7 +504,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
               <input
                 value={partialAmount}
                 onChange={(event) => setPartialAmount(event.target.value)}
-                placeholder="Partial credit amount (ETB)"
+                placeholder="Amount to credit (ETB)"
                 className="fp-input mt-3 min-h-10 px-3"
               />
             ) : null}
@@ -491,14 +513,15 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
 
         {verdict === 'verify' ? (
           <div className="flex flex-wrap items-center gap-3">
-            <label className="text-[10px] font-semibold uppercase tracking-wide text-[#6b7d76]">Trusted payer</label>
+            <label htmlFor="trusted-payer-action" className="text-xs font-semibold text-[#73736e]">Remember this sender?</label>
             <select
+              id="trusted-payer-action"
               value={trustedPayerAction}
               onChange={(event) => setTrustedPayerAction(event.target.value as TrustedPayerAction)}
               className="fp-input min-h-10"
             >
-              <option value="verified_once">Verify, do not add</option>
-              <option value="added">Verify + add to trusted-payer list</option>
+              <option value="verified_once">Verify only</option>
+              <option value="added">Verify and add to trusted senders</option>
             </select>
           </div>
         ) : null}
@@ -507,7 +530,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
           <textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="Escalation question shown to the customer (required)"
+            placeholder="Question for the customer (required)"
             className="fp-input min-h-24 px-4 py-3"
           />
         ) : null}
@@ -523,9 +546,9 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         <button
           type="submit"
           disabled={busy || !verdict || (verdict === 'escalate' && !note.trim())}
-          className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-50"
+          className="fp-action-primary"
         >
-          {busy ? 'Rendering…' : 'Render decision'}
+          {busy ? 'Saving…' : 'Save decision'}
         </button>
       </div>
     </form>
@@ -546,7 +569,7 @@ export function AdminReceiptsPage() {
   const selected = queue.find((item) => item.id === selectedId) ?? null;
 
   async function onRendered() {
-    setMessage('Decision rendered.');
+    setMessage('Decision saved.');
     setError(null);
     setSelectedId(null);
     await Promise.all([refetch(), refetchAudit()]);
@@ -579,9 +602,9 @@ export function AdminReceiptsPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Verification queue"
-        title="Receipt verdicts"
-        description="Review pending and escalated receipts, then render one of exactly five verdicts. Credits apply only on Verify — pessimistic unlock."
+        eyebrow="Verify payments"
+        title="Review payment receipts"
+        description="Check the receipt and choose what to do. We add credit only after you verify the payment."
       />
 
       {message ? (
@@ -598,11 +621,11 @@ export function AdminReceiptsPage() {
       <ReversalsPanel onUndo={onUndo} onReverse={onReverse} onError={setError} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Panel eyebrow="Queue" title="Pending and escalated" description="Oldest first — receipts in the selected workspace.">
+        <Panel eyebrow="Waiting for review" title="Payment receipts" description="Oldest first.">
           {queue.length === 0 ? (
-            <p className="text-xs text-[#63766f]">No receipts awaiting a verdict.</p>
+            <p className="text-xs text-[#73736e]">No payments are waiting for review.</p>
           ) : (
-            <div className="grid gap-1.5">
+            <div className="divide-y divide-[#efeeea] border-t border-[#efeeea]">
               {queue.map((item) => (
                 <button
                   key={item.id}
@@ -612,34 +635,34 @@ export function AdminReceiptsPage() {
                     setError(null);
                     setMessage(null);
                   }}
-                  className={`border p-2.5 text-left transition ${
+                  className={`block w-full py-3 text-left transition ${
                     selectedId === item.id
-                      ? 'border-[#087f72] bg-[#eef7f3]'
-                      : 'border-[#d7dfdc] bg-white hover:border-[#a9bbb4]'
+                      ? 'bg-[#f2f7f4]'
+                      : 'bg-white hover:bg-[#fafaf9]'
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge label={item.status} tone={verdictTone(item.status)} />
-                      {item.sender_has_reversed_credit ? (
-                        <span className="border border-[#d8c8e5] bg-[#faf5fd] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#6b4688]">
+                      <StatusBadge label={item.status === 'escalated' ? 'Waiting for customer' : 'Waiting for review'} tone={verdictTone(item.status)} />
+        {item.sender_has_reversed_credit ? (
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#6b4688]">
                           {REVERSED_CREDIT_CHIP}
                         </span>
                       ) : null}
                       {item.is_new_sender ? (
-                        <span className="border border-[#e7c2be] bg-[#fff8f7] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#a3342f]">
-                          NEW SENDER
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#a3342f]">
+                          New sender
                         </span>
                       ) : null}
                       {item.is_cash_sender ? (
-                        <span className="border border-[#e7d1a8] bg-[#fffaf0] px-1.5 py-0.5 text-[9px] font-semibold text-[#885100]">
-                          CASH
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#885100]">
+                          Cash
                         </span>
                       ) : null}
                     </div>
-                    <span className="text-[10px] text-[#63766f]">{new Date(item.created_at).toLocaleString()}</span>
+                    <span className="text-[11px] text-[#73736e]">{new Date(item.created_at).toLocaleString()}</span>
                   </div>
-                  <p className="mt-1.5 text-xs font-semibold text-[#20372f]">
+                  <p className="mt-1.5 text-sm font-medium text-[#252522]">
                     {item.organization_name} · {item.extracted_fields['reference_number'] ?? 'no ref'}
                   </p>
                   <p className="mt-0.5 text-[11px] text-[#63766f]">
@@ -666,7 +689,7 @@ export function AdminReceiptsPage() {
             <AdminDetail key={selected.id} item={selected} onRendered={onRendered} onError={setError} />
           </Panel>
         ) : (
-          <Panel eyebrow="Detail" title="Select a receipt" description="Choose a queue item to review its extraction and render a verdict.">
+          <Panel eyebrow="Receipt details" title="Choose a receipt" description="Select a receipt to check its details and choose a decision.">
             <p className="text-xs text-[#63766f]">No receipt selected.</p>
           </Panel>
         )}

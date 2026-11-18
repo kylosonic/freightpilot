@@ -215,7 +215,7 @@ CI runs the backend suite, Python dependency audit, console checks, product-site
 Production runs on Cloudflare and Neon PostgreSQL. The API uses Cloudflare
 Hyperdrive for its pooled database connection. The product site is served by
 Cloudflare Pages at `freightpilot.pages.dev`; the operations console is a
-static Cloudflare Worker at `freightpilot-ops.freightpilot.workers.dev`. From the repository root:
+Cloudflare Pages project at `freightpilot-ops.pages.dev`. From the repository root:
 
 ```powershell
 npm run cloudflare:deploy
@@ -224,7 +224,7 @@ npm run cloudflare:deploy
 The API deployment stages the FastAPI application and Alembic migration files,
 then deploys the Worker and its Hyperdrive binding. The web and console
 deployments build their static output first. The individual commands are
-`cloudflare:deploy:web`, `cloudflare:deploy:ops`, and `cloudflare:deploy:api`.
+`cloudflare:deploy:web`, `cloudflare:deploy:console`, and `cloudflare:deploy:api`.
 Production API secrets are managed as Cloudflare Worker secrets:
 
 ```powershell

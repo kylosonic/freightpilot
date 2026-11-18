@@ -36,9 +36,9 @@ export function RouteMap({ stops, riskZones = [] }: Props) {
 
   return (
     <Panel
-      eyebrow="Route map"
-      title="Spatial route review"
-      description="Visual map of the optimized route path with stop markers and distance segments."
+      eyebrow="Map"
+      title="See the route"
+      description="Check the path and delivery stops before saving or dispatching."
     >
       <div className="relative h-[420px] overflow-hidden border border-[#d7dfdc]">
         {validStops.length === 0 ? (
@@ -50,7 +50,7 @@ export function RouteMap({ stops, riskZones = [] }: Props) {
                 </svg>
               </div>
               <p className="text-sm font-semibold text-[#20372f]">No mapped stops yet</p>
-              <p>Run a route scenario with geocoded warehouse data to preview the path here.</p>
+              <p>Plan a route with warehouse locations to see it here.</p>
             </div>
           </div>
         ) : null}

@@ -34,7 +34,7 @@ export function RouteHistoryCard({ run }: { run: RouteOptimizationRunSummary }) 
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge
-              label={run.persist_requested ? 'persisted run' : 'draft run'}
+              label={run.persist_requested ? 'Saved route' : 'Draft plan'}
               tone={run.persist_requested ? 'success' : 'info'}
             />
             {run.unassigned_count > 0 ? (

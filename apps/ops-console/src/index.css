@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -16,9 +16,9 @@ body,
 
 body {
   margin: 0;
-  font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #202b36;
-  background: #f4f6f5;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #252522;
+  background: #ffffff;
 }
 
 ::selection {
@@ -166,36 +166,36 @@ textarea:focus-visible {
 /* ── Design tokens ──────────────────────────────────────── */
 
 :root {
-  --fp-black: #f4f6f5;
+  --fp-black: #f7f7f5;
   --fp-surface: #ffffff;
   --fp-elevated: #ffffff;
   --fp-surface-primary: #ffffff;
-  --fp-surface-nested: #f7f9f8;
-  --fp-surface-inset: #eef2f0;
-  --fp-border: #d7dfdc;
+  --fp-surface-nested: #f7f7f5;
+  --fp-surface-inset: #f1f1ef;
+  --fp-border: #e5e4e0;
   --fp-input: #ffffff;
-  --fp-muted: #63716c;
-  --fp-secondary: #51615b;
-  --fp-placeholder: #63716c;
-  --fp-primary: #202b36;
+  --fp-muted: #73736e;
+  --fp-secondary: #5f5f59;
+  --fp-placeholder: #73736e;
+  --fp-primary: #252522;
   --fp-white: #ffffff;
-  --fp-accent: #087f72;
-  --fp-accent-hover: #06675d;
+  --fp-accent: #176b5c;
+  --fp-accent-hover: #115449;
   --fp-success: #16856b;
   --fp-warning: #a15b00;
   --fp-danger: #b93a36;
   --fp-info: #17679b;
 
-  --fp-radius-sm: 3px;
-  --fp-radius-md: 4px;
-  --fp-radius-lg: 6px;
-  --fp-radius-xl: 6px;
-  --fp-radius-2xl: 6px;
-  --fp-radius-3xl: 6px;
-  --fp-radius-hero: 6px;
-  --fp-radius-panel: 4px;
+  --fp-radius-sm: 4px;
+  --fp-radius-md: 6px;
+  --fp-radius-lg: 8px;
+  --fp-radius-xl: 8px;
+  --fp-radius-2xl: 8px;
+  --fp-radius-3xl: 8px;
+  --fp-radius-hero: 8px;
+  --fp-radius-panel: 8px;
    --fp-radius-pill: 999px;
-  --fp-focus-ring: rgba(8, 127, 114, 0.5);
+  --fp-focus-ring: rgba(23, 107, 92, 0.35);
 
    --fp-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -205,14 +205,14 @@ textarea:focus-visible {
     @apply border;
     border-color: var(--fp-border);
     background-color: var(--fp-surface);
-    border-radius: 6px;
+    border-radius: var(--fp-radius-panel);
   }
 
   .fp-nested-surface {
     @apply border;
     border-color: var(--fp-border);
     background-color: var(--fp-elevated);
-    border-radius: 4px;
+    border-radius: var(--fp-radius-md);
   }
 
   .fp-pill {
@@ -228,7 +228,8 @@ textarea:focus-visible {
     border-color: var(--fp-border);
     background-color: var(--fp-input);
     color: var(--fp-primary);
-    border-radius: 4px;
+    border-radius: var(--fp-radius-md);
+    box-shadow: 0 1px 1px rgba(30, 30, 25, 0.02);
   }
 
   .fp-input::placeholder {
@@ -238,13 +239,13 @@ textarea:focus-visible {
   .fp-input:focus-visible {
     outline: none;
     border-color: var(--fp-accent);
-    box-shadow: 0 0 0 2px var(--fp-focus-ring);
+    box-shadow: 0 0 0 3px var(--fp-focus-ring);
   }
 
   /* Shared modal presentation — one overlay, one border-first frame. */
   .fp-dialog-overlay {
     @apply fixed inset-0 z-50 grid place-items-center p-4;
-    background: rgba(23, 33, 38, 0.42);
+    background: rgba(30, 30, 27, 0.32);
     animation: fadeIn 0.3s ease-out both;
   }
 
@@ -252,23 +253,34 @@ textarea:focus-visible {
     @apply w-full max-w-lg border p-6;
     border-color: var(--fp-border);
     background: #ffffff;
-    border-radius: 6px;
-    box-shadow: 0 18px 44px rgba(31, 46, 51, 0.16);
+    border-radius: var(--fp-radius-lg);
+    box-shadow: 0 18px 50px rgba(30, 30, 27, 0.13);
     animation: scaleIn 0.28s ease-out both;
   }
 
   /* Dense nested queue row shared by shipments, alerts, planning, providers. */
   .fp-row {
-    @apply border p-3;
+    @apply border-b py-4;
     border-color: var(--fp-border);
     background-color: var(--fp-surface);
-    border-radius: 4px;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease;
   }
 
   .fp-row:hover {
-    background-color: #f6f9f8;
-    border-color: #bfd0ca;
+    background-color: #fafaf9;
+    border-color: var(--fp-border);
+  }
+
+  .fp-action-primary {
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-full bg-[#176b5c] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#115449] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .fp-action-secondary {
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-full border border-[#e5e4e0] bg-white px-3.5 text-sm font-medium text-[#454540] transition-colors hover:border-[#d8d7d2] hover:bg-[#f7f7f5] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .fp-action-quiet {
+    @apply inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium text-[#5f5f59] transition-colors hover:bg-[#f1f1ef] hover:text-[#252522];
   }
 }
 

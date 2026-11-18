@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Sans } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import type { PropsWithChildren } from 'react';
 
 import { MotionProvider } from '@/components/site/motion-provider';
@@ -8,7 +8,7 @@ import { SiteChrome } from '@/components/site/site-chrome';
 
 import './globals.css';
 
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || 'https://freightpilot.pages.dev';
@@ -74,14 +74,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f4f6f5',
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en" className={dmSans.variable}>
+    <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
         <a href="#main-content" className="skip-to-content">
           Skip to content

@@ -151,7 +151,7 @@ describe('ActivationBanner checklist (upload page, NB-26 + NB-30.5)', () => {
     expect(strip(html)).toContain('0 of 5 categories is yours');
     expect(html).toContain('data-testid="milestone-chip-warehouses"');
     expect(html).toContain('data-testid="milestone-chip-fleet_assets"');
-    expect(strip(html)).toContain('next step');
+    expect(strip(html)).toContain('Next step');
   });
 
   it('renders the 80% pre-optimization copy with a /routes CTA at 5-of-5 (decision #8)', () => {

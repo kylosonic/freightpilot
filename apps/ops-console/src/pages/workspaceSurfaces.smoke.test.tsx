@@ -160,7 +160,7 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Enter control tower');
+    expect(html).toContain('Sign in');
     expect(html).toContain('Create company account');
     expect(html).not.toContain('Create initial admin (first-time setup)');
     // the signup CTA must carry the real product address — never a
@@ -190,7 +190,7 @@ describe('ops console surface smoke', () => {
     );
 
     expect(html).toContain('Upload a transfer receipt');
-    expect(html).toContain('Receipts and wallet');
+    expect(html).toContain('Payments');
   });
 
   it('renders the admin verification queue surface', () => {
@@ -202,8 +202,8 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Receipt verdicts');
-    expect(html).toContain('No receipts awaiting a verdict.');
+    expect(html).toContain('Review payment receipts');
+    expect(html).toContain('No payments are waiting for review.');
   });
 
   it('renders the admin reversals panel (Verified & reversible)', () => {
@@ -216,7 +216,7 @@ describe('ops console surface smoke', () => {
     );
 
     // React SSR escapes the ampersand in the panel title.
-    expect(html).toContain('Verified &amp; reversible');
+    expect(html).toContain('Verified payments');
     expect(html).toContain('No verified receipts.');
   });
 
@@ -245,7 +245,7 @@ describe('ops console surface smoke', () => {
 
     expect(html).toContain('data-testid="activation-banner"');
     expect(strip(html)).toContain('You&#x27;re 0% through onboarding');
-    expect(html).toContain('Unlocks after Milestone');
+    expect(html).toContain('Available after setup step');
     expect(html).toContain('Continue onboarding');
   });
 
@@ -279,13 +279,13 @@ describe('ops console surface smoke', () => {
 
     // Primary pair and secondary trio copy all render (source plan §5 Layer C).
     expect(html).toContain('Open exceptions');
-    expect(html).toContain('In-transit');
+    expect(html).toContain('In transit');
     expect(html).toContain('Forecast demand');
     expect(html).toContain('Simulated weather risk');
-    expect(html).toContain('Usage posture');
+    expect(html).toContain('Plan usage');
     // Seeded 0-of-5: forecast + weather render their locked milestone-5 variants.
     expect(html).toContain('>Locked<');
-    expect(html).toContain('Unlocks after Milestone 5.');
+    expect(html).toContain('Available after setup step 5.');
     expect(html).toContain('Continue onboarding');
   });
 
@@ -335,14 +335,14 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Route studio');
-    expect(html).toContain('Build, compare, and operationalize route scenarios');
-    expect(html).toContain('Optimize route');
-    expect(html).toContain('Schedule library');
-    expect(html).toContain('Scenario history');
+    expect(html).toContain('Plan and save routes');
+    expect(html).toContain('Enter delivery stops, compare options, and save the route your team will use.');
+    expect(html).toContain('Plan route');
+    expect(html).toContain('Saved routes');
+    expect(html).toContain('Recent route plans');
     // No activation data resolves to milestone 0 — the locked map placeholder renders.
-    expect(html).toContain('Unlocks after Milestone 5');
-    expect(html).toContain('No optimization history');
+    expect(html).toContain('Available after step 5');
+    expect(html).toContain('No route plans yet');
   });
 
   it('renders the account page with the escalation contact phone field (PROD-03)', () => {
@@ -354,9 +354,9 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(strip(html)).toContain('Escalation contact');
-    expect(html).toContain('placeholder="Escalation phone"');
-    expect(html).toContain('Save phone number');
+    expect(strip(html)).toContain('Support phone number');
+    expect(html).toContain('placeholder="Phone number"');
+    expect(html).toContain('Save phone');
   });
 
   it('renders the admin danger zone with typed-confirmation reset (disabled until match)', () => {
@@ -399,7 +399,7 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Load a workspace in the right operational order');
+    expect(html).toContain('Add your business data');
     expect(html).toContain('Recommended onboarding order');
     // Unseeded activation resolves to an unlocked free cap, so the action labels render.
     expect(html).toContain('Upload Warehouses');
@@ -418,9 +418,9 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Track movement health across every lane');
+    expect(html).toContain('Track every delivery');
     expect(html).toContain('Create a shipment');
-    expect(html).toContain('Shipment lifecycle');
+    expect(html).toContain('Shipment status');
     // Labeled field group uses the existing placeholder strings as labels.
     expect(html).toContain('Origin Code');
     expect(html).toContain('Destination Code');
@@ -435,8 +435,8 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Triage, assign, and close operational risk quickly');
-    expect(html).toContain('Create a manual operator alert');
+    expect(html).toContain('Resolve what needs attention');
+    expect(html).toContain('Add an issue');
     expect(html).toContain('Alert queue');
     expect(html).toContain('Scan for exceptions');
   });
@@ -450,7 +450,7 @@ describe('ops console surface smoke', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('Generate and approve replenishment actions');
+    expect(html).toContain('Plan inventory replenishment');
     expect(html).toContain('Run replenishment planning');
     expect(html).toContain('Horizon (weeks)');
     expect(html).toContain('Approval board');
@@ -493,10 +493,10 @@ describe('ops console surface smoke', () => {
     );
     authUserState.user = null;
 
-    expect(html).toContain('Carrier Integrations');
-    expect(html).toContain('Provider Keys');
+    expect(html).toContain('Connected services');
+    expect(html).toContain('Service keys');
     expect(html).toContain('Loading keys...');
-    expect(html).toContain('Securely Save Key');
+    expect(html).toContain('Save and test key');
   });
 
   it('renders the unauthorized fallback on the shared dark system without the light card', () => {

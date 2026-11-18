@@ -107,8 +107,7 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
 
       {receipt.status === 'escalated' ? (
         <p className="mt-2 border border-[#e7d1a8] bg-[#fffaf0] p-3 text-xs text-[#704500]">
-          Your receipt is under review. FreightPilot has a question about your recent receipt — please
-          watch your notifications for the details.
+          We are still checking this receipt. We will send you a message if we need more information.
         </p>
       ) : null}
     </article>
@@ -163,8 +162,8 @@ export function ReceiptsPage() {
     <div className="space-y-4">
       <PageHeader
         eyebrow="Payments"
-        title="Receipts and wallet"
-        description="Upload bank-transfer receipts — no invoice selection needed; the system routes each receipt to your oldest open invoice. Verification typically takes ≤24 hours."
+        title="Payments"
+        description="Upload your bank receipt and we will apply it to your oldest unpaid invoice. Most receipts are checked within 24 hours."
       />
 
       {statusMessage ? (
@@ -207,18 +206,18 @@ export function ReceiptsPage() {
 
         <Panel
           eyebrow="Wallet"
-          title="Surplus credits"
-          description="Overpayments within tolerance apply as credit to your next invoice automatically."
+          title="Credit balance"
+          description="If you pay a little extra, the credit goes toward your next invoice."
         >
           {wallet ? (
             <>
               <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#63766f]">Available balance</p>
-                <p className="mt-1 font-mono text-2xl font-medium tabular-nums text-[#172a24]">
+                <p className="text-xs text-[#73736e]">Available credit</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-[#252522]">
                   {wallet.available_etb} ETB
                 </p>
-                <p className="mt-1 text-xs text-[#63766f]">
-                  Wallet balance: +{wallet.available_etb} ETB applies to next invoice.
+                <p className="mt-1 text-xs text-[#73736e]">
+                  {wallet.available_etb} ETB will go toward your next invoice.
                 </p>
               </div>
               {wallet.credits.length > 0 ? (
@@ -237,11 +236,11 @@ export function ReceiptsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-xs text-[#63766f]">No surplus credits yet.</p>
+                <p className="mt-3 text-xs text-[#73736e]">No credit yet.</p>
               )}
             </>
           ) : (
-            <p className="text-xs text-[#63766f]">Wallet unavailable.</p>
+            <p className="text-xs text-[#73736e]">Your credit balance is unavailable right now.</p>
           )}
         </Panel>
       </div>
@@ -249,10 +248,10 @@ export function ReceiptsPage() {
       <Panel
         eyebrow="History"
         title="Your receipts"
-        description="Rejections show the reason and let you re-upload or dispute the decision."
+        description="If we cannot accept a receipt, you can read why, upload it again, or ask us to review it."
       >
         {receipts.length === 0 ? (
-          <p className="text-xs text-[#63766f]">No receipts uploaded yet.</p>
+          <p className="text-xs text-[#73736e]">No receipts uploaded yet.</p>
         ) : (
           <div className="space-y-2">
             {receipts.map((receipt) => (

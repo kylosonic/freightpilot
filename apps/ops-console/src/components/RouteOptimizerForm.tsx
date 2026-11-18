@@ -78,13 +78,13 @@ export function RouteOptimizerForm({
 
   return (
     <Panel
-      eyebrow="Route model"
-      title="Optimize a dispatch scenario"
-      description="Compare route assumptions, persist the winning option, and preview the resulting stop sequence without leaving the control surface."
+      eyebrow="Plan a route"
+      title="Plan the best delivery order"
+      description="Enter the stops, vehicle size, and travel costs. We will suggest a route and show the stop order."
     >
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={onSubmit} className="space-y-7">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Scenario identity</p>
+          <p className="col-span-full text-xs font-semibold text-[#73736e]">Route details</p>
           <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Route name
             <input className={fieldClassName} value={payload.route_name} onChange={(e) => setPayload({ ...payload, route_name: e.target.value })} />
@@ -100,7 +100,7 @@ export function RouteOptimizerForm({
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Route shape</p>
+          <p className="col-span-full text-xs font-semibold text-[#73736e]">Stops and vehicles</p>
           <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Deliveries
             <input className={fieldClassName} value={payload.deliveries} onChange={(e) => setPayload({ ...payload, deliveries: e.target.value })} placeholder="WH-002:80,WH-003:60" />
@@ -117,7 +117,7 @@ export function RouteOptimizerForm({
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Operating constraints</p>
+          <p className="col-span-full text-xs font-semibold text-[#73736e]">Plan settings</p>
           <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
             Speed km/h
             <input className={fieldClassName} type="number" step="0.1" value={payload.speed_kmh} onChange={(e) => setPayload({ ...payload, speed_kmh: Number(e.target.value) })} />
@@ -129,25 +129,25 @@ export function RouteOptimizerForm({
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <p className="col-span-full text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6b7d76]">Persistence options</p>
-          <label className="col-span-1 flex items-center gap-3 border border-[#d7dfdc] bg-[#f8faf9] px-3 py-3 text-xs text-[#40534c]">
+          <p className="col-span-full text-xs font-semibold text-[#73736e]">Save this plan</p>
+          <label className="col-span-1 flex items-center gap-3 py-1 text-xs text-[#454540]">
             <input type="checkbox" checked={payload.persist_schedule} onChange={(e) => setPayload({ ...payload, persist_schedule: e.target.checked })} />
-            Persist the optimized route as a saved schedule for the wider team.
+            Save this route so the rest of the team can use it.
           </label>
-          <label className="col-span-1 flex items-center gap-3 border border-[#d7dfdc] bg-[#f8faf9] px-3 py-3 text-xs text-[#40534c]">
+          <label className="col-span-1 flex items-center gap-3 py-1 text-xs text-[#454540]">
             <input type="checkbox" checked={payload.minimize_carbon_footprint} onChange={(e) => setPayload({ ...payload, minimize_carbon_footprint: e.target.checked })} />
-            Minimize Carbon Footprint
+            Choose the lower-emission route
           </label>
         </div>
 
         <button
           disabled={isSubmitting}
-          className="glow-ring inline-flex min-h-10 w-full items-center justify-center gap-2 bg-[#087f72] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+          className="fp-action-primary w-full"
         >
           {isSubmitting ? (
             <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
           ) : null}
-          {isSubmitting ? 'Optimizing scenario...' : 'Optimize route'}
+          {isSubmitting ? 'Planning route...' : 'Plan route'}
         </button>
       </form>
 
@@ -170,16 +170,16 @@ export function RouteOptimizerForm({
               { label: 'Duration', value: `${result.estimated_duration_min} min` },
               { label: 'Stops', value: String(result.stops.length) },
             ].map((stat) => (
-              <div key={stat.label} className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">{stat.label}</p>
-                <p className="mt-1.5 font-mono text-xl font-medium tabular-nums text-[#172a24]">{stat.value}</p>
+              <div key={stat.label} className="border-b border-[#efeeea] py-2">
+                <p className="text-xs text-[#73736e]">{stat.label}</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{stat.value}</p>
               </div>
             ))}
           </div>
 
           {previousResult ? (
-            <div className="border border-[#d7dfdc] bg-[#f8faf9] px-3 py-2.5 text-xs text-[#52665e]">
-              Compared with the previous scenario:{' '}
+            <div className="rounded-md bg-[#f7f7f5] px-3 py-2.5 text-xs text-[#5f5f59]">
+              Compared with your last plan:{' '}
               <span className={`font-mono font-semibold tabular-nums ${previousDistanceDelta != null && previousDistanceDelta < 0 ? 'text-[#14745f]' : 'text-[#20372f]'}`}>
                 {previousDistanceDelta == null ? 'N/A' : `${previousDistanceDelta >= 0 ? '+' : ''}${previousDistanceDelta.toFixed(1)} km`}
               </span>
@@ -193,7 +193,7 @@ export function RouteOptimizerForm({
           <RouteDecisionBrief explanation={result.decision_explanation} />
 
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6b7d76]">Stop sequence</p>
+            <p className="text-xs font-semibold text-[#73736e]">Stop sequence</p>
             <ul className="mt-2 grid gap-1 text-xs text-[#40534c]">
               {result.stops.map((stop) => (
                 <li key={stop.sequence} className="border-b border-[#e6ebe8] px-2 py-1.5 last:border-b-0">
