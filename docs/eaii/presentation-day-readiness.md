@@ -73,7 +73,7 @@ All four URLs returned **200** today:
 | Surface | URL | Status |
 |---|---|---|
 | Product website | https://freightpilot.pages.dev | 200 |
-| Operations console | https://freightpilot-ops.freightpilot.workers.dev | 200 |
+| Operations console | https://freightpilot-ops.pages.dev | 200 |
 | API (`/health`) | https://freightpilot-api.freightpilot.workers.dev/health | 200 — `{"status":"ok","db":"ok"}` |
 | EAII submission page | https://freightpilot-eaii.vercel.app | 200 |
 
@@ -199,7 +199,7 @@ the dialog before you confirm.
 (`index-DtmxP_mN.js`) containing both the `/drivers` route and the "Fleet & Cash"
 nav label, and the `DriversPage-svPNSIDN.js` chunk returns `200`.
 **The page is on the live console now**, at
-https://freightpilot-ops.freightpilot.workers.dev/drivers
+https://freightpilot-ops.pages.dev/drivers
 
 ---
 

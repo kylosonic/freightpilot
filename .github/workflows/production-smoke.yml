@@ -43,7 +43,7 @@ jobs:
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
             https://freightpilot.pages.dev/ > /dev/null
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
-            https://freightpilot-ops.freightpilot.workers.dev/ > /dev/null
+            https://freightpilot-ops.pages.dev/ > /dev/null
 
       - name: Dispatch fleet endpoint is published
         run: |
@@ -58,7 +58,7 @@ jobs:
             https://freightpilot.pages.dev/ > /dev/null
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
             --dump-header /tmp/freightpilot-ops-headers.txt \
-            https://freightpilot-ops.freightpilot.workers.dev/ > /dev/null
+            https://freightpilot-ops.pages.dev/ > /dev/null
           python3 - <<'PY'
           from pathlib import Path
 
@@ -76,7 +76,23 @@ jobs:
                   assert name in headers, (path, name)
           PY
 
-      - name: Legacy product address redirects
+      - name: Legacy addresses redirect to current sites
         run: |
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
-            https://freightpilot.freightpilot.workers.dev/)" = "301"
+          for url in \
+            https://freightpilot.freightpilot.workers.dev/ \
+            https://freightpilot-ops.freightpilot.workers.dev/login; do
+            test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              "$url")" = "301"
+          done
+          legacy_product_headers="$(curl --fail --silent --show-error \
+            --retry 3 --retry-delay 5 --dump-header - --output /dev/null \
+            https://freightpilot.freightpilot.workers.dev/)"
+          legacy_console_headers="$(curl --fail --silent --show-error \
+            --retry 3 --retry-delay 5 --dump-header - --output /dev/null \
+            https://freightpilot-ops.freightpilot.workers.dev/login)"
+          grep --quiet --ignore-case \
+            '^location: https://freightpilot.pages.dev/$' \
+            <<< "$legacy_product_headers"
+          grep --quiet --ignore-case \
+            '^location: https://freightpilot-ops.pages.dev/login$' \
+            <<< "$legacy_console_headers"
