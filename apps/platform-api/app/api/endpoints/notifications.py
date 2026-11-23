@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.security import get_current_membership
+from app.api.security import get_current_membership, require_roles
 from app.db.session import get_db
 from app.models.membership import OrganizationMembership
 from app.models.notification import Notification
+from app.models.user import User
+from app.schemas.auth import UserRole
 from app.schemas.billing import NotificationRead
 
 router = APIRouter()
@@ -31,6 +33,7 @@ def dismiss_notification(
     notification_id: str,
     db: Session = Depends(get_db),
     membership: OrganizationMembership = Depends(get_current_membership),
+    _: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
 ):
     notification = db.get(Notification, notification_id)
     if not notification or notification.organization_id != membership.organization_id:

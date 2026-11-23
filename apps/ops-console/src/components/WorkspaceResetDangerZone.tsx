@@ -78,7 +78,11 @@ export function WorkspaceResetDangerZone({
             </button>
             <button
               type="button"
-              disabled={typedWorkspaceName !== organizationName || resetMutation.isPending}
+              disabled={
+                !organizationName.trim() ||
+                typedWorkspaceName !== organizationName ||
+                resetMutation.isPending
+              }
               onClick={() => resetMutation.mutate(typedWorkspaceName)}
               className="min-h-8 border border-[#b93a36] bg-[#b93a36] px-3 text-xs font-semibold text-white transition hover:bg-[#9f2f2b] disabled:cursor-not-allowed disabled:opacity-50"
             >

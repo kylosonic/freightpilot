@@ -66,6 +66,7 @@ def apply_available_wallet_credits(
             WalletCredit.status == 'available',
         )
         .order_by(WalletCredit.created_at.asc())
+        .with_for_update()
     ).scalars().all()
     for row in rows:
         if remaining <= 0:
@@ -120,7 +121,7 @@ def void_wallet_credits_for_receipt(
             WalletCredit.organization_id == org.id,
             WalletCredit.receipt_id == receipt.id,
             WalletCredit.status == 'available',
-        )
+        ).with_for_update()
     ).scalars().all()
     total = Decimal('0.00')
     for row in rows:

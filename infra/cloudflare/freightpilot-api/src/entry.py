@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import time
 from json import dumps
 from pathlib import Path
 from typing import Any
@@ -18,20 +19,30 @@ if str(SRC_ROOT) not in sys.path:
 ENV_NAMES = (
     'ALLOWED_HOSTS',
     'APP_ENV',
+    'BLOCKED_PUBLIC_EMAIL_DOMAINS',
     'CBE_ACCOUNT_HOLDER',
     'CBE_ACCOUNT_NUMBER',
     'CONSOLE_URL',
     'CORS_ORIGINS',
+    'CSV_MAX_SIZE_BYTES',
     'DASHEN_ACCOUNT_HOLDER',
     'DASHEN_ACCOUNT_NUMBER',
     'JWT_ALGORITHM',
     'JWT_ACCESS_TOKEN_EXPIRE_MINUTES',
     'JWT_SECRET_KEY',
     'LOG_LEVEL',
+    'PLATFORM_ADMIN_EMAILS',
     'PROVIDER_KEY_ENCRYPTION_SECRET',
+    'PROVIDER_KEY_ENCRYPTION_PREVIOUS_SECRET',
+    'PROOF_ORG_QUOTA_BYTES',
+    'RECEIPT_ORG_QUOTA_BYTES',
+    'RECEIPT_MAX_SIZE_BYTES',
+    'RECEIPT_PENDING_LIMIT',
     'RECEIPT_EXTRACTION_BASE_URL',
     'RECEIPT_EXTRACTION_MODE',
     'RECEIPT_EXTRACTION_MODEL',
+    'REVERSAL_UNDO_WINDOW_HOURS',
+    'SMS_BRAND_NAME',
     'SMS_GATEWAY_API_KEY',
     'SMS_GATEWAY_URL',
     'SMS_SENDER_NAME',
@@ -40,9 +51,11 @@ ENV_NAMES = (
     'SMTP_HOST',
     'SMTP_PASSWORD',
     'SMTP_PORT',
+    'SMTP_TIMEOUT_SECONDS',
     'SMTP_USE_SSL',
     'SMTP_USE_TLS',
     'SMTP_USERNAME',
+    'WALLET_AUTO_FORWARD_TOLERANCE_ETB',
 )
 
 _apps: dict[str, Any] = {}
@@ -56,6 +69,21 @@ _DOWN_REVISION_TUPLE_RE = re.compile(
     r"^down_revision(?:\s*:\s*[^=]+)?\s*=\s*\(([^)]*)\)", re.MULTILINE
 )
 _QUOTED_VALUE_RE = re.compile(r"['\"]([^'\"]+)['\"]")
+
+_SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+}
+
+_RATE_RULES = {
+    '/api/v1/auth/login': (20, 60),
+    '/api/v1/auth/company-signup': (5, 3600),
+    '/api/v1/team/invitations/accept': (10, 60),
+}
 
 
 def _copy_worker_environment(binding: Any) -> None:
@@ -80,12 +108,47 @@ class _GroupDurableObject(DurableObject):
     """
 
     group = ''
+    _rate_windows: dict[str, tuple[int, int]]
 
     def __init__(self, state: Any, env: Any):
         super().__init__(state, env)
         self.env = env
+        self._rate_windows = {}
+
+    def _rate_limited(self, request: Any) -> Any | None:
+        path = _request_path(request.url)
+        rule = _RATE_RULES.get(path)
+        if rule is None or request.method == 'OPTIONS':
+            return None
+        limit, period = rule
+        headers = getattr(request, 'headers', None)
+        client_ip = headers.get('CF-Connecting-IP') if headers is not None else None
+        client_key = str(client_ip or 'unknown-client')
+        bucket = int(time.time()) // period
+        key = f'{path}:{client_key}'
+        previous_bucket, count = self._rate_windows.get(key, (bucket, 0))
+        count = 1 if previous_bucket != bucket else count + 1
+        self._rate_windows[key] = (bucket, count)
+        if count <= limit:
+            return None
+
+        from workers import Response
+
+        return Response(
+            dumps({'detail': 'Too many requests'}),
+            status=429,
+            headers={
+                **_SECURITY_HEADERS,
+                'content-type': 'application/json',
+                'cache-control': 'no-store',
+                'Retry-After': str(period),
+            },
+        )
 
     async def fetch(self, request: Any):
+        limited = self._rate_limited(request)
+        if limited is not None:
+            return limited
         app = _apps.get(self.group)
         if app is None:
             _copy_worker_environment(self.env)
@@ -195,6 +258,7 @@ class FreightPilotHealth(DurableObject):
                 }
             ),
             headers={
+                **_SECURITY_HEADERS,
                 'content-type': 'application/json',
                 'cache-control': 'no-store',
             },
@@ -284,6 +348,7 @@ class Default(WorkerEntrypoint):
             return Response(
                 OPENAPI_JSON,
                 headers={
+                    **_SECURITY_HEADERS,
                     'content-type': 'application/json',
                     'cache-control': 'public, max-age=300',
                 },
@@ -293,22 +358,15 @@ class Default(WorkerEntrypoint):
 
             return Response(
                 """<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>FreightPilot API</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
-  </head>
-  <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-    <script>SwaggerUIBundle({url:'/openapi.json',dom_id:'#swagger-ui'});</script>
-  </body>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FreightPilot API</title></head>
+  <body><h1>FreightPilot API</h1><p><a href="/openapi.json">Open the API schema</a></p></body>
 </html>""",
                 headers={
+                    **_SECURITY_HEADERS,
                     'content-type': 'text/html; charset=utf-8',
-                    'cache-control': 'public, max-age=300',
+                    'cache-control': 'no-store',
+                    'Content-Security-Policy': "default-src 'none'; style-src 'none'; base-uri 'none'; frame-ancestors 'none'",
                 },
             )
         binding_name, group = _route_group(request.url)

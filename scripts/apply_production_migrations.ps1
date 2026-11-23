@@ -76,6 +76,7 @@ Create one at https://console.neon.tech/app/settings/api-keys
 The key is used only by neonctl and is never written to disk.
 '@
 }
+$env:NEON_API_KEY = $NeonApiKey
 Ok "Neon API key present ($($NeonApiKey.Substring(0, [Math]::Min(4, $NeonApiKey.Length)))..., $($NeonApiKey.Length) chars)"
 
 if (-not $PythonExe) {
@@ -116,7 +117,7 @@ Ok 'neonctl ready'
 Step "Neon project '$ProjectName'"
 $orgArgs = @()
 if ($OrgId) { $orgArgs = @('--org-id', $OrgId) }
-$projectsRaw = & $neon projects list --api-key $NeonApiKey @orgArgs --output json 2>&1
+$projectsRaw = & $neon projects list @orgArgs --output json 2>&1
 if ($LASTEXITCODE -ne 0) { Die "projects list failed:`n$($projectsRaw | Select-Object -First 8)" }
 $projects = ConvertFrom-NeonJson $projectsRaw
 if (-not $projects) {
@@ -171,7 +172,7 @@ if (-not $project) {
 }
 Ok "project $($project.id) in $($project.region_id)"
 
-$raw = & $neon connection-string --project-id $project.id --pooled --api-key $NeonApiKey @orgArgs 2>&1
+$raw = & $neon connection-string --project-id $project.id --pooled @orgArgs 2>&1
 if ($LASTEXITCODE -ne 0) { Die "connection-string failed:`n$raw" }
 $pgUrl = ($raw | Where-Object { $_ -match '^postgres' } | Select-Object -First 1)
 if (-not $pgUrl) { $pgUrl = ("$raw" -split "`n" | Where-Object { $_ -match 'postgres' } | Select-Object -First 1) }
@@ -210,5 +211,7 @@ try {
     Write-Host ''
     Ok 'Migration applied. Code that depends on it may now be deployed.'
 } finally {
+    Remove-Item Env:\DATABASE_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
     Pop-Location
 }

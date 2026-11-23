@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.organization import Organization
 
 
 def _headers(token: str) -> dict[str, str]:
@@ -571,6 +575,44 @@ def test_deactivated_driver_capability_is_rejected(
     manifest = client.get(
         '/api/v1/dispatch/driver/manifest',
         headers={'X-Driver-Token': driver_token},
+    )
+    assert manifest.status_code == 403
+
+
+def test_driver_capability_is_rejected_when_workspace_is_inactive(
+    client: TestClient, signup_workspace, db_session: Session
+):
+    org_id, token = signup_workspace('Inactive Workspace')
+    first, _second, driver = _setup(client, token)
+    planned = client.post(
+        '/api/v1/dispatch/runs',
+        headers=_headers(token),
+        json={
+            'route_name': 'Inactive workspace run',
+            'plan_date': '2026-10-22',
+            'start_label': 'Main depot',
+            'start_latitude': 9.0,
+            'start_longitude': 38.75,
+            'order_ids': [first['id']],
+            'driver_id': driver['id'],
+            'vehicle_capacity_units': 100,
+            'max_stops': 10,
+        },
+    )
+    assert planned.status_code == 201, planned.text
+    link = client.post(
+        f"/api/v1/dispatch/runs/{planned.json()['id']}/driver-link",
+        headers=_headers(token),
+    )
+    assert link.status_code == 200, link.text
+
+    org = db_session.get(Organization, UUID(org_id))
+    org.is_active = False
+    db_session.commit()
+
+    manifest = client.get(
+        '/api/v1/dispatch/driver/manifest',
+        headers={'X-Driver-Token': link.json()['token']},
     )
     assert manifest.status_code == 403
 

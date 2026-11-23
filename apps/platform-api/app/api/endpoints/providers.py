@@ -125,7 +125,9 @@ def revoke_provider_key(
 def test_provider_key(
     key_id: str,
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(get_current_membership),
+    membership: OrganizationMembership = Depends(
+        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
+    ),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
 

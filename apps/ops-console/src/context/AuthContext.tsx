@@ -13,7 +13,6 @@ import {
   clearAuthStorage,
   endAuthSessionEstablishment,
   getStoredOrgId,
-  getStoredToken,
   onAuthSessionExpired,
   setStoredOrgId,
 } from '../services/api';
@@ -57,8 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Stored-token-only: the token is written by login/signup in
   // authApi; there is no /auth/token refresh path to consult.
   const getToken = useCallback(async (): Promise<string | null> => {
-    if (!getStoredToken()) return null;
-    return getLiveSessionToken();
+    try {
+      // Cookie-only sessions can still request a short-lived socket token;
+      // stored bearer sessions use the same exchange for least privilege.
+      return await getLiveSessionToken();
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {

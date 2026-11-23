@@ -48,10 +48,10 @@ describe('token storage', () => {
 
   it('clearAuthStorage removes both token and org id', () => {
     setStoredToken('tok-123');
-    localMock.setItem('supply_chain_org_id', 'org-9');
+    sessionMock.setItem('supply_chain_org_id', 'org-9');
     clearAuthStorage();
     expect(getStoredToken()).toBeNull();
-    expect(localMock.getItem('supply_chain_org_id')).toBeNull();
+    expect(sessionMock.getItem('supply_chain_org_id')).toBeNull();
   });
 });
 
@@ -115,7 +115,7 @@ describe('response interceptor — soft session reset (NB-59)', () => {
 
   it('clears auth storage and signals listeners on 401 with a stored token — no window redirect', async () => {
     setStoredToken('tok-401');
-    localMock.setItem('supply_chain_org_id', 'org-1');
+    sessionMock.setItem('supply_chain_org_id', 'org-1');
     const listener = vi.fn();
     const unsubscribe = onAuthSessionExpired(listener);
     rejectWith401();
@@ -123,7 +123,7 @@ describe('response interceptor — soft session reset (NB-59)', () => {
     await expect(api.get('/data')).rejects.toMatchObject({ response: { status: 401 } });
 
     expect(getStoredToken()).toBeNull();
-    expect(localMock.getItem('supply_chain_org_id')).toBeNull();
+    expect(sessionMock.getItem('supply_chain_org_id')).toBeNull();
     expect(listener).toHaveBeenCalledTimes(1);
     expect(assigns).toEqual([]);
     unsubscribe();
@@ -157,7 +157,7 @@ describe('response interceptor — soft session reset (NB-59)', () => {
     await expect(api.post('/auth/login', {})).rejects.toMatchObject({ response: { status: 401 } });
 
     expect(getStoredToken()).toBeNull();
-    expect(localMock.getItem('supply_chain_org_id')).toBeNull();
+    expect(sessionMock.getItem('supply_chain_org_id')).toBeNull();
     expect(listener).not.toHaveBeenCalled();
     expect(assigns).toEqual([]);
     unsubscribe();

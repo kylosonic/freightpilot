@@ -26,7 +26,7 @@ class ReceiptExtraction(UUIDTimestampMixin, Base):
     )
 
     receipt_id: Mapped[UUID] = mapped_column(
-        UUIDType, ForeignKey('payment_receipts.id', ondelete='CASCADE'), nullable=False
+        UUIDType, ForeignKey('payment_receipts.id', ondelete='CASCADE'), nullable=False, index=True
     )
     provider_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     key_id: Mapped[str | None] = mapped_column(String(64), nullable=True)

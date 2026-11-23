@@ -18,6 +18,7 @@ from app.api.security import (
     require_writable_workspace,
     resolve_scoped_organization,
     scoped_to_organization,
+    validate_uuid,
 )
 from app.core.config import settings
 from app.db.session import get_db
@@ -792,14 +793,16 @@ def create_driver_link(
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
     organization_id = _org(actor, writable)
-    run = organization_scoped_get(
-        db,
-        DispatchRun,
-        run_id,
-        organization_id,
-        not_found_detail='Dispatch run not found',
-        include_legacy_null=False,
-    )
+    run = db.execute(
+        select(DispatchRun)
+        .where(
+            DispatchRun.id == validate_uuid(run_id, detail='Invalid dispatch run identifier'),
+            DispatchRun.organization_id == organization_id,
+        )
+        .with_for_update()
+    ).scalar_one_or_none()
+    if run is None:
+        raise HTTPException(status_code=404, detail='Dispatch run not found')
     if run.driver_id is None:
         raise HTTPException(status_code=409, detail='Assign a driver before creating a driver link')
     driver = organization_scoped_get(
@@ -844,14 +847,16 @@ def close_dispatch_cash(
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
     organization_id = _org(actor, writable)
-    run = organization_scoped_get(
-        db,
-        DispatchRun,
-        run_id,
-        organization_id,
-        not_found_detail='Dispatch run not found',
-        include_legacy_null=False,
-    )
+    run = db.execute(
+        select(DispatchRun)
+        .where(
+            DispatchRun.id == validate_uuid(run_id, detail='Invalid dispatch run identifier'),
+            DispatchRun.organization_id == organization_id,
+        )
+        .with_for_update()
+    ).scalar_one_or_none()
+    if run is None:
+        raise HTTPException(status_code=404, detail='Dispatch run not found')
     if run.status == 'closed' or run.cash_closed_at is not None:
         raise HTTPException(status_code=409, detail='Cash is already closed for this run')
     orders = (
@@ -967,8 +972,11 @@ def _driver_context(
         raise HTTPException(status_code=401, detail='Invalid driver token') from None
     run = db.get(DispatchRun, run_id)
     driver = db.get(Driver, driver_id)
+    organization = db.get(Organization, organization_id)
     if (
-        run is None
+        organization is None
+        or not organization.is_active
+        or run is None
         or driver is None
         or run.organization_id != organization_id
         or driver.organization_id != organization_id
@@ -1010,6 +1018,11 @@ def driver_update_status(
         raise HTTPException(status_code=404, detail='Delivery order not found')
     if order.status in {'cancelled', 'delivered'}:
         raise HTTPException(status_code=409, detail='This delivery is already terminal')
+    if payload.status == 'failed' and order.cash_declared_at is not None:
+        raise HTTPException(
+            status_code=409,
+            detail='Cash was already declared. Complete delivery or reverse the cash record before failing it.',
+        )
     order.status = payload.status
     order.completed_at = datetime.now(UTC) if payload.status in _TERMINAL_ORDER_STATUSES else None
     if payload.note:

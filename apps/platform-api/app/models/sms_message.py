@@ -28,7 +28,7 @@ class SmsMessage(UUIDTimestampMixin, Base):
         UUIDType, ForeignKey('organizations.id', ondelete='CASCADE'), index=True, nullable=False
     )
     receipt_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('payment_receipts.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('payment_receipts.id', ondelete='SET NULL'), nullable=True, index=True
     )
     to_phone: Mapped[str] = mapped_column(String(24), nullable=False)
     body: Mapped[str] = mapped_column(String(200), nullable=False)

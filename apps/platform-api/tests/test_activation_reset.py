@@ -5,6 +5,7 @@ resets derived + stored activation state, clears pitch crossings, audits
 with the admin user + timestamp.
 """
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -12,6 +13,8 @@ from sqlalchemy.orm import Session
 
 from app.models.audit_event import AuditEvent
 from app.models.membership import OrganizationMembership
+from app.models.route import RouteSchedule, RouteStop
+from app.models.shipment import Shipment
 from app.models.threshold_crossing import ThresholdCrossing
 from app.models.user import User
 from app.models.warehouse import Warehouse
@@ -142,6 +145,55 @@ def test_reset_wipes_real_uploads_and_reseeds_sample(
     counts = sample_row_counts(org_id)
     for category in ('warehouses', 'items', 'fleet_assets', 'inventory', 'orders'):
         assert counts[category] > 0
+
+
+def test_reset_handles_routes_and_shipments_referencing_sample_rows(
+    client, db_session: Session, signup_workspace, seed_csv_path
+):
+    org_id, token = signup_workspace(name='Dependency Reset Co')
+    org_uuid = UUID(org_id)
+    warehouses = db_session.execute(
+        select(Warehouse).where(Warehouse.organization_id == org_uuid).order_by(Warehouse.code)
+    ).scalars().all()
+    from app.models.item import Item
+
+    item = db_session.execute(select(Item).where(Item.organization_id == org_uuid)).scalars().first()
+    assert item is not None and len(warehouses) >= 2
+    route = RouteSchedule(
+        organization_id=org_uuid,
+        route_name='Dependency Route',
+        schedule_date=datetime.now(UTC).date(),
+        start_warehouse_id=warehouses[0].id,
+        vehicle_capacity_units=100,
+        status='active',
+    )
+    db_session.add(route)
+    db_session.flush()
+    db_session.add(
+        RouteStop(route_schedule_id=route.id, sequence=1, warehouse_id=warehouses[1].id, load_units=10)
+    )
+    shipment = Shipment(
+        organization_id=org_uuid,
+        shipment_no='SHP-DEPENDENCY-RESET',
+        route_schedule_id=route.id,
+        origin_warehouse_id=warehouses[0].id,
+        destination_warehouse_id=warehouses[1].id,
+        item_id=item.id,
+        quantity_units=10,
+        status='planned',
+    )
+    db_session.add(shipment)
+    db_session.commit()
+
+    response = _reset(client, token, 'Dependency Reset Co')
+    assert response.status_code == 200, response.text
+    db_session.expire_all()
+    assert db_session.execute(
+        select(Shipment).where(Shipment.organization_id == org_uuid)
+    ).scalars().all() == []
+    assert db_session.execute(
+        select(RouteSchedule).where(RouteSchedule.organization_id == org_uuid)
+    ).scalars().all() == []
 
 
 def test_reset_milestones_back_to_zero(client, signup_workspace, seed_csv_path, upload_csv):

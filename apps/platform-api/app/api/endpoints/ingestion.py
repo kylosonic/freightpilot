@@ -185,9 +185,10 @@ def ingest_orders_csv(
 
 
 @router.post('/telematics', response_model=TelematicsResult)
-async def ingest_telematics(
+def ingest_telematics(
     payload: TelematicsPayload,
     db: Session = Depends(get_db),
+    actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
     """Ingest a real-time telematics data point for a fleet asset.
@@ -226,9 +227,10 @@ async def ingest_telematics(
 
 
 @router.post('/iot-telemetry', response_model=IoTResult)
-async def ingest_iot_telemetry(
+def ingest_iot_telemetry(
     payload: IoTColdChainPayload,
     db: Session = Depends(get_db),
+    actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
     # resolve the SKU inside the caller's tenant, and stamp any alert it
@@ -260,7 +262,7 @@ async def ingest_iot_telemetry(
                 f'threshold of {item.temperature_threshold}°C.'
             ),
             related_entity_type='item',
-            related_entity_id=item.id,
+            related_entity_id=str(item.id),
         )
         db.add(alert)
         db.commit()

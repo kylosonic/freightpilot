@@ -60,6 +60,20 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode('utf-8')).hexdigest()
 
 
+def _raise_account_role_floor(user: User, membership_role: str) -> None:
+    """Keep the global role ceiling at least as high as a workspace role.
+
+    The account role is an upper bound used by ``require_org_roles``; it is not
+    tenant authority. Without this floor a viewer could be promoted in one
+    workspace but remain permanently capped at viewer everywhere.
+    """
+    required = _ROLE_RANK.get(membership_role)
+    current = _ROLE_RANK.get(str(user.role), 0)
+    if required is not None and required > current:
+        user.role = UserRole(membership_role)
+        user.token_version += 1
+
+
 def _utc(value: datetime) -> datetime:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
@@ -135,11 +149,6 @@ def create_invitation(
         ).scalar_one_or_none()
         if existing_membership is not None:
             raise HTTPException(status_code=409, detail='This person is already in the workspace')
-        if _ROLE_RANK[payload.role.value] > _ROLE_RANK.get(str(existing_user.role), 0):
-            raise HTTPException(
-                status_code=409,
-                detail='The existing account role is lower than the invited role',
-            )
 
     pending = db.execute(
         select(OrganizationInvitation).where(
@@ -261,17 +270,14 @@ def accept_invitation(
     if user is not None:
         if not user.is_active or not verify_password(payload.password, user.password_hash):
             raise HTTPException(status_code=401, detail='Existing account password is incorrect')
-        if _ROLE_RANK[invitation.role] > _ROLE_RANK.get(str(user.role), 0):
-            raise HTTPException(
-                status_code=409,
-                detail='The existing account role is lower than the invited role',
-            )
+        _raise_account_role_floor(user, invitation.role)
     else:
-        username_exists = db.execute(select(User.id).where(User.username == payload.username)).first()
+        username = payload.username.strip().lower()
+        username_exists = db.execute(select(User.id).where(User.username == username)).first()
         if username_exists is not None:
             raise HTTPException(status_code=409, detail='Username already exists')
         user = User(
-            username=payload.username,
+            username=username,
             email=invitation.email,
             full_name=payload.full_name,
             password_hash=hash_password(payload.password),
@@ -288,15 +294,20 @@ def accept_invitation(
         )
     ).scalar_one_or_none()
     if already_member is not None:
-        raise HTTPException(status_code=409, detail='This person is already in the workspace')
-
-    membership = OrganizationMembership(
-        organization_id=invitation.organization_id,
-        user_id=user.id,
-        role=invitation.role,
-        is_active=True,
-    )
-    db.add(membership)
+        if already_member.is_active:
+            raise HTTPException(status_code=409, detail='This person is already in the workspace')
+        membership = already_member
+        membership.role = invitation.role
+        membership.is_active = True
+    else:
+        membership = OrganizationMembership(
+            organization_id=invitation.organization_id,
+            user_id=user.id,
+            role=invitation.role,
+            is_active=True,
+        )
+        db.add(membership)
+    _raise_account_role_floor(user, invitation.role)
     invitation.status = 'accepted'
     invitation.accepted_at = datetime.now(UTC)
     invitation.accepted_by_user_id = user.id
@@ -346,6 +357,8 @@ def update_member_role(
 
     target.role = payload.role.value
     user = db.get(User, target.user_id)
+    if user is not None:
+        _raise_account_role_floor(user, target.role)
     record_audit_event(
         db,
         event_type='organization.member_role_changed',
@@ -376,6 +389,8 @@ def deactivate_member(
     if target.user_id == actor.id:
         raise HTTPException(status_code=409, detail='You cannot remove yourself')
     if target.role == 'owner':
+        if membership.role != 'owner':
+            raise HTTPException(status_code=403, detail='Only an owner can remove an owner')
         owner_count = db.execute(
             select(func.count(OrganizationMembership.id)).where(
                 OrganizationMembership.organization_id == membership.organization_id,

@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = 'HS256'
     jwt_access_token_expire_minutes: int = 120
     provider_key_encryption_secret: str = ''
+    provider_key_encryption_previous_secret: str = ''
+    platform_admin_emails: Annotated[list[str], NoDecode] = []
     cors_origins: Annotated[list[str], NoDecode] = DEFAULT_CORS_ORIGINS.copy()
     allowed_hosts: Annotated[list[str], NoDecode] = [
         'localhost',
@@ -71,6 +73,8 @@ class Settings(BaseSettings):
     receipt_extraction_base_url: str = 'https://api.openai.com/v1'
     receipt_extraction_model: str = 'gpt-4o-mini'
     receipt_max_size_bytes: int = 5 * 1024 * 1024
+    receipt_org_quota_bytes: int = 100 * 1024 * 1024
+    receipt_pending_limit: int = 25
     # CSV ingestion was unbounded — an authenticated
     # operator could stream an arbitrarily large body into memory.
     csv_max_size_bytes: int = 10 * 1024 * 1024
@@ -133,36 +137,55 @@ class Settings(BaseSettings):
             raise ValueError('RECEIPT_EXTRACTION_BASE_URL must start with http:// or https:// in real mode')
         return self.receipt_extraction_mode
 
+    @staticmethod
+    def _is_placeholder_bank_value(value: str) -> bool:
+        normalized = value.strip().lower()
+        return normalized.startswith('change-me') or 'placeholder' in normalized
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        if self.app_env in ('development', 'test'):
+            return list(self.cors_origins)
+        from urllib.parse import urlparse
+
+        filtered: list[str] = []
+        for origin in self.cors_origins:
+            parsed = urlparse(origin)
+            if parsed.hostname in ('localhost', '127.0.0.1', '::1'):
+                continue
+            filtered.append(origin)
+        return filtered
+
     @property
     def effective_cbe_account_holder(self) -> str:
         if self.app_env in ('development', 'test'):
             return self.cbe_account_holder
-        if not self.cbe_account_holder:
-            raise ValueError('CBE_ACCOUNT_HOLDER is required in non-dev environments')
+        if not self.cbe_account_holder or self._is_placeholder_bank_value(self.cbe_account_holder):
+            raise ValueError('CBE_ACCOUNT_HOLDER is required and must not be a placeholder in non-dev environments')
         return self.cbe_account_holder
 
     @property
     def effective_cbe_account_number(self) -> str:
         if self.app_env in ('development', 'test'):
             return self.cbe_account_number
-        if not self.cbe_account_number:
-            raise ValueError('CBE_ACCOUNT_NUMBER is required in non-dev environments')
+        if not self.cbe_account_number or self._is_placeholder_bank_value(self.cbe_account_number):
+            raise ValueError('CBE_ACCOUNT_NUMBER is required and must not be a placeholder in non-dev environments')
         return self.cbe_account_number
 
     @property
     def effective_dashen_account_holder(self) -> str:
         if self.app_env in ('development', 'test'):
             return self.dashen_account_holder
-        if not self.dashen_account_holder:
-            raise ValueError('DASHEN_ACCOUNT_HOLDER is required in non-dev environments')
+        if not self.dashen_account_holder or self._is_placeholder_bank_value(self.dashen_account_holder):
+            raise ValueError('DASHEN_ACCOUNT_HOLDER is required and must not be a placeholder in non-dev environments')
         return self.dashen_account_holder
 
     @property
     def effective_dashen_account_number(self) -> str:
         if self.app_env in ('development', 'test'):
             return self.dashen_account_number
-        if not self.dashen_account_number:
-            raise ValueError('DASHEN_ACCOUNT_NUMBER is required in non-dev environments')
+        if not self.dashen_account_number or self._is_placeholder_bank_value(self.dashen_account_number):
+            raise ValueError('DASHEN_ACCOUNT_NUMBER is required and must not be a placeholder in non-dev environments')
         return self.dashen_account_number
 
     @property
@@ -216,6 +239,13 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [domain.strip().lower() for domain in value.split(',') if domain.strip()]
         return [domain.lower() for domain in value]
+
+    @field_validator('platform_admin_emails', mode='before')
+    @classmethod
+    def parse_platform_admin_emails(cls, value: list[str] | str) -> list[str]:
+        if isinstance(value, str):
+            return [email.strip().lower() for email in value.split(',') if email.strip()]
+        return [email.strip().lower() for email in value if email and email.strip()]
 
 
 settings = Settings()

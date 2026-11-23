@@ -109,6 +109,7 @@ class VerdictRequest(BaseModel):
     verdict: Verdict
     note: str | None = Field(default=None, max_length=512)
     admin_note: str | None = Field(default=None, max_length=512)
+    verified_amount_etb: Decimal | None = Field(default=None, gt=0)
     trusted_payer_action: TrustedPayerAction | None = None
     large_surplus_decision: LargeSurplusDecision | None = None
     partial_credit_amount_etb: Decimal | None = None

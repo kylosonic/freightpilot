@@ -32,7 +32,26 @@ __all__ = [
     'organization_scoped_get',
     'resolve_scoped_organization',
     'scoped_to_organization',
+    'validate_uuid',
 ]
+
+
+def validate_uuid(value: str | UUID, *, detail: str = 'Invalid identifier') -> UUID:
+    """Return a UUID or raise a client-safe 422 for malformed identifiers.
+
+    SQLAlchemy's PostgreSQL UUID binder raises a ValueError while processing a
+    malformed string, which otherwise escapes as an HTTP 500. Every endpoint
+    that accepts an id from a path/header can route through this helper.
+    """
+    if isinstance(value, UUID):
+        return value
+    try:
+        return UUID(str(value))
+    except (TypeError, ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=detail,
+        ) from None
 
 
 def actor_organization_id(actor: User | None, db: Session) -> UUID | None:
@@ -126,7 +145,8 @@ def organization_scoped_get(
             detail='Active organization membership required',
         )
 
-    row = db.get(model, entity_id)
+    entity_uuid = validate_uuid(entity_id, detail=not_found_detail)
+    row = db.get(model, entity_uuid)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=not_found_detail)
     row_org = row.organization_id

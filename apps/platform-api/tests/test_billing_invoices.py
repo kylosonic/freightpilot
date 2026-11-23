@@ -214,6 +214,51 @@ def test_at_most_one_invoice_per_period(db_session: Session):
     assert len(rows) == 1
 
 
+def test_renewal_uses_current_subscription_tier(db_session: Session):
+    org = _org(db_session, tier='starter')
+    _ended_trial(
+        db_session,
+        org,
+        'starter',
+        started=datetime(2026, 7, 24, 10, 0, tzinfo=UTC),
+        ended=datetime(2026, 7, 31, 10, 0, tzinfo=UTC),
+    )
+    first = invoices.try_issue_invoice(db_session, org, datetime(2026, 8, 1, tzinfo=UTC))
+    assert first is not None
+    first.balance_remaining_etb = Decimal('0.00')
+    first.status = 'paid'
+    org.subscription_tier = 'scale'
+    db_session.commit()
+
+    renewal = invoices.try_issue_invoice(db_session, org, datetime(2026, 9, 2, tzinfo=UTC))
+    assert renewal is not None
+    assert renewal.id != first.id
+    assert renewal.tier == 'scale'
+    assert renewal.flat_amount_etb == Decimal('10000.00')
+
+
+def test_plan_change_invoice_is_immediate_and_unique(db_session: Session):
+    org = _org(db_session, tier='starter')
+    first = invoices.issue_plan_change_invoice(
+        db_session,
+        org,
+        'enterprise',
+        datetime(2026, 8, 15, 10, 0, tzinfo=UTC),
+    )
+    second = invoices.issue_plan_change_invoice(
+        db_session,
+        org,
+        'enterprise',
+        datetime(2026, 8, 15, 11, 0, tzinfo=UTC),
+    )
+    db_session.commit()
+
+    assert first.tier == 'enterprise'
+    assert first.total_etb == Decimal('45000.00')
+    assert first.due_date == date(2026, 8, 15)
+    assert second.billing_period_start == first.billing_period_start + timedelta(days=1)
+
+
 def test_first_invoice_grace_3_subsequent_0(db_session: Session):
     org = _org(db_session)
     _ended_trial(

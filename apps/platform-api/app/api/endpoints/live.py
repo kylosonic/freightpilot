@@ -8,7 +8,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy import asc, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
+from starlette.concurrency import run_in_threadpool
 
 from app.api.security import get_current_user_from_token, scoped_to_organization
 from app.core.observability import app_metrics
@@ -37,7 +38,7 @@ def _live_principal(token: str, db: Session):
     organization_claim = payload.get('org_id')
     if not organization_claim:
         raise ValueError('Organization-scoped token required')
-    user = get_current_user_from_token(token, db)
+    user = get_current_user_from_token(token, db, token_type='ws')
     membership = MembershipRepository(db).get_active_membership(
         user.id,
         org_id=organization_claim,
@@ -121,6 +122,7 @@ def _gather_snapshot(db: Session, organization_id: UUID | None = None) -> dict:
         )
     )
     order_stmt = scoped_to_organization(order_stmt, HistoricalOrder, organization_id)
+    order_stmt = order_stmt.limit(2000)
     rows = db.execute(order_stmt).all()
 
     forecast_rows = []
@@ -300,10 +302,17 @@ async def websocket_updates(
     db: Session = Depends(get_db),
 ):
     await websocket.accept()
-    auth_msg = await websocket.receive_text()
+    try:
+        auth_msg = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
+    except TimeoutError:
+        await websocket.close(code=1008, reason='Authentication timeout')
+        return
     try:
         parsed = json.loads(auth_msg)
     except json.JSONDecodeError:
+        await websocket.close(code=1008, reason='Invalid auth payload')
+        return
+    if not isinstance(parsed, dict):
         await websocket.close(code=1008, reason='Invalid auth payload')
         return
 
@@ -312,28 +321,44 @@ async def websocket_updates(
         await websocket.close(code=1008, reason='Missing token')
         return
 
+    engine = db.get_bind()
+
+    def _new_session() -> Session:
+        return sessionmaker(bind=engine, autoflush=False, autocommit=False)()
+
+    def _snapshot(organization_id):
+        tick_db = _new_session()
+        try:
+            return _gather_snapshot(tick_db, organization_id), _live_principal(token, tick_db)[1]
+        finally:
+            tick_db.close()
+
     try:
-        _user, membership, _organization = _live_principal(token, db)
+        membership = _live_principal(token, db)[1]
     except Exception:
         await websocket.close(code=1008, reason='Invalid, expired, or unauthorized token')
         return
+    finally:
+        # Release the request session before the long-lived socket loop starts.
+        db.close()
     organization_id = membership.organization_id
 
     app_metrics.record_ws_open()
 
     try:
         while True:
-            # A socket is not a permanent capability. Revalidate the user,
-            # membership, organization, and token expiry before every snapshot
-            # so a revoked member cannot keep receiving tenant data.
-            db.expire_all()
             try:
-                _live_principal(token, db)
+                payload, current_membership = await run_in_threadpool(_snapshot, organization_id)
             except Exception:
                 await websocket.close(code=1008, reason='Session is no longer authorized')
                 return
-            payload = _gather_snapshot(db, organization_id)
+            if current_membership.organization_id != organization_id:
+                await websocket.close(code=1008, reason='Session is no longer authorized')
+                return
             await websocket.send_json(payload)
-            await asyncio.sleep(5)
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
+            except TimeoutError:
+                continue
     except WebSocketDisconnect:
         return

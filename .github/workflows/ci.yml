@@ -17,6 +17,9 @@ on:
       - master
       - main
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -30,10 +33,10 @@ jobs:
         working-directory: apps/platform-api
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -45,16 +48,20 @@ jobs:
           # CI installs exactly what Docker installs.
           python -m pip install --require-hashes -r requirements.lock
           python -m pip install --no-deps -e .
-          python -m pip install pytest pytest-timeout pytest-xdist ruff
+          python -m pip install uv==0.13.8
+          uv sync --extra dev --locked
 
       - name: Run backend tests
-        run: pytest -q --timeout=120 --timeout-method=thread -n 4
+        run: .venv/bin/pytest -q --timeout=120 --timeout-method=thread -n 4
 
       - name: Lint backend (ruff correctness gate)
         # The legacy tree still carries formatting/unused-import debt. This
         # gate blocks undefined names and syntax errors; formatting cleanup is
         # tracked separately so it cannot mask a runtime failure.
-        run: ruff check app --select E9,F63,F7,F82
+        run: .venv/bin/ruff check app tests --select E9,F63,F7,F82
+
+      - name: Compile Cloudflare Worker sources
+        run: python -m py_compile ../../infra/cloudflare/freightpilot-api/src/entry.py ../../infra/cloudflare/freightpilot-api/src/worker_app.py
 
   backend-dependency-audit:
     name: backend-dependency-audit
@@ -64,10 +71,10 @@ jobs:
         working-directory: apps/platform-api
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
 
@@ -76,15 +83,93 @@ jobs:
           python -m pip install --upgrade pip pip-audit
           pip-audit -r requirements.lock --strict --progress-spinner off
 
+  backend-postgres:
+    name: backend-postgres
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: freightpilot_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d freightpilot_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: apps/platform-api
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/freightpilot_ci
+      APP_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip uv==0.13.8
+          uv sync --extra dev --locked
+
+      - name: Apply migrations to PostgreSQL
+        run: .venv/bin/alembic upgrade head
+
+      - name: Verify PostgreSQL schema revision and UUID comparisons
+        run: |
+          .venv/bin/python - <<'PY'
+          import os
+          from sqlalchemy import create_engine, text
+          engine = create_engine(os.environ['DATABASE_URL'])
+          with engine.connect() as conn:
+              revision = conn.execute(text('select version_num from alembic_version')).scalar_one()
+              assert revision == '20261122_0027', revision
+              conn.execute(text("select '00000000-0000-0000-0000-000000000001'::uuid = '00000000-0000-0000-0000-000000000001'::uuid"))
+          print('postgres schema smoke passed:', revision)
+          PY
+
+  worker-dependency-audit:
+    name: worker-dependency-audit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Audit locked Worker dependency versions
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          python - <<'PY'
+          import tomllib
+          from pathlib import Path
+          lock = tomllib.loads(Path('infra/cloudflare/freightpilot-api/pylock.toml').read_text())
+          rows = [f"{pkg['name']}=={pkg['version']}" for pkg in lock['packages'] if pkg.get('name') and pkg.get('version')]
+          Path('.worker-requirements.txt').write_text('\n'.join(rows) + '\n')
+          print(f'wrote {len(rows)} Worker packages for audit')
+          PY
+          pip-audit -r .worker-requirements.txt --strict --progress-spinner off
+
   ops-console:
     name: ops-console
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -118,10 +203,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -150,10 +235,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm

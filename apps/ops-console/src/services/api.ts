@@ -6,14 +6,16 @@ const ORG_ID_KEY = 'supply_chain_org_id';
 const TOKEN_KEY = 'supply_chain_token';
 
 export function getStoredOrgId(): string | null {
-  return localStorage.getItem(ORG_ID_KEY);
+  if (typeof sessionStorage === 'undefined') return null;
+  return sessionStorage.getItem(ORG_ID_KEY);
 }
 
 export function setStoredOrgId(orgId: string | null): void {
+  if (typeof sessionStorage === 'undefined') return;
   if (orgId) {
-    localStorage.setItem(ORG_ID_KEY, orgId);
+    sessionStorage.setItem(ORG_ID_KEY, orgId);
   } else {
-    localStorage.removeItem(ORG_ID_KEY);
+    sessionStorage.removeItem(ORG_ID_KEY);
   }
 }
 
@@ -42,7 +44,9 @@ export function setStoredToken(token: string | null): void {
 }
 
 export function clearAuthStorage(): void {
-  localStorage.removeItem(ORG_ID_KEY);
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(ORG_ID_KEY);
+  }
   setStoredToken(null);
 }
 

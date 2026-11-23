@@ -24,7 +24,7 @@ describe('contact page phase 5 (NB-46.6, NB-43)', () => {
   });
 
   it('still renders the email card and the message form', () => {
-    expect(html).toContain('nahomgwmichael@gmail.com');
+    expect(html).toContain('support@freightpilot.app');
     expect(html).toContain('Send a message');
   });
 

@@ -15,7 +15,7 @@ from app.db.migration_status import (
 
 
 def test_repository_head_is_the_pinned_migration():
-    assert repository_migration_head() == '20261107_0026'
+    assert repository_migration_head() == '20261122_0027'
 
 
 def test_unmigrated_database_has_no_revision():
@@ -28,9 +28,9 @@ def test_applied_revision_is_read_from_the_database():
     engine = create_engine('sqlite+pysqlite:///:memory:')
     with engine.begin() as connection:
         connection.execute(text('CREATE TABLE alembic_version (version_num VARCHAR(32))'))
-        connection.execute(text("INSERT INTO alembic_version VALUES ('20261107_0026')"))
+        connection.execute(text("INSERT INTO alembic_version VALUES ('20261122_0027')"))
     with engine.connect() as connection:
-        assert database_migration_head(connection) == '20261107_0026'
+        assert database_migration_head(connection) == '20261122_0027'
 
 
 def test_migration_head_supports_merge_migrations(tmp_path):
@@ -93,7 +93,7 @@ def test_schema_endpoint_reports_pending_without_exposing_connection_details(cli
     assert response.json() == {
         'status': 'pending',
         'current': None,
-        'expected': '20261107_0026',
+        'expected': '20261122_0027',
     }
     assert 'sqlite' not in response.text.lower()
 
@@ -123,5 +123,5 @@ def test_production_smoke_requires_the_live_schema_revision():
     ).read_text(encoding='utf-8')
     assert "health['schema'] == 'current'" in workflow
     assert "health['revision'] == health['expected_revision']" in workflow
-    assert "health['revision'] == '20261107_0026'" in workflow
+    assert "health['revision'] == '20261122_0027'" in workflow
     assert '/api/v1/health/schema' in workflow

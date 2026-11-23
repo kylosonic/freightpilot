@@ -32,7 +32,9 @@ export function clearLiveSession(): void {
   }
 }
 
-export function useLiveUpdates({ getToken, enabled, onMessage }: Props) {  const socketRef = useRef<WebSocket | null>(null);
+export function useLiveUpdates({ getToken, enabled, onMessage }: Props) {
+  const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
@@ -75,12 +77,24 @@ export function useLiveUpdates({ getToken, enabled, onMessage }: Props) {  const
           // ignore malformed payloads
         }
       };
+
+      socket.onclose = () => {
+        if (cancelled || reconnectTimerRef.current !== null) return;
+        reconnectTimerRef.current = window.setTimeout(() => {
+          reconnectTimerRef.current = null;
+          void connect();
+        }, 3000);
+      };
     }
 
-    connect();
+    void connect();
 
     return () => {
       cancelled = true;
+      if (reconnectTimerRef.current !== null) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       socketRef.current?.close();
     };
   }, [enabled, getToken]);

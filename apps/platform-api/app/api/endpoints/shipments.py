@@ -308,7 +308,7 @@ def update_shipment_status(
                 Alert.alert_type == AlertType.DELAYED_SHIPMENT,
                 Alert.status.in_([AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED]),
                 Alert.related_entity_type == 'shipment',
-                Alert.related_entity_id == shipment.id,
+                Alert.related_entity_id == str(shipment.id),
             )
         ).scalar_one_or_none()
         if not existing_alert:
@@ -321,7 +321,7 @@ def update_shipment_status(
                     title=f'Shipment delayed: {shipment.shipment_no}',
                     message=payload.delay_reason or 'Shipment marked as delayed',
                     related_entity_type='shipment',
-                    related_entity_id=shipment.id,
+                    related_entity_id=str(shipment.id),
                 )
             )
 

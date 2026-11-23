@@ -27,14 +27,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.security import get_current_user, require_org_roles
+from app.api.security import require_platform_admin
 from app.db.session import get_db
 from app.models.audit_event import AuditEvent
-from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
 from app.models.payment_receipt import PaymentReceipt
 from app.models.user import User
-from app.schemas.auth import OrganizationRole
 from app.schemas.receipts import (
     ReceiptAuditEventRead,
     ReversalRead,
@@ -94,15 +92,13 @@ def _reversal_read(db: Session, receipt: PaymentReceipt) -> ReversalRead:
 @router.get('/audit', response_model=list[VerifiedReceiptAuditRead])
 def receipt_audit_list(
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    _admin: User = Depends(require_platform_admin),
 ):
     """All verified receipts, newest decision first, each with server-side
     reversal availability (decision #7). Write-guard EXEMPT."""
     now = datetime.now(UTC)
     rows = []
-    for receipt in queue_service.list_verified(db, membership.organization_id):
+    for receipt in queue_service.list_verified(db):
         org = db.get(Organization, receipt.organization_id)
         rows.append(
             VerifiedReceiptAuditRead(
@@ -125,19 +121,14 @@ def receipt_audit_list(
 def receipt_audit_events(
     receipt_id: str,
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    _admin: User = Depends(require_platform_admin),
 ):
     """The per-receipt audit timeline, newest first (NB-18.1). The Undo/
     Reverse affordance is anchored ON the ``receipts.verified`` event
     (NB-19.1/NB-20.1): ``available_actions`` is computed server-side for
     that event only, while ``reversal_status IS NULL``."""
     receipt = db.execute(
-        select(PaymentReceipt).where(
-            PaymentReceipt.id == receipt_id,
-            PaymentReceipt.organization_id == membership.organization_id,
-        )
+        select(PaymentReceipt).where(PaymentReceipt.id == receipt_id)
     ).scalar_one_or_none()
     if receipt is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
@@ -173,20 +164,20 @@ def undo_receipt_endpoint(
     receipt_id: str,
     payload: UndoRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    user: User = Depends(require_platform_admin),
 ):
     """Silent Undo (NB-19) — all guards live in ``undo.undo_verification``;
     the server 409s past the 24h window (decision #7). Write-guard EXEMPT."""
+    target = db.get(PaymentReceipt, receipt_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail='Receipt not found')
     try:
         receipt = undo_verification(
             db,
             user,
             receipt_id,
             note=payload.note,
-            organization_id=membership.organization_id,
+            organization_id=target.organization_id,
         )
     except ReversalError as exc:
         raise _as_http(exc) from None
@@ -199,20 +190,20 @@ def reverse_receipt_endpoint(
     receipt_id: str,
     payload: ReverseRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    user: User = Depends(require_platform_admin),
 ):
     """Explicit Reverse (NB-20) — mandatory reason, exact NB-20.3 customer
     notification, NO refund. Write-guard EXEMPT."""
+    target = db.get(PaymentReceipt, receipt_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail='Receipt not found')
     try:
         receipt = reverse_verification(
             db,
             user,
             receipt_id,
             payload.reason,
-            organization_id=membership.organization_id,
+            organization_id=target.organization_id,
         )
     except ReversalError as exc:
         raise _as_http(exc) from None
@@ -225,18 +216,13 @@ def remove_trusted_payer_endpoint(
     sender_name: str,
     organization_id: str = Query(...),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    user: User = Depends(require_platform_admin),
 ):
     """Admin-only trusted-payer removal (NB-21.5). Org context comes from the
     query param — the admin queue is system-wide and the admin's membership
     org must NOT be used (blueprint risk #7). Missing row -> 404. The fraud
     flag is NOT cleared (decision #6). Write-guard EXEMPT."""
-    if organization_id != str(membership.organization_id):
-        raise HTTPException(status_code=404, detail='Organization not found')
-    org = db.get(Organization, membership.organization_id)
+    org = db.get(Organization, organization_id)
     if org is None:
         raise HTTPException(status_code=404, detail='Organization not found')
     removed = remove_trusted_payer(db, org, sender_name, user)

@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -185,6 +186,29 @@ def test_zero_confidence_warning_text(
     item = _queue(client, token)[0]
     assert item['has_zero_confidence'] is True
     assert item['zero_confidence_warning'] == ZERO_CONFIDENCE_WARNING
+
+
+def test_zero_confidence_verify_requires_and_accepts_manual_amount(
+    client: TestClient, db_session: Session, make_paid_org_with_open_invoice
+):
+    org, invoice, token = make_paid_org_with_open_invoice(with_ai_key=False)
+    assert _upload(client, token, ref='TXN-ZC2').status_code == 200
+    item = _queue(client, token)[0]
+    assert item['extracted_fields']['transfer_amount'] is None
+
+    missing_amount = _decision(client, token, item['id'], {'verdict': 'verify'})
+    assert missing_amount.status_code == 422
+    assert 'verified amount' in missing_amount.json()['detail'].lower()
+
+    accepted = _decision(
+        client,
+        token,
+        item['id'],
+        {'verdict': 'verify', 'verified_amount_etb': '4520.00'},
+    )
+    assert accepted.status_code == 200, accepted.text
+    db_session.refresh(invoice)
+    assert invoice.balance_remaining_etb == Decimal('0.00')
 
 
 def test_low_confidence_visual_flags_present(

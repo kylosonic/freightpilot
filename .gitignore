@@ -22,6 +22,24 @@ apps/product-web/out/
 # Env
 .env
 .env*.local
+.env.*
+!.env.example
+!**/.env.example
+
+# Local databases, dumps, keys, and tool state
+*.sql
+*.dump
+*.pem
+*.key
+*.db
+*.sqlite
+*.sqlite3
+.wrangler/
+**/.wrangler/
+.venv/
+**/.venv/
+.ruff_cache/
+**/.ruff_cache/
 
 # OS/IDE
 .DS_Store

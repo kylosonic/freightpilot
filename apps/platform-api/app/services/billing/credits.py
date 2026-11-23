@@ -135,11 +135,15 @@ def apply_credit(
     lives in ``receipts.render_verdict``; this module re-checks the
     invariants and raises ``CreditError`` on violation (backstop).
     """
-    invoice = db.get(SubscriptionInvoice, receipt.invoice_id)
+    invoice = db.execute(
+        select(SubscriptionInvoice)
+        .where(SubscriptionInvoice.id == receipt.invoice_id)
+        .with_for_update()
+    ).scalar_one_or_none()
     if invoice is None:
         raise CreditError('Receipt has no routed invoice to credit')
-    if receipt.amount_etb is None:
-        raise CreditError('Receipt has no extracted amount to credit')
+    if receipt.amount_etb is None or receipt.amount_etb <= 0:
+        raise CreditError('Receipt amount must be greater than zero before it can be credited')
     amount = quantize_money(receipt.amount_etb)
     balance = quantize_money(invoice.balance_remaining_etb)
     classification = classify_surplus(amount, balance)
@@ -172,7 +176,7 @@ def apply_credit(
             surplus = quantize_money(amount - balance)
             wallet.create_wallet_credit(db, org, receipt, surplus)
             wallet._wallet_notification(db, org, surplus)
-            outcome.credit_delta_etb = amount
+            outcome.credit_delta_etb = min(amount, balance)
             outcome.surplus_etb = surplus
             outcome.wallet_credit_etb = surplus
         elif decision == 'credit_backward':
@@ -180,7 +184,7 @@ def apply_credit(
             # (offline refund — blueprint decision #9). No wallet row.
             _credit_invoice(db, org, invoice, amount)
             surplus = quantize_money(amount - balance)
-            outcome.credit_delta_etb = amount
+            outcome.credit_delta_etb = min(amount, balance)
             outcome.surplus_etb = surplus
         elif decision == 'partial_ignore':
             if partial_amount is None:

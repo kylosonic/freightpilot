@@ -52,6 +52,7 @@ function Ok([string]$t) { Write-Host "  [ok] $t" -ForegroundColor Green }
 function Die([string]$t) { Write-Host "  [xx] $t" -ForegroundColor Red; exit 1 }
 
 if (-not $NeonApiKey) { Die 'No Neon API key. Set $env:NEON_API_KEY or pass -NeonApiKey.' }
+$env:NEON_API_KEY = $NeonApiKey
 if (-not (Test-Path $neon)) { Die "neonctl not found at $neon. Run scripts/setup_neon_production.ps1 once to install it." }
 if (-not $PythonExe) {
     $candidate = Join-Path $repoRoot '.venv/Scripts/python.exe'
@@ -80,7 +81,7 @@ print(json.dumps(out))
 '@
 
 function Get-Conn([string]$branch) {
-    $args = @('connection-string', '--project-id', $ProjectId, '--pooled', '--api-key', $NeonApiKey)
+    $args = @('connection-string', '--project-id', $ProjectId, '--pooled')
     if ($branch) { $args += @('--branch', $branch) }
     $raw = & $neon @args 2>&1
     $line = ($raw | Where-Object { $_ -match '^postgres' } | Select-Object -First 1)
@@ -97,12 +98,12 @@ function Invoke-Probe([string]$url) {
 
 # Preconditions: no leftover branch from a previous failed run
 Step 'Preconditions'
-$branches = (& $neon branches list --project-id $ProjectId --api-key $NeonApiKey --output json 2>&1) -join "`n"
+$branches = (& $neon branches list --project-id $ProjectId --output json 2>&1) -join "`n"
 if ($LASTEXITCODE -ne 0) { Die "could not list branches:`n$($branches | Select-Object -First 5)" }
 $branchList = $branches | ConvertFrom-Json
 if (@($branchList) | Where-Object { $_.name -eq $DrillBranch }) {
     Write-Host "  cleaning up a leftover '$DrillBranch' branch from an earlier run"
-    & $neon branches delete $DrillBranch --project-id $ProjectId --api-key $NeonApiKey 2>&1 | Out-Null
+    & $neon branches delete $DrillBranch --project-id $ProjectId 2>&1 | Out-Null
     Start-Sleep -Seconds 5
 }
 Ok "clean slate ($(@($branchList).Count) branch(es) before the drill)"
@@ -116,7 +117,7 @@ Ok ("production: orgs={0} users={1} warehouses={2} shipments={3} head={4}" -f `
 
 # 2. Create the restore branch
 Step "Creating restore branch '$DrillBranch' from '$ParentBranch'"
-$created = (& $neon branches create --project-id $ProjectId --name $DrillBranch --parent $ParentBranch --api-key $NeonApiKey --output json 2>&1) -join "`n"
+$created = (& $neon branches create --project-id $ProjectId --name $DrillBranch --parent $ParentBranch --output json 2>&1) -join "`n"
 if ($LASTEXITCODE -ne 0) { Die "branch create failed:`n$($created | Select-Object -First 5)" }
 $branchId = (($created | ConvertFrom-Json).branch).id
 Ok "branch $branchId created"
@@ -181,12 +182,13 @@ with psycopg.connect(os.environ["FP_URL"], connect_timeout=25) as c:
 }
 finally {
     Step 'Cleaning up'
-    & $neon branches delete $branchId --project-id $ProjectId --api-key $NeonApiKey 2>&1 | Out-Null
+    & $neon branches delete $branchId --project-id $ProjectId 2>&1 | Out-Null
     Start-Sleep -Seconds 5
-    $remaining = ((& $neon branches list --project-id $ProjectId --api-key $NeonApiKey --output json 2>&1) -join "`n") | ConvertFrom-Json
+    $remaining = ((& $neon branches list --project-id $ProjectId --output json 2>&1) -join "`n") | ConvertFrom-Json
     $names = (@($remaining) | ForEach-Object { $_.name }) -join ', '
     if ($names -notmatch [regex]::Escape($DrillBranch)) { Ok "drill branch deleted (remaining: $names)" }
     else { Write-Host "  [!!] drill branch may still exist — check the Neon dashboard" -ForegroundColor Yellow }
+    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
 }
 
 $recordDir = Join-Path $repoRoot '.artifacts'

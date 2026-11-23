@@ -5,6 +5,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { useReceipts, useSubmitDispute, useWallet } from '../hooks/queries';
+import { apiErrorMessage } from '../services/authErrors';
 import type { Receipt } from '../types/api';
 
 const UPLOAD_CONFIRMATION = 'Receipt received — verification typically takes ≤24 hours.';
@@ -137,8 +138,7 @@ export function ReceiptsPage() {
       (event.target as HTMLFormElement).reset();
       await refetchReceipts();
     } catch (error: unknown) {
-      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setErrorMessage(detail ?? 'Upload failed. Please try again.');
+      setErrorMessage(apiErrorMessage(error, 'Upload failed. Please try again.'));
     } finally {
       setUploading(false);
     }

@@ -35,6 +35,20 @@ def test_websocket_live_rejects_unscoped_login_token(client: TestClient, admin_t
         assert data['type'] == 'websocket.close'
 
 
+def test_websocket_token_cannot_access_regular_api(client: TestClient, admin_token: str):
+    scoped = client.get(
+        '/api/v1/auth/token',
+        headers={'Authorization': f'Bearer {admin_token}'},
+    )
+    assert scoped.status_code == 200
+    response = client.get(
+        '/api/v1/auth/me',
+        headers={'Authorization': f'Bearer {scoped.json()["access_token"]}'},
+    )
+    assert response.status_code == 401
+    assert response.json()['detail'] == 'Invalid token type'
+
+
 def test_websocket_closes_after_membership_revocation(
     client: TestClient,
     signup_workspace,

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, String
+from sqlalchemy import Boolean, Integer, String, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -14,6 +14,9 @@ class User(UUIDTimestampMixin, Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(24), default='viewer', nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_platform_admin: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false(), nullable=False
+    )
     token_version: Mapped[int] = mapped_column(
         Integer, default=0, server_default='0', nullable=False
     )

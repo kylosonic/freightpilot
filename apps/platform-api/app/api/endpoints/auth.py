@@ -35,7 +35,9 @@ from app.services.audit import record_audit_event
 from app.services.security import (
     create_access_token,
     create_access_token_for_org,
+    create_ws_token_for_org,
     hash_password,
+    verify_dummy_password,
     verify_password,
 )
 
@@ -165,14 +167,18 @@ def register_user(
             detail='Create the first workspace through company signup',
         )
 
-    exists = db.execute(select(User).where(User.username == payload.username)).scalar_one_or_none()
+    username = payload.username.strip().lower()
+    email = payload.email.strip().lower() if payload.email else None
+    exists = db.execute(select(User).where(User.username == username)).scalar_one_or_none()
     if exists:
         raise HTTPException(status_code=409, detail='Username already exists')
+    if email and db.execute(select(User.id).where(User.email == email)).first() is not None:
+        raise HTTPException(status_code=409, detail='Email already exists')
 
     assigned_role = payload.role if users_exist else UserRole.ADMIN
     user = User(
-        username=payload.username,
-        email=payload.email.lower() if payload.email else None,
+        username=username,
+        email=email,
         full_name=payload.full_name,
         password_hash=hash_password(payload.password),
         role=assigned_role,
@@ -192,8 +198,8 @@ def register_user(
         # Development/test-only bootstrap. The new admin receives a real
         # workspace membership so it cannot become an org-less global reader.
         bootstrap_org = Organization(
-            name=f'{payload.username} Workspace',
-            slug=_generate_unique_slug(db, f'{payload.username} Workspace'),
+            name=f'{username} Workspace',
+            slug=_generate_unique_slug(db, f'{username} Workspace'),
             primary_email_domain=None,
             subscription_tier='free',
             subscription_status='active',
@@ -262,6 +268,13 @@ def company_signup(
         password_hash=hash_password(payload.password),
         role=UserRole.ADMIN,
         is_active=True,
+        # Local development and the test suite sign up one owner to exercise
+        # both customer and review workflows in an isolated workspace.
+        # Production still requires the explicit flag or allowlisted email.
+        is_platform_admin=(
+            settings.app_env in ('development', 'test')
+            or normalized_email in set(settings.platform_admin_emails)
+        ),
     )
     db.add(user)
     db.flush()
@@ -327,7 +340,10 @@ def login_user(payload: UserLogin, request: Request, response: Response, db: Ses
             )
         )
     ).scalar_one_or_none()
-    if not user or not user.is_active or not verify_password(payload.password, user.password_hash):
+    if not user or not user.is_active:
+        verify_dummy_password(payload.password)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
+    if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
 
     token = create_access_token(
@@ -384,11 +400,10 @@ def get_token_for_ws(
     current_user: User = Depends(require_roles(UserRole.VIEWER, UserRole.OPERATOR, UserRole.ADMIN)),
     membership: OrganizationMembership = Depends(get_current_membership),
 ):
-    token = create_access_token_for_org(
+    token = create_ws_token_for_org(
         subject=str(current_user.id),
         role=UserRole(current_user.role),
         organization_id=str(membership.organization_id),
-        expires_delta=timedelta(minutes=settings.jwt_access_token_expire_minutes),
         token_version=current_user.token_version,
     )
     return TokenResponse(

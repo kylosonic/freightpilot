@@ -8,7 +8,13 @@ from app.models.route import RouteSchedule, RouteStop
 from app.models.shipment import Shipment
 
 
-def generate_rerouting_plan(db: Session, alert_id: str, shipment_id: str) -> None:
+def generate_rerouting_plan(
+    db: Session,
+    alert_id: str,
+    shipment_id: str,
+    *,
+    commit: bool = True,
+) -> None:
     """Attach a reviewable saved-route candidate to an alert.
 
     This is deliberately not an autonomous rerouting engine. It never invents
@@ -20,8 +26,11 @@ def generate_rerouting_plan(db: Session, alert_id: str, shipment_id: str) -> Non
 
     if not alert or not shipment:
         return
+    if alert.organization_id != shipment.organization_id:
+        return
 
     stmt = select(RouteSchedule).where(
+        RouteSchedule.organization_id == shipment.organization_id,
         RouteSchedule.start_warehouse_id == shipment.origin_warehouse_id,
         RouteSchedule.status == 'active',
     ).join(
@@ -55,4 +64,5 @@ def generate_rerouting_plan(db: Session, alert_id: str, shipment_id: str) -> Non
         }
 
     db.add(alert)
-    db.commit()
+    if commit:
+        db.commit()

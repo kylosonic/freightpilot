@@ -28,7 +28,7 @@ def _upload(client: TestClient, token: str, reference: str) -> str:
     return response.json()['receipt_id']
 
 
-def test_receipt_queue_and_verdict_are_scoped_to_selected_workspace(
+def test_customer_receipts_stay_scoped_while_platform_review_is_cross_tenant(
     client: TestClient,
     make_paid_org_with_open_invoice,
 ):
@@ -45,24 +45,30 @@ def test_receipt_queue_and_verdict_are_scoped_to_selected_workspace(
     assert queue_a.status_code == 200, queue_a.text
     ids_a = {item['id'] for item in queue_a.json()}
     assert receipt_a in ids_a
-    assert receipt_b not in ids_a
+    assert receipt_b in ids_a
+
+    customer_a = client.get('/api/v1/receipts', headers=_headers(token_a))
+    assert customer_a.status_code == 200, customer_a.text
+    customer_ids = {item['id'] for item in customer_a.json()}
+    assert receipt_a in customer_ids
+    assert receipt_b not in customer_ids
 
     foreign_file = client.get(
         f'/api/v1/receipts/queue/{receipt_b}/file',
         headers=_headers(token_a),
     )
-    assert foreign_file.status_code == 404
+    assert foreign_file.status_code == 200
     foreign_audit = client.get(
         f'/api/v1/receipts/{receipt_b}/audit-events',
         headers=_headers(token_a),
     )
-    assert foreign_audit.status_code == 404
+    assert foreign_audit.status_code == 200
     foreign_decision = client.post(
         f'/api/v1/receipts/{receipt_b}/decision',
         headers=_headers(token_a),
         json={'verdict': 'reject_illegible'},
     )
-    assert foreign_decision.status_code == 404
+    assert foreign_decision.status_code == 200, foreign_decision.text
 
     own_decision = client.post(
         f'/api/v1/receipts/{receipt_a}/decision',

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -21,5 +21,8 @@ class DockAppointment(UUIDTimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(64), default='scheduled', nullable=False)
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expected_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     warehouse = relationship('Warehouse')

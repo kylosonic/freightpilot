@@ -18,6 +18,10 @@ _hyperdrive_binding: ContextVar[Any | None] = ContextVar(
     'hyperdrive_binding',
     default=None,
 )
+_hyperdrive_engine: ContextVar[Engine | None] = ContextVar(
+    'hyperdrive_engine',
+    default=None,
+)
 _local_engine: Engine | None = None
 
 
@@ -79,7 +83,11 @@ def _create_hyperdrive_engine(binding: Any) -> Engine:
 def get_engine() -> Engine:
     binding = _hyperdrive_binding.get()
     if binding is not None:
-        return _create_hyperdrive_engine(binding)
+        engine = _hyperdrive_engine.get()
+        if engine is None:
+            engine = _create_hyperdrive_engine(binding)
+            _hyperdrive_engine.set(engine)
+        return engine
 
     global _local_engine
     if _local_engine is None:
@@ -103,7 +111,12 @@ def get_db() -> Iterator[Session]:
 def use_hyperdrive(binding: Any) -> Iterator[None]:
     """Make the current Worker request use its Cloudflare Hyperdrive binding."""
     token = _hyperdrive_binding.set(binding)
+    engine_token = _hyperdrive_engine.set(None)
     try:
         yield
     finally:
+        engine = _hyperdrive_engine.get()
+        if engine is not None:
+            engine.dispose()
+        _hyperdrive_engine.reset(engine_token)
         _hyperdrive_binding.reset(token)

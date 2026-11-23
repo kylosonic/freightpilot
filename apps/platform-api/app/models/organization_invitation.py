@@ -39,6 +39,7 @@ class OrganizationInvitation(UUIDTimestampMixin, Base):
         UUIDType,
         ForeignKey('users.id', ondelete='SET NULL'),
         nullable=True,
+        index=True,
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -46,6 +47,7 @@ class OrganizationInvitation(UUIDTimestampMixin, Base):
         UUIDType,
         ForeignKey('users.id', ondelete='SET NULL'),
         nullable=True,
+        index=True,
     )
     status: Mapped[str] = mapped_column(String(16), default='pending', nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

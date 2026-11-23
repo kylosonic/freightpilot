@@ -1,5 +1,6 @@
 from datetime import UTC, date, datetime, timedelta
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -251,3 +252,20 @@ def test_tier_switch_from_hard_lock_no_trial(db_session: Session):
         select(SubscriptionInvoice).where(SubscriptionInvoice.organization_id == org.id)
     ).scalars().one()
     assert invoice.grace_ends_at == date(2026, 8, 4)
+
+
+def test_locked_workspace_cannot_switch_to_free(db_session: Session):
+    org = _org(db_session)
+    trial_end = datetime(2026, 7, 31, 10, 0, tzinfo=UTC)
+    _start_trial(db_session, org, 'starter', trial_end - timedelta(hours=168))
+    org.trial_ends_at = trial_end
+    db_session.commit()
+
+    locked_now = datetime(2026, 8, 5, 0, 0, tzinfo=UTC)
+    assert lifecycle.refresh_workspace_state(db_session, org, locked_now) == WorkspacePhase.HARD_LOCKED
+
+    with pytest.raises(lifecycle.TierSelectionError):
+        lifecycle.apply_tier_selection(db_session, org, 'free', locked_now)
+    db_session.refresh(org)
+    assert org.subscription_tier == 'starter'
+    assert org.billing_phase == 'hard_locked'

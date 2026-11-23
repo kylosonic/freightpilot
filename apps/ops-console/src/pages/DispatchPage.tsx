@@ -348,6 +348,9 @@ export function DispatchPage() {
     setError(null);
     try {
       const blob = await getProofBlob(orderId, proofId);
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(blob.type)) {
+        throw new Error('Unexpected proof file type');
+      }
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;

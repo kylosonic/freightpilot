@@ -115,7 +115,9 @@ def _restore_balance(
         raise ReversalError(409, 'Receipt has no routed invoice to restore')
     payload = verified_event.payload or {}
     credit_delta = Decimal(str(payload.get('credit_delta_etb') or '0.00'))
-    new_balance = quantize_money(invoice.balance_remaining_etb + credit_delta)
+    new_balance = quantize_money(
+        min(invoice.total_etb, invoice.balance_remaining_etb + max(Decimal('0.00'), credit_delta))
+    )
     invoice.balance_remaining_etb = new_balance
     if new_balance > 0:
         invoice.status = 'issued'

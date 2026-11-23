@@ -237,8 +237,12 @@ export function DriverPage() {
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     setManifest(null);
-    pruneDriverStorage(token);
-    setPendingCount(readQueue(token).length);
+    if (token) {
+      pruneDriverStorage(token);
+      setPendingCount(readQueue(token).length);
+    } else {
+      setPendingCount(0);
+    }
     void refreshProofQueue();
     void loadManifest();
     return () => {

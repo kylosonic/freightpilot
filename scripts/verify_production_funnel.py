@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import secrets
 import sys
 import time
 import urllib.error
@@ -65,6 +66,7 @@ class Funnel:
         self.token: str | None = None
         self.org_id: str | None = None
         self.stamp = datetime.now(UTC).strftime('%Y%m%d-%H%M%S')
+        self.password = secrets.token_urlsafe(24)
 
     # -- transport ---------------------------------------------------------
 
@@ -166,7 +168,7 @@ class Funnel:
             {
                 'company_name': company,
                 'company_email': email,
-                'password': 'DemoPassw0rd!2026',
+                'password': self.password,
                 'full_name': 'Dawit Lemma',
                 'subscription_tier': 'free',
             },
@@ -188,12 +190,6 @@ class Funnel:
             bool(self.token) and bool(self.org_id),
             f'HTTP 201, org={org.get("name")!r} slug={org.get("slug")!r} tier={org.get("subscription_tier")}',
         )
-        self.check(
-            'signup is rate-limited to 3/min (demo caution)',
-            True,
-            'limit is 3/minute per IP -- a fourth attempt inside 60s returns 429',
-        )
-
         print('\n3. Identity and workspace')
         status, me = self.call('GET', '/api/v1/auth/me')
         self.check('GET /auth/me', status == 200, f'HTTP {status} user={me.get("username") if isinstance(me, dict) else me!r}')
@@ -441,7 +437,7 @@ class Funnel:
             {
                 'company_name': f'Second Carrier {self.stamp}',
                 'company_email': f'owner+second-{self.stamp}@secondcarrier-demo.et',
-                'password': 'DemoPassw0rd!2026',
+                'password': self.password,
                 'full_name': 'Second Owner',
                 'subscription_tier': 'free',
             },

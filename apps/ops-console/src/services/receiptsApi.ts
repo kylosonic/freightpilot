@@ -53,6 +53,7 @@ export type RenderDecisionPayload = {
   trusted_payer_action?: TrustedPayerAction | null;
   large_surplus_decision?: LargeSurplusDecision | null;
   partial_credit_amount_etb?: string | null;
+  verified_amount_etb?: string | null;
 };
 
 export async function renderDecision(id: string, payload: RenderDecisionPayload): Promise<Receipt> {

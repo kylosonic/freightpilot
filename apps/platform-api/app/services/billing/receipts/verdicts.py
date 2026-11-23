@@ -73,7 +73,7 @@ def render_verdict(
         select(PaymentReceipt).where(
             PaymentReceipt.id == receipt_id,
             PaymentReceipt.organization_id == organization_id,
-        )
+        ).with_for_update()
     ).scalar_one_or_none()
     if receipt is None:
         raise ReceiptVerdictError(404, 'Receipt not found')
@@ -221,6 +221,14 @@ def _apply_verify(
             )
     if invoice is None:
         raise ReceiptVerdictError(422, 'Receipt has no routed invoice to credit')
+    if receipt.amount_etb is None:
+        if request.verified_amount_etb is None:
+            raise ReceiptVerdictError(
+                422,
+                'The receipt amount could not be read. Enter the verified amount before approving it.',
+            )
+        receipt.amount_etb = request.verified_amount_etb
+        db.add(receipt)
     if receipt.is_large_surplus and request.large_surplus_decision is None:
         raise ReceiptVerdictError(
             422,

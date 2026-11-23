@@ -7,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.config import settings
 from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
 from app.models.user import User
@@ -30,11 +31,14 @@ def _extract_token(
     return cookie_token
 
 
-def get_current_user_from_token(token: str, db: Session) -> User:
+def get_current_user_from_token(token: str, db: Session, *, token_type: str = 'access') -> User:
     try:
         payload = decode_access_token(token)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    if payload.get('typ') != token_type:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token type')
 
     user_id = payload.get('sub')
     if not user_id:
@@ -52,6 +56,18 @@ def get_current_user_from_token(token: str, db: Session) -> User:
     return user
 
 
+def is_platform_admin_user(user: User) -> bool:
+    """Platform review privilege is separate from every tenant role.
+
+    The allowlist supports bootstrapping an operator account without a manual
+    database edit. Membership OWNER/ADMIN never implies this privilege.
+    """
+    if bool(getattr(user, 'is_platform_admin', False)):
+        return True
+    email = (user.email or '').strip().lower()
+    return bool(email and email in {item.lower() for item in settings.platform_admin_emails})
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     cookie_token: str | None = Cookie(default=None, alias=_COOKIE_NAME),
@@ -62,6 +78,15 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing authentication token')
 
     return get_current_user_from_token(token, db)
+
+
+def require_platform_admin(user: User = Depends(get_current_user)) -> User:
+    if not is_platform_admin_user(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Platform administrator access required',
+        )
+    return user
 
 
 def require_roles(*allowed: UserRole):
@@ -103,7 +128,8 @@ def get_current_membership(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> OrganizationMembership:
-    membership = MembershipRepository(db).get_active_membership(user.id, org_id=x_org_id)
+    scoped_org_id = validate_uuid(x_org_id, detail='Invalid organization identifier') if x_org_id else None
+    membership = MembershipRepository(db).get_active_membership(user.id, org_id=scoped_org_id)
     if not membership:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='No active organization membership')
     organization = db.get(Organization, membership.organization_id)
@@ -123,7 +149,8 @@ def get_optional_membership(
     ``require_writable_workspace``. A ``None`` result must never grant access
     to tenant data.
     """
-    return MembershipRepository(db).get_active_membership(user.id, org_id=x_org_id)
+    scoped_org_id = validate_uuid(x_org_id, detail='Invalid organization identifier') if x_org_id else None
+    return MembershipRepository(db).get_active_membership(user.id, org_id=scoped_org_id)
 
 
 def require_writable_workspace(
@@ -174,7 +201,10 @@ def require_org_roles(*allowed: OrganizationRole):
         user: User = Depends(get_current_user),
         membership: OrganizationMembership = Depends(get_current_membership),
     ):
-        account_rank = {'viewer': 1, 'operator': 2, 'admin': 3}
+        # A global admin can own a workspace. The membership role remains
+        # authoritative for tenant authority, while the account role is only
+        # an upper bound that prevents stale promotions from widening access.
+        account_rank = {'viewer': 1, 'operator': 2, 'admin': 4}
         membership_rank = {'viewer': 1, 'operator': 2, 'admin': 3, 'owner': 4}
         allowed_ranks = [membership_rank[str(role)] for role in allowed]
         if not allowed_ranks:
@@ -212,6 +242,7 @@ from app.core.tenant_scope import (  # noqa: E402  (kept beside its consumers)
     organization_scoped_get,
     resolve_scoped_organization,
     scoped_to_organization,
+    validate_uuid,
 )
 
 __all__ = [
@@ -223,9 +254,12 @@ __all__ = [
     'get_optional_membership',
     'order_by_organization_first',
     'organization_scoped_get',
+    'is_platform_admin_user',
+    'require_platform_admin',
     'require_org_roles',
     'require_roles',
     'require_writable_workspace',
     'resolve_scoped_organization',
     'scoped_to_organization',
+    'validate_uuid',
 ]

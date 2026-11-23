@@ -21,8 +21,8 @@ _DOWN_REVISION_RE = re.compile(
 # Head advances with each migration batch. Keep this pin deliberate: it is the
 # tripwire that makes an accidental second head or a forgotten down_revision fail
 # loudly instead of silently forking the chain.
-_HEAD = '20261107_0026'
-_HEAD_PARENT = '20261107_0025'
+_HEAD = '20261122_0027'
+_HEAD_PARENT = '20261107_0026'
 _MIN_EXPECTED = 24
 
 

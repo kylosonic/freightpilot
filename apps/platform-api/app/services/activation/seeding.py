@@ -28,6 +28,8 @@ from app.models.inventory import Inventory
 from app.models.item import Item
 from app.models.order import HistoricalOrder
 from app.models.organization import Organization
+from app.models.route import RouteSchedule, RouteStop
+from app.models.shipment import Shipment
 from app.models.user import User
 from app.models.warehouse import Warehouse
 from app.services.activation.state import CATEGORIES, CATEGORY_META, _ensure_state_row
@@ -298,15 +300,35 @@ def supersede_sample_rows(db: Session, org: Organization, category: str, now: da
                 HistoricalOrder,
                 HistoricalOrder.warehouse_id if category == 'warehouses' else HistoricalOrder.item_id,
             ),
+            (Shipment, Shipment.origin_warehouse_id if category == 'warehouses' else Shipment.item_id),
+            (
+                RouteSchedule,
+                RouteSchedule.start_warehouse_id if category == 'warehouses' else None,
+            ),
         ):
+            if fk_col is None:
+                continue
+            stmt = select(fk_col).where(
+                downstream.organization_id == org_id,
+                fk_col.in_([row.id for row in sample_rows]),
+            )
+            if hasattr(downstream, 'data_origin'):
+                stmt = stmt.where(downstream.data_origin == 'real')
             refs = db.execute(
-                select(fk_col).where(
-                    downstream.organization_id == org_id,
-                    downstream.data_origin == 'real',
-                    fk_col.in_([row.id for row in sample_rows]),
-                )
+                stmt
             ).scalars().all()
             referenced.update(refs)
+
+        if category == 'warehouses':
+            route_stop_refs = db.execute(
+                select(RouteStop.warehouse_id)
+                .join(RouteSchedule, RouteSchedule.id == RouteStop.route_schedule_id)
+                .where(
+                    RouteSchedule.organization_id == org_id,
+                    RouteStop.warehouse_id.in_([row.id for row in sample_rows]),
+                )
+            ).scalars().all()
+            referenced.update(route_stop_refs)
 
         to_delete = [row for row in sample_rows if row.id not in referenced]
         if not to_delete:

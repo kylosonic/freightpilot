@@ -30,7 +30,13 @@ def test_upload_accepts_png_jpg_pdf(
     png = upload_receipt(token, filename='receipt.png', content=sample_receipt_bytes(), content_type='image/png', mock_extraction=payload)
     assert png.status_code == 200
 
-    jpg = upload_receipt(token, filename='receipt.jpg', content=sample_receipt_bytes(), content_type='image/jpeg', mock_extraction=payload)
+    jpg = upload_receipt(
+        token,
+        filename='receipt.jpg',
+        content=b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01' + b'fixture-image-data',
+        content_type='image/jpeg',
+        mock_extraction=payload,
+    )
     assert jpg.status_code == 200
 
     pdf = upload_receipt(token, filename='receipt.pdf', content=pdf_bytes(), content_type='application/pdf', mock_extraction=payload)
@@ -52,6 +58,52 @@ def test_upload_rejects_oversized_file(client: TestClient, make_paid_org_with_op
     resp = upload_receipt(token, filename='receipt.png', content=big, content_type='image/png')
     assert resp.status_code == 400
     assert resp.json()['detail'] == 'Receipt too large — maximum 5 MB.'
+
+
+def test_upload_rejects_content_that_does_not_match_declared_type(
+    client: TestClient, make_paid_org_with_open_invoice, upload_receipt
+):
+    _, _, token = make_paid_org_with_open_invoice()
+    resp = upload_receipt(
+        token,
+        filename='receipt.png',
+        content=b'plain text pretending to be an image',
+        content_type='image/png',
+        mock_extraction=mock_extraction_payload(),
+    )
+    assert resp.status_code == 415
+    assert resp.json()['detail'] == 'Receipt content does not match the declared file type.'
+
+
+def test_upload_enforces_org_storage_quota(
+    client: TestClient, make_paid_org_with_open_invoice, upload_receipt, monkeypatch
+):
+    from app.core.config import settings
+
+    _, _, token = make_paid_org_with_open_invoice()
+    monkeypatch.setattr(settings, 'receipt_org_quota_bytes', 1)
+    resp = upload_receipt(token, mock_extraction=mock_extraction_payload())
+    assert resp.status_code == 413
+    assert resp.json()['detail'] == 'This workspace has reached its receipt storage limit.'
+
+
+def test_upload_enforces_pending_review_limit(
+    client: TestClient, make_paid_org_with_open_invoice, upload_receipt, monkeypatch
+):
+    from app.core.config import settings
+
+    _, _, token = make_paid_org_with_open_invoice()
+    monkeypatch.setattr(settings, 'receipt_pending_limit', 1)
+    first = upload_receipt(token, mock_extraction=mock_extraction_payload())
+    assert first.status_code == 200, first.text
+
+    second_payload = mock_extraction_payload(fields={
+        **mock_extraction_payload()['fields'],
+        'reference_number': 'TXN-PENDING-LIMIT-2',
+    })
+    second = upload_receipt(token, mock_extraction=second_payload)
+    assert second.status_code == 429
+    assert second.json()['detail'] == 'Too many receipts are waiting for review. Please wait for a decision.'
 
 
 def test_upload_confirmation_message_exact_copy(

@@ -30,23 +30,6 @@ export function SiteChrome({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    let frame = 0;
-    const onMove = (event: MouseEvent) => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        document.documentElement.style.setProperty('--spotlight-x', `${event.clientX}px`);
-        document.documentElement.style.setProperty('--spotlight-y', `${event.clientY}px`);
-      });
-    };
-
-    window.addEventListener('mousemove', onMove, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('mousemove', onMove);
-    };
-  }, []);
-
   useEffect(() => setMenuOpen(false), [pathname]);
 
   // Close mobile menu on Escape key

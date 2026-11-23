@@ -344,12 +344,15 @@ def select_tier(
     if not organization:
         raise HTTPException(status_code=404, detail='Organization not found')
 
-    return lifecycle.apply_tier_selection(
-        db,
-        organization,
-        payload.tier.value,
-        datetime.now(UTC),
-    )
+    try:
+        return lifecycle.apply_tier_selection(
+            db,
+            organization,
+            payload.tier.value,
+            datetime.now(UTC),
+        )
+    except lifecycle.TierSelectionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post('/me/contact-phone', response_model=SubscriptionRead)

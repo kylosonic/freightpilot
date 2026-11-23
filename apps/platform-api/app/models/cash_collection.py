@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -64,6 +64,9 @@ class CashCollection(UUIDTimestampMixin, Base):
     collected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     settled_by_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True
     )
     note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )

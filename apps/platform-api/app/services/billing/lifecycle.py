@@ -32,6 +32,10 @@ GRACE_BANNER = 'Grace period: {days} days remaining'
 
 WRITE_DISABLED_PHASES = frozenset({WorkspacePhase.LIMBO, WorkspacePhase.GRACE, WorkspacePhase.HARD_LOCKED})
 
+
+class TierSelectionError(Exception):
+    """A plan change that would bypass billing or unlock a locked workspace."""
+
 _STATUS_BY_PHASE = {
     WorkspacePhase.FREE: 'active',
     WorkspacePhase.TRIAL: 'trialing',
@@ -114,9 +118,13 @@ def derive_phase(db: Session, org: Organization, now: datetime) -> WorkspacePhas
 def refresh_workspace_state(db: Session, org: Organization, now: datetime) -> WorkspacePhase:
     """Lazy issuance + derive + persist. Called by every guard evaluation
     and billing-state read."""
-    invoices_service.try_issue_invoice(db, org, now)
+    previous_invoice = invoices_service.latest_invoice(db, org)
+    issued_invoice = invoices_service.try_issue_invoice(db, org, now)
     phase = derive_phase(db, org, now)
-    if org.billing_phase != phase.value:
+    invoice_changed = issued_invoice is not None and (
+        previous_invoice is None or issued_invoice.id != previous_invoice.id
+    )
+    if org.billing_phase != phase.value or invoice_changed:
         org.billing_phase = phase.value
         org.subscription_status = _derived_status(phase)
         db.add(org)
@@ -174,6 +182,10 @@ def apply_tier_selection(db: Session, org: Organization, tier: str, now: datetim
     from_tier = org.subscription_tier
     refresh_workspace_state(db, org, now)
     phase = derive_phase(db, org, now)
+    if tier == 'free' and phase in WRITE_DISABLED_PHASES:
+        raise TierSelectionError(
+            'A locked workspace cannot switch to Free to clear its billing status.'
+        )
 
     trial_started = False
     trial_ends_at: datetime | None = None
@@ -200,6 +212,9 @@ def apply_tier_selection(db: Session, org: Organization, tier: str, now: datetim
         org.trial_ends_at = None
 
     org.subscription_tier = tier
+    plan_change_invoice = None
+    if phase == WorkspacePhase.ACTIVE and tier != 'free' and tier != from_tier:
+        plan_change_invoice = invoices_service.issue_plan_change_invoice(db, org, tier, now)
     final_phase = derive_phase(db, org, now)
     org.billing_phase = final_phase.value
     org.subscription_status = _derived_status(final_phase)
@@ -220,6 +235,7 @@ def apply_tier_selection(db: Session, org: Organization, tier: str, now: datetim
             'trial_started': trial_started,
             'trial_ends_at': str(trial_ends_at) if trial_ends_at else None,
             'billing_phase': final_phase.value,
+            'plan_change_invoice': plan_change_invoice.invoice_number if plan_change_invoice else None,
         },
     )
     db.commit()

@@ -10,6 +10,7 @@ from app.api.security import (
     get_current_membership,
     order_by_organization_first,
     organization_scoped_get,
+    require_platform_admin,
     require_roles,
     require_writable_workspace,
     resolve_scoped_organization,
@@ -49,7 +50,7 @@ def readiness(db: Session = Depends(get_db)) -> dict:
 
 
 @router.get('/metrics')
-def metrics(_: User = Depends(require_roles(UserRole.ADMIN))) -> dict:
+def metrics(_: User = Depends(require_platform_admin)) -> dict:
     return app_metrics.snapshot()
 
 

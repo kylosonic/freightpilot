@@ -130,3 +130,30 @@ def test_wallet_list_surfaces_voided_rows(
     credits = [c for c in body['credits'] if c['status'] == 'voided']
     assert len(credits) == 1
     assert credits[0]['amount_etb'] == '480.00'
+
+
+def test_large_surplus_reversal_restores_only_the_invoice_portion(
+    client: TestClient,
+    db_session: Session,
+    make_paid_org_with_open_invoice,
+    verify_receipt,
+):
+    _org, invoice, token = make_paid_org_with_open_invoice()
+    receipt_id, _invoice = verify_receipt(
+        token,
+        'TXN-LARGE-REVERSE',
+        amount='10000.00',
+        trusted_payer_action='verified_once',
+        large_surplus_decision='credit_forward',
+    )
+    receipt = db_session.get(PaymentReceipt, receipt_id)
+    receipt.decided_at = datetime.now(UTC) - timedelta(hours=25)
+    db_session.commit()
+
+    response = _reverse(client, token, receipt_id, reason='Bank reversed the excess')
+    assert response.status_code == 200, response.text
+    assert response.json()['restored_balance_etb'] == '4520.00'
+    assert response.json()['wallet_voided_etb'] == '5480.00'
+
+    db_session.refresh(invoice)
+    assert invoice.balance_remaining_etb == Decimal('4520.00')

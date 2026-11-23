@@ -126,7 +126,8 @@ def _apply_extraction_fields(receipt: PaymentReceipt, result) -> None:
     amount = _as_str(result.fields.get('transfer_amount'))
     if amount:
         try:
-            receipt.amount_etb = quantize_money(Decimal(amount))
+            parsed_amount = quantize_money(Decimal(amount))
+            receipt.amount_etb = parsed_amount if parsed_amount > 0 else None
         except Exception:
             receipt.amount_etb = None
     transfer_date = _as_str(result.fields.get('transfer_date'))
@@ -200,6 +201,7 @@ def _find_verified_by_ref(db: Session, ref: str) -> PaymentReceipt | None:
 
 def _flag_duplicate_pair(db: Session, org: Organization, attempt: PaymentReceipt, original: PaymentReceipt) -> None:
     """NB-14.4 fraud-flag pair: attempt + flagged (attached to the original)."""
+    same_tenant = attempt.organization_id == original.organization_id
     record_audit_event(
         db,
         event_type='receipts.duplicate_attempt',
@@ -209,7 +211,8 @@ def _flag_duplicate_pair(db: Session, org: Organization, attempt: PaymentReceipt
         description=f'Duplicate reference {attempt.reference_number} attempted',
         payload={
             'reference_number': attempt.reference_number,
-            'original_receipt_id': original.id,
+            'original_receipt_id': original.id if same_tenant else None,
+            'cross_tenant_match': not same_tenant,
         },
     )
     record_audit_event(
@@ -221,7 +224,8 @@ def _flag_duplicate_pair(db: Session, org: Organization, attempt: PaymentReceipt
         description=f'Original receipt flagged: duplicate reference {attempt.reference_number}',
         payload={
             'reference_number': attempt.reference_number,
-            'duplicate_receipt_id': attempt.id,
+            'duplicate_receipt_id': attempt.id if same_tenant else None,
+            'cross_tenant_match': not same_tenant,
         },
     )
 

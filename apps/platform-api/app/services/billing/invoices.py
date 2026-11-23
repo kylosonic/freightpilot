@@ -49,8 +49,16 @@ def designate_account(db: Session, org: Organization, ordinal: int) -> Collectio
 
 
 def next_invoice_number(db: Session) -> str:
-    """Monotonic invoice number from the single-row ``billing_counters``."""
-    counter = db.get(BillingCounter, 1)
+    """Monotonic invoice number from the single-row ``billing_counters``.
+
+    The row lock serializes PostgreSQL invoice issuance across organizations.
+    The first-row creation race is still protected by the counter primary key,
+    and ``try_issue_invoice`` retries a savepoint without discarding the outer
+    transaction.
+    """
+    counter = db.execute(
+        select(BillingCounter).where(BillingCounter.id == 1).with_for_update()
+    ).scalar_one_or_none()
     if counter is None:
         counter = BillingCounter(id=1, last_value=0)
         db.add(counter)
@@ -141,11 +149,12 @@ def _issue_invoice(
     ordinal: int,
     now: datetime,
     wallet_credit_etb: Decimal = Decimal('0.00'),
+    due_date: date | None = None,
 ) -> SubscriptionInvoice:
     flat = pricing.flat_price_etb(tier)
     account = designate_account(db, org, ordinal)
     grace_days = pricing.grace_days_for(ordinal)
-    due_date = period_start
+    due_date = due_date or period_start
     invoice = SubscriptionInvoice(
         organization_id=org.id,
         invoice_number=next_invoice_number(db),
@@ -261,17 +270,18 @@ def issue_next_invoice(db: Session, org: Organization, now: datetime) -> Subscri
     if last is None:
         raise ValueError('No prior invoice; use issue_first_invoice')
     period_start = last.billing_period_end + timedelta(days=1)
-    start, end = pricing.period_for_tier(last.tier, period_start)
+    tier = org.subscription_tier
+    start, end = pricing.period_for_tier(tier, period_start)
     count = db.execute(
         select(SubscriptionInvoice.id).where(SubscriptionInvoice.organization_id == org.id)
     ).scalars().all()
     ordinal = len(count) + 1
-    overage = _overage_units(db, org, last.tier, last.billing_period_start, last.billing_period_end)
+    overage = _overage_units(db, org, tier, last.billing_period_start, last.billing_period_end)
 
-    flat = pricing.flat_price_etb(last.tier)
+    flat = pricing.flat_price_etb(tier)
     pre_wallet_total = flat
     for metric, units in overage.items():
-        rate = pricing.overage_rate_etb(last.tier, metric)
+        rate = pricing.overage_rate_etb(tier, metric)
         if rate is None:
             continue
         pre_wallet_total = pre_wallet_total + quantize_money(Decimal(units) * rate)
@@ -281,7 +291,7 @@ def issue_next_invoice(db: Session, org: Organization, now: datetime) -> Subscri
     invoice = _issue_invoice(
         db,
         org,
-        last.tier,
+        tier,
         start,
         end,
         overage,
@@ -302,6 +312,65 @@ def issue_next_invoice(db: Session, org: Organization, now: datetime) -> Subscri
     return invoice
 
 
+def issue_plan_change_invoice(
+    db: Session,
+    org: Organization,
+    tier: str,
+    now: datetime,
+) -> SubscriptionInvoice:
+    """Bill a paid plan upgrade immediately rather than granting free quotas.
+
+    The invoice is due now. ``billing_period_start`` needs a unique value per
+    organization, so same-day plan changes advance by one day while keeping
+    the due date and current billing cycle intact.
+    """
+    if tier == 'free':
+        raise ValueError('A free plan change does not require an invoice')
+
+    period_start, period_end = pricing.period_for_tier(tier, now.date())
+    existing_starts = set(
+        db.execute(
+            select(SubscriptionInvoice.billing_period_start).where(
+                SubscriptionInvoice.organization_id == org.id
+            )
+        ).scalars().all()
+    )
+    while period_start in existing_starts:
+        period_start = period_start + timedelta(days=1)
+
+    invoice_count = len(existing_starts)
+    flat = pricing.flat_price_etb(tier)
+    available = wallet.available_wallet_credit(db, org)
+    wallet_credit_etb = min(available, flat)
+    invoice = _issue_invoice(
+        db,
+        org,
+        tier,
+        period_start,
+        period_end,
+        {},
+        ordinal=invoice_count + 1,
+        now=now,
+        wallet_credit_etb=wallet_credit_etb,
+        due_date=now.date(),
+    )
+    applied, _remaining = wallet.apply_available_wallet_credits(db, org, invoice, flat)
+    record_audit_event(
+        db,
+        event_type='billing.plan_change_invoiced',
+        entity_type='subscription_invoice',
+        entity_id=invoice.id,
+        organization_id=org.id,
+        description=f'Issued plan-change invoice {invoice.invoice_number} for {tier}',
+        payload={
+            'invoice_number': invoice.invoice_number,
+            'tier': tier,
+            'wallet_applied_etb': str(applied),
+        },
+    )
+    return invoice
+
+
 def try_issue_invoice(db: Session, org: Organization, now: datetime) -> SubscriptionInvoice | None:
     """Lazily issue the first invoice when the trial-end boundary is crossed.
 
@@ -312,16 +381,24 @@ def try_issue_invoice(db: Session, org: Organization, now: datetime) -> Subscrip
     """
     if org.subscription_tier == 'free':
         return None
-    anchor_rec = _trial_anchor(db, org)
-    if anchor_rec is None:
-        return None
-    anchor = anchor_rec.ended_at or anchor_rec.started_at + timedelta(hours=pricing.TRIAL_DURATION_HOURS)
-    cycle = pricing.billing_cycle_for(anchor_rec.tier)
-    if not cycle:
-        return None
-    next_start = pricing.next_period_start_after(anchor.date(), cycle)
+    last = latest_invoice(db, org)
+    if last is None:
+        anchor_rec = _trial_anchor(db, org)
+        if anchor_rec is None:
+            return None
+        anchor = anchor_rec.ended_at or anchor_rec.started_at + timedelta(hours=pricing.TRIAL_DURATION_HOURS)
+        cycle = pricing.billing_cycle_for(anchor_rec.tier)
+        if not cycle:
+            return None
+        next_start = pricing.next_period_start_after(anchor.date(), cycle)
+        issue = issue_first_invoice
+    else:
+        next_start = last.billing_period_end + timedelta(days=1)
+        issue = issue_next_invoice
     if now.date() < next_start:
-        return None
+        # Idempotent callers may ask for the invoice at any point in the
+        # current period; return the active invoice rather than inventing one.
+        return last
 
     existing = db.execute(
         select(SubscriptionInvoice).where(
@@ -333,12 +410,13 @@ def try_issue_invoice(db: Session, org: Organization, now: datetime) -> Subscrip
         return existing
 
     try:
-        invoice = issue_first_invoice(db, org, now)
-        db.commit()
-        db.refresh(invoice)
+        with db.begin_nested():
+            invoice = issue(db, org, now)
+        db.flush()
         return invoice
     except IntegrityError:
-        db.rollback()
+        # The nested savepoint has already rolled back. Avoid rolling back the
+        # caller's outer transaction (and any receipt/credit work in it).
         return db.execute(
             select(SubscriptionInvoice).where(
                 SubscriptionInvoice.organization_id == org.id,

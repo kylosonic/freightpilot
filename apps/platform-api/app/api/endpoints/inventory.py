@@ -50,6 +50,8 @@ def upsert_inventory(
         quantity_on_hand=payload.quantity_on_hand,
         safety_stock=payload.safety_stock,
     )
+    db.commit()
+    db.refresh(inv)
     return inv
 
 

@@ -395,7 +395,14 @@ export function AccountPage() {
           <form onSubmit={onAddKey} className="mt-4 grid gap-3 md:grid-cols-3">
             <input value={providerName} onChange={(event) => setProviderName(event.target.value)} className={fieldClassName} placeholder="Provider name" />
             <input value={keyName} onChange={(event) => setKeyName(event.target.value)} className={fieldClassName} placeholder="Key label" />
-            <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} className={fieldClassName} placeholder="API key" />
+            <input
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+              className={fieldClassName}
+              placeholder="API key"
+              type="password"
+              autoComplete="new-password"
+            />
             <div className="md:col-span-3">
               <button type="submit" className="fp-action-primary">
                 Save key

@@ -29,10 +29,20 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        void caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        if (response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          void caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/driver'))),
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          const shell = await caches.match('/driver');
+          if (shell) return shell;
+        }
+        return Response.error();
+      }),
   );
 });

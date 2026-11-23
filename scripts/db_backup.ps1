@@ -11,5 +11,15 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Creating PostgreSQL backup to $OutputFile ..."
-docker compose exec -T postgres pg_dump -U $pgUser -d $pgDb > $OutputFile
+$resolvedOutput = [System.IO.Path]::GetFullPath($OutputFile)
+$tempOutput = "$resolvedOutput.partial.$PID"
+$process = Start-Process -FilePath docker `
+  -ArgumentList @('compose','exec','-T','postgres','pg_dump','-U',$pgUser,'-d',$pgDb,'--no-owner','--no-privileges') `
+  -RedirectStandardOutput $tempOutput `
+  -NoNewWindow -Wait -PassThru
+if ($process.ExitCode -ne 0) {
+  Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue
+  throw "pg_dump failed with exit code $($process.ExitCode)."
+}
+Move-Item -Force $tempOutput $resolvedOutput
 Write-Host "Backup completed: $OutputFile"

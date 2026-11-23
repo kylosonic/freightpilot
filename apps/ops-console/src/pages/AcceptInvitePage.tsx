@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { apiErrorMessage } from '../services/authErrors';
 import { setStoredToken } from '../services/api';
@@ -8,7 +7,6 @@ import { acceptInvitation } from '../services/teamApi';
 const FIELD = 'fp-input mt-1 min-h-10';
 
 export function AcceptInvitePage() {
-  const navigate = useNavigate();
   const fragment = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '');
   const token = new URLSearchParams(fragment).get('token') || '';
   const [username, setUsername] = useState('');
@@ -29,8 +27,8 @@ export function AcceptInvitePage() {
         full_name: fullName || undefined,
       });
       setStoredToken(result.access_token);
-      navigate('/', { replace: true });
-      window.location.reload();
+      window.history.replaceState(null, '', '/');
+      window.location.replace('/');
     } catch (err) {
       setError(apiErrorMessage(err, 'Could not accept the invitation.'));
     } finally {

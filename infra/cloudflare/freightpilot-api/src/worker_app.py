@@ -81,20 +81,26 @@ def build_app(group: str) -> Any:
     anyio.to_thread.run_sync = run_sync_inline
 
     from app.core.config import settings
+    from app.core.http_security import add_http_security
     from app.db.migration_status import migration_readiness
     from app.db.session import get_engine
     from fastapi import FastAPI
-    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import JSONResponse
     from sqlalchemy import text
 
-    app = FastAPI(title='Supply Chain Logistics API', version='1.0.0')
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials='*' not in settings.cors_origins,
-        allow_methods=['*'],
-        allow_headers=['*'],
+    _ = (
+        settings.effective_database_url,
+        settings.effective_jwt_secret_key,
+        settings.effective_provider_key_encryption_secret,
+        settings.effective_receipt_extraction_mode,
+        settings.effective_cbe_account_holder,
+        settings.effective_cbe_account_number,
+        settings.effective_dashen_account_holder,
+        settings.effective_dashen_account_number,
     )
+
+    app = FastAPI(title='Supply Chain Logistics API', version='1.0.0')
+    add_http_security(app)
 
     for module_name, prefix in ENDPOINT_GROUPS[group]:
         module = __import__(
@@ -104,7 +110,7 @@ def build_app(group: str) -> Any:
         app.include_router(module.router, prefix=f'/api/v1{prefix}')
 
     @app.get('/health')
-    def health() -> dict:
+    def health():
         schema = {'status': 'unavailable', 'current': None, 'expected': None}
         try:
             with get_engine().connect() as connection:
@@ -113,12 +119,16 @@ def build_app(group: str) -> Any:
             db_status = 'ok'
         except Exception:  # noqa: BLE001 - readiness must report degraded instead of crashing
             db_status = 'unavailable'
-        return {
+        payload = {
             'status': 'ok' if db_status == 'ok' and schema['status'] == 'current' else 'degraded',
             'db': db_status,
             'schema': schema['status'],
             'revision': schema['current'],
             'expected_revision': schema['expected'],
         }
+        return JSONResponse(
+            payload,
+            status_code=200 if payload['status'] == 'ok' else 503,
+        )
 
     return app

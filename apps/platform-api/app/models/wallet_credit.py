@@ -34,12 +34,12 @@ class WalletCredit(UUIDTimestampMixin, Base):
         UUIDType, ForeignKey('organizations.id', ondelete='CASCADE'), index=True, nullable=False
     )
     receipt_id: Mapped[UUID] = mapped_column(
-        UUIDType, ForeignKey('payment_receipts.id', ondelete='RESTRICT'), nullable=False
+        UUIDType, ForeignKey('payment_receipts.id', ondelete='CASCADE'), nullable=False, index=True
     )
     amount_etb: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     status: Mapped[str] = mapped_column(String(16), default='available', nullable=False)
     applied_to_invoice_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('subscription_invoices.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('subscription_invoices.id', ondelete='SET NULL'), nullable=True, index=True
     )
     applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     voided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

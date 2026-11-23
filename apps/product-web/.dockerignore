@@ -5,4 +5,8 @@ dist/
 .git/
 .env
 .env.local
+.env.*
+.vercel/
+.vercel
+!.env.example
 *.log

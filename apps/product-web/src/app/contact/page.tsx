@@ -4,6 +4,8 @@ import { ContactForm } from '@/components/site/contact-form';
 import { PageHero } from '@/components/site/page-hero';
 import { SpotlightCard } from '@/components/site/spotlight-card';
 
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@freightpilot.app';
+
 export default function ContactPage() {
   return (
     <>
@@ -31,7 +33,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[#172a24]">Email us</h3>
-                  <p className="mt-1 text-sm text-[#5b6d66]">nahomgwmichael@gmail.com</p>
+                  <p className="mt-1 text-sm text-[#5b6d66]">{CONTACT_EMAIL}</p>
                 </div>
               </SpotlightCard>
             </div>

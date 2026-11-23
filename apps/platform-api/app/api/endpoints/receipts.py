@@ -17,9 +17,14 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.security import get_current_membership, get_current_user, require_org_roles
+from app.api.security import (
+    get_current_membership,
+    require_org_roles,
+    require_platform_admin,
+)
 from app.db.session import get_db
 from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
@@ -45,6 +50,15 @@ from app.services.billing.receipts import (
 )
 
 router = APIRouter()
+
+
+def _matches_receipt_signature(content_type: str, data: bytes) -> bool:
+    signatures = {
+        'image/png': (b'\x89PNG\r\n\x1a\n',),
+        'image/jpeg': (b'\xff\xd8\xff',),
+        'application/pdf': (b'%PDF-',),
+    }
+    return any(data.startswith(signature) for signature in signatures.get(content_type, ()))
 
 
 def _receipt_read(receipt) -> ReceiptRead:
@@ -77,7 +91,9 @@ def upload_receipt_endpoint(
     file: UploadFile = File(...),
     mock_extraction: str | None = Form(default=None),
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(get_current_membership),
+    membership: OrganizationMembership = Depends(
+        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
+    ),
 ):
     """Customer upload (any billing phase — write-guard EXEMPT).
 
@@ -87,7 +103,8 @@ def upload_receipt_endpoint(
     """
     from app.core.config import settings
 
-    file_bytes = file.file.read() if file.file else b''
+    max_bytes = settings.receipt_max_size_bytes
+    file_bytes = file.file.read(max_bytes + 1) if file.file else b''
     ext = file.filename.rsplit('.', 1)[-1].lower() if file.filename else ''
     if ext not in {'png', 'jpg', 'jpeg', 'pdf'} or file.content_type not in {
         'image/png',
@@ -95,12 +112,25 @@ def upload_receipt_endpoint(
         'application/pdf',
     }:
         raise HTTPException(status_code=400, detail=UNSUPPORTED_FORMAT_MESSAGE)
-    if len(file_bytes) > settings.receipt_max_size_bytes:
+    if len(file_bytes) > max_bytes:
         raise HTTPException(status_code=400, detail='Receipt too large — maximum 5 MB.')
+    if not _matches_receipt_signature(file.content_type or '', file_bytes):
+        raise HTTPException(status_code=415, detail='Receipt content does not match the declared file type.')
 
     org = db.get(Organization, membership.organization_id)
     if org is None:
         raise HTTPException(status_code=404, detail='Organization not found')
+
+    used_bytes, pending_count = db.execute(
+        select(
+            func.coalesce(func.sum(PaymentReceipt.file_size_bytes), 0),
+            func.count(PaymentReceipt.id).filter(PaymentReceipt.status.in_(['pending', 'escalated'])),
+        ).where(PaymentReceipt.organization_id == org.id)
+    ).one()
+    if int(used_bytes) + len(file_bytes) > settings.receipt_org_quota_bytes:
+        raise HTTPException(status_code=413, detail='This workspace has reached its receipt storage limit.')
+    if int(pending_count) >= settings.receipt_pending_limit:
+        raise HTTPException(status_code=429, detail='Too many receipts are waiting for review. Please wait for a decision.')
 
     lifecycle.refresh_workspace_state(db, org, datetime.now(UTC))
 
@@ -179,7 +209,9 @@ def submit_dispute_endpoint(
     receipt_id: str,
     payload: DisputeRequest,
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(get_current_membership),
+    membership: OrganizationMembership = Depends(
+        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
+    ),
 ):
     """Customer dispute (NB-17). Write-guard EXEMPT."""
     org = db.get(Organization, membership.organization_id)
@@ -198,15 +230,13 @@ def submit_dispute_endpoint(
 @router.get('/queue', response_model=list[ReceiptQueueItemRead])
 def receipt_queue(
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    _admin: User = Depends(require_platform_admin),
 ):
     """Admin verification queue (pending + escalated, oldest first).
     Write-guard EXEMPT — locked workspaces must still be serviced."""
     return [
         _queue_item(db, receipt)
-        for receipt in receipts_service.list_queue(db, membership.organization_id)
+        for receipt in receipts_service.list_queue(db)
     ]
 
 
@@ -214,11 +244,9 @@ def receipt_queue(
 def receipt_queue_item(
     receipt_id: str,
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    _admin: User = Depends(require_platform_admin),
 ):
-    receipt = receipts_service.get_queue_item(db, receipt_id, membership.organization_id)
+    receipt = receipts_service.get_queue_item(db, receipt_id)
     if receipt is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     return _queue_item(db, receipt)
@@ -228,12 +256,10 @@ def receipt_queue_item(
 def receipt_queue_file(
     receipt_id: str,
     db: Session = Depends(get_db),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    _admin: User = Depends(require_platform_admin),
 ):
     """Raw receipt bytes for the admin detail panel (DB blob re-display)."""
-    receipt = receipts_service.get_queue_item(db, receipt_id, membership.organization_id)
+    receipt = receipts_service.get_queue_item(db, receipt_id)
     if receipt is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     # the stored content_type is client-supplied. Force a
@@ -253,25 +279,25 @@ def render_decision_endpoint(
     receipt_id: str,
     payload: VerdictRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-    membership: OrganizationMembership = Depends(
-        require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
-    ),
+    user: User = Depends(require_platform_admin),
 ):
     """Admin verdict render (verify / reject_* / escalate) — write-guard
     EXEMPT. When the receipt has an open dispute, the same endpoint routes
     through dispute-resolution semantics (verify -> credit path;
     any rejection -> maintain_rejection)."""
+    target = db.get(PaymentReceipt, receipt_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail='Receipt not found')
     try:
         if receipts_service.has_open_dispute(
-            db, receipt_id, membership.organization_id
+            db, receipt_id, target.organization_id
         ):
             receipt = receipts_service.resolve_dispute(
-                db, user, receipt_id, payload, membership.organization_id
+                db, user, receipt_id, payload, target.organization_id
             )
         else:
             receipt = receipts_service.render_verdict(
-                db, user, receipt_id, payload, membership.organization_id
+                db, user, receipt_id, payload, target.organization_id
             )
     except ReceiptVerdictError as exc:
         raise _as_verdict_http(exc) from None

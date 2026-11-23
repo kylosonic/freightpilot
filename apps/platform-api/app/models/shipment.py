@@ -56,10 +56,10 @@ class Shipment(UUIDTimestampMixin, Base):
         UUIDType, ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True, index=True
     )
     shipment_no: Mapped[str] = mapped_column(String(64), nullable=False)
-    route_schedule_id: Mapped[UUID | None] = mapped_column(UUIDType, ForeignKey('route_schedules.id', ondelete='SET NULL'), nullable=True)
+    route_schedule_id: Mapped[UUID | None] = mapped_column(UUIDType, ForeignKey('route_schedules.id', ondelete='SET NULL'), nullable=True, index=True)
     origin_warehouse_id: Mapped[UUID] = mapped_column(UUIDType, ForeignKey('warehouses.id', ondelete='RESTRICT'), nullable=False, index=True)
-    destination_warehouse_id: Mapped[str] = mapped_column(
-        ForeignKey('warehouses.id', ondelete='RESTRICT'), nullable=False, index=True
+    destination_warehouse_id: Mapped[UUID] = mapped_column(
+        UUIDType, ForeignKey('warehouses.id', ondelete='RESTRICT'), nullable=False, index=True
     )
     item_id: Mapped[UUID] = mapped_column(UUIDType, ForeignKey('items.id', ondelete='RESTRICT'), nullable=False, index=True)
     quantity_units: Mapped[int] = mapped_column(Integer, nullable=False)

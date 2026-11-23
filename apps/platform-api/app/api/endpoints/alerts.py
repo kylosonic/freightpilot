@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import asc, select
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,10 @@ from app.services.audit import record_audit_event
 from app.services.rerouting import generate_rerouting_plan
 
 router = APIRouter()
+
+
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 @router.get('', response_model=list[AlertRead])
@@ -86,7 +90,6 @@ def create_alert(
 
 @router.post('/scan', response_model=list[AlertRead])
 def scan_alerts(
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     actor: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
@@ -152,7 +155,7 @@ def scan_alerts(
                         Alert.alert_type == AlertType.DELAYED_SHIPMENT,
                         Alert.status.in_([AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED]),
                         Alert.related_entity_type == 'shipment',
-                        Alert.related_entity_id == shipment.id,
+                        Alert.related_entity_id == str(shipment.id),
                     ),
                     Alert,
                     organization_id,
@@ -171,17 +174,24 @@ def scan_alerts(
             title=f'Delayed shipment: {shipment.shipment_no}',
             message=shipment.delay_reason or 'Shipment is delayed',
             related_entity_type='shipment',
-            related_entity_id=shipment.id,
+            related_entity_id=str(shipment.id),
         )
         generated.append(alert)
         
         if shipment.expected_delivery:
-            delay = now - shipment.expected_delivery
+            delay = now - _as_utc(shipment.expected_delivery)
             if delay.total_seconds() > 30 * 60:
                 tasks_to_queue.append((alert, shipment.id))
 
     for alert in generated:
         db.add(alert)
+    db.flush()
+
+    # Generate saved-route candidates inside the same transaction. Running
+    # this as a FastAPI BackgroundTask handed the task a request-scoped session
+    # that had already been closed; the plan lookup is cheap enough to keep here.
+    for alert, shipment_id in tasks_to_queue:
+        generate_rerouting_plan(db, str(alert.id), str(shipment_id), commit=False)
 
     record_audit_event(
         db,
@@ -196,9 +206,6 @@ def scan_alerts(
     db.commit()
     for alert in generated:
         db.refresh(alert)
-        
-    for alert, shipment_id in tasks_to_queue:
-        background_tasks.add_task(generate_rerouting_plan, db, alert.id, shipment_id)
         
     return generated
 

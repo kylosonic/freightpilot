@@ -4,19 +4,7 @@ import { Navigate } from 'react-router-dom';
 
 import { LoginFeedbackPanels } from '../components/login/LoginFeedbackPanels';
 import { useAuth } from '../context/AuthContext';
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (typeof err === 'object' && err !== null && 'response' in err) {
-    const response = (err as { response?: { data?: { detail?: string } } }).response;
-    if (response?.data?.detail) {
-      return response.data.detail;
-    }
-  }
-  if (err instanceof Error && err.message) {
-    return err.message;
-  }
-  return fallback;
-}
+import { apiErrorMessage } from '../services/authErrors';
 
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -30,11 +18,12 @@ export function LoginPage() {
   // Production static hosting can retain the login chunk from an earlier
   // deploy for a few minutes. Reloading avoids waiting on that stale bundle.
   useEffect(() => {
-    let reloading = false;
+    const reloadMarker = 'freightpilot_chunk_reload_at';
 
     function reloadOnce() {
-      if (reloading) return;
-      reloading = true;
+      const lastReload = Number(sessionStorage.getItem(reloadMarker) || 0);
+      if (Date.now() - lastReload < 60_000) return;
+      sessionStorage.setItem(reloadMarker, String(Date.now()));
       window.location.reload();
     }
 
@@ -71,7 +60,7 @@ export function LoginPage() {
     try {
       await login(identifier, password);
     } catch (err: unknown) {
-      setSignInError(getErrorMessage(err, 'Sign-in failed. Please try again.'));
+      setSignInError(apiErrorMessage(err, 'Sign-in failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }

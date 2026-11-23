@@ -81,7 +81,7 @@ class PaymentReceipt(UUIDTimestampMixin, Base):
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     content_type: Mapped[str] = mapped_column(String(64), nullable=False)
     file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
-    file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, deferred=True)
     file_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
 
     reference_number: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
@@ -98,7 +98,7 @@ class PaymentReceipt(UUIDTimestampMixin, Base):
     rejection_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
     admin_note: Mapped[str | None] = mapped_column(String(512), nullable=True)
     decision_made_by_user_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True
     )
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     trusted_payer_action: Mapped[str | None] = mapped_column(String(24), nullable=True)
@@ -111,7 +111,7 @@ class PaymentReceipt(UUIDTimestampMixin, Base):
     reversal_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
     reversal_note: Mapped[str | None] = mapped_column(String(512), nullable=True)
     reversed_by_user_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True
     )
     reversed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

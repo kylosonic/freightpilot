@@ -91,7 +91,45 @@ def test_invitation_can_be_revoked_and_cannot_be_reused(client: TestClient, admi
     assert accepted.status_code == 410
 
 
-def test_member_role_can_change_but_owner_cannot_be_removed(client: TestClient, admin_token: str):
+def test_deactivated_member_can_accept_a_new_invitation(client: TestClient, admin_token: str, db_session: Session):
+    members = client.get('/api/v1/team/members', headers=_headers(admin_token)).json()
+    viewer = next(row for row in members if row['username'] == 'viewer')
+    removed = client.delete(
+        f'/api/v1/team/members/{viewer["membership_id"]}',
+        headers=_headers(admin_token),
+    )
+    assert removed.status_code == 204, removed.text
+
+    created = client.post(
+        '/api/v1/team/invitations',
+        headers=_headers(admin_token),
+        json={'email': 'viewer@testco.com', 'role': 'operator'},
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    accepted = client.post(
+        '/api/v1/team/invitations/accept',
+        json={
+            'token': body['token'],
+            'username': 'viewer',
+            'password': 'viewer12345',
+        },
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()['organization_role'] == 'operator'
+    user = db_session.execute(select(User).where(User.username == 'viewer')).scalar_one()
+    membership = db_session.execute(
+        select(OrganizationMembership).where(
+            OrganizationMembership.user_id == user.id,
+            OrganizationMembership.is_active.is_(True),
+        )
+    ).scalar_one()
+    assert membership.role == 'operator'
+
+
+def test_member_role_can_change_but_owner_cannot_be_removed(
+    client: TestClient, admin_token: str, db_session: Session
+):
     members = client.get('/api/v1/team/members', headers=_headers(admin_token)).json()
     admin = next(row for row in members if row['username'] == 'admin')
     viewer = next(row for row in members if row['username'] == 'viewer')
@@ -110,6 +148,8 @@ def test_member_role_can_change_but_owner_cannot_be_removed(client: TestClient, 
     )
     assert promoted.status_code == 200, promoted.text
     assert promoted.json()['role'] == 'operator'
+    promoted_user = db_session.execute(select(User).where(User.username == 'viewer')).scalar_one()
+    assert promoted_user.role == 'operator'
 
     remove_owner = client.delete(
         f'/api/v1/team/members/{admin["membership_id"]}',

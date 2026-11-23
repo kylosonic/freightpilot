@@ -294,3 +294,36 @@ def test_credit_amount_never_rejection_reason(
 
     db_session.refresh(invoice)
     assert invoice.balance_remaining_etb == Decimal('4519.00')
+
+
+def test_zero_confidence_receipt_supports_manual_verified_amount(
+    client: TestClient, db_session: Session, make_paid_org_with_open_invoice
+):
+    _org, invoice, token = make_paid_org_with_open_invoice()
+    payload = mock_extraction_payload(
+        fields={
+            **mock_extraction_payload()['fields'],
+            'transfer_amount': 'not-a-number',
+            'reference_number': 'TXN-MANUAL-AMOUNT',
+        }
+    )
+    upload = client.post(
+        '/api/v1/receipts/upload',
+        headers={'Authorization': f'Bearer {token}'},
+        files={'file': ('receipt.png', sample_receipt_bytes(), 'image/png')},
+        data={'mock_extraction': __import__('json').dumps(payload)},
+    )
+    assert upload.status_code == 200, upload.text
+    receipt_id = _receipt_id(client, token)
+
+    missing = _verify(client, token, receipt_id)
+    assert missing.status_code == 422
+    assert 'Enter the verified amount' in missing.json()['detail']
+
+    non_positive = _verify(client, token, receipt_id, verified_amount_etb='0')
+    assert non_positive.status_code == 422
+
+    accepted = _verify(client, token, receipt_id, verified_amount_etb='100.00')
+    assert accepted.status_code == 200, accepted.text
+    db_session.refresh(invoice)
+    assert invoice.balance_remaining_etb == Decimal('4420.00')

@@ -20,11 +20,18 @@ from datetime import datetime
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.models.alert import Alert
+from app.models.cash_collection import CashCollection
+from app.models.dispatch import Customer, DeliveryOrder, DeliveryProof, DispatchRun
+from app.models.dock_appointment import DockAppointment
 from app.models.fleet_asset import FleetAsset
 from app.models.inventory import Inventory
 from app.models.item import Item
 from app.models.order import HistoricalOrder
 from app.models.organization import Organization
+from app.models.replenishment import ReplenishmentPlan
+from app.models.route import RouteSchedule
+from app.models.shipment import Shipment
 from app.models.threshold_crossing import ThresholdCrossing
 from app.models.user import User
 from app.models.warehouse import Warehouse
@@ -32,7 +39,23 @@ from app.services.activation import seeding
 from app.services.activation.state import CATEGORIES, _ensure_state_row
 from app.services.audit import record_audit_event
 
-_DELETE_ORDER = (HistoricalOrder, Inventory, FleetAsset, Item, Warehouse)
+_DELETE_ORDER = (
+    DeliveryProof,
+    DeliveryOrder,
+    DispatchRun,
+    Customer,
+    CashCollection,
+    Shipment,
+    RouteSchedule,
+    ReplenishmentPlan,
+    DockAppointment,
+    Alert,
+    HistoricalOrder,
+    Inventory,
+    FleetAsset,
+    Item,
+    Warehouse,
+)
 
 
 class ResetError(Exception):

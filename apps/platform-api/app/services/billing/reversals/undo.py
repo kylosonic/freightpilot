@@ -41,7 +41,7 @@ def undo_verification(
         select(PaymentReceipt).where(
             PaymentReceipt.id == receipt_id,
             PaymentReceipt.organization_id == organization_id,
-        )
+        ).with_for_update()
     ).scalar_one_or_none()
     if receipt is None:
         raise ReversalError(404, 'Receipt not found')

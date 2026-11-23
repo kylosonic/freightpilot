@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
@@ -12,6 +12,7 @@ import {
   useVerifiedAudit,
 } from '../hooks/queries';
 import { getReceiptFileUrl, renderDecision } from '../services/receiptsApi';
+import { apiErrorMessage } from '../services/authErrors';
 import type {
   LargeSurplusDecision,
   ReceiptQueueItem,
@@ -271,10 +272,17 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
   const [trustedPayerAction, setTrustedPayerAction] = useState<TrustedPayerAction>('verified_once');
   const [surplusDecision, setSurplusDecision] = useState<LargeSurplusDecision>('credit_forward');
   const [partialAmount, setPartialAmount] = useState('');
+  const [verifiedAmount, setVerifiedAmount] = useState('');
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(false);
   const removeMutation = useRemoveTrustedPayer();
+
+  useEffect(() => {
+    return () => {
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+    };
+  }, [fileUrl]);
 
   const fieldRows: Array<[string, string | null, number]> = [
     ['sender_name', item.extracted_fields['sender_name'] ?? null, item.confidence['sender_name'] ?? 0],
@@ -312,11 +320,14 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
           verdict === 'verify' && item.is_large_surplus && surplusDecision === 'partial_ignore'
             ? partialAmount
             : null,
+        verified_amount_etb:
+          verdict === 'verify' && !item.extracted_fields['transfer_amount']
+            ? verifiedAmount
+            : null,
       });
       onRendered();
     } catch (error: unknown) {
-      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      onError(detail ?? 'Could not save the decision.');
+      onError(apiErrorMessage(error, 'Could not save the decision.'));
     } finally {
       setBusy(false);
     }
@@ -332,8 +343,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
       await removeMutation.mutateAsync({ senderName: sender, organizationId: item.organization_id });
       onError('');
     } catch (error: unknown) {
-      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      onError(detail ?? 'Failed to remove trusted payer.');
+      onError(apiErrorMessage(error, 'Failed to remove trusted payer.'));
     } finally {
       setRemoving(false);
     }
@@ -512,6 +522,24 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         ) : null}
 
         {verdict === 'verify' ? (
+          !item.extracted_fields['transfer_amount'] ? (
+            <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
+              <label htmlFor="verified-amount" className="text-xs font-semibold text-[#885100]">
+                Amount shown on the receipt (ETB)
+              </label>
+              <input
+                id="verified-amount"
+                inputMode="decimal"
+                value={verifiedAmount}
+                onChange={(event) => setVerifiedAmount(event.target.value)}
+                placeholder="Enter the amount you verified"
+                className="fp-input mt-2 min-h-10 px-3"
+              />
+            </div>
+          ) : null
+        ) : null}
+
+        {verdict === 'verify' ? (
           <div className="flex flex-wrap items-center gap-3">
             <label htmlFor="trusted-payer-action" className="text-xs font-semibold text-[#73736e]">Remember this sender?</label>
             <select
@@ -545,7 +573,12 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
 
         <button
           type="submit"
-          disabled={busy || !verdict || (verdict === 'escalate' && !note.trim())}
+          disabled={
+            busy
+            || !verdict
+            || (verdict === 'escalate' && !note.trim())
+            || (verdict === 'verify' && !item.extracted_fields['transfer_amount'] && !verifiedAmount.trim())
+          }
           className="fp-action-primary"
         >
           {busy ? 'Saving…' : 'Save decision'}
@@ -581,8 +614,7 @@ export function AdminReceiptsPage() {
       await undoMutation.mutateAsync({ id: row.id, note: note || null });
       setMessage(`Undo applied to ${row.reference_number ?? row.id} — balance restored, no customer notice.`);
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail ?? 'Undo failed.');
+      setError(apiErrorMessage(err, 'Undo failed.'));
     }
   }
 
@@ -594,8 +626,7 @@ export function AdminReceiptsPage() {
         result.message ?? `Reversal applied to ${row.reference_number ?? row.id} — customer notified.`,
       );
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail ?? 'Reverse failed.');
+      setError(apiErrorMessage(err, 'Reverse failed.'));
     }
   }
 

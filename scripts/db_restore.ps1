@@ -16,5 +16,11 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Restoring PostgreSQL backup from $InputFile ..."
-Get-Content $InputFile | docker compose exec -T postgres psql -U $pgUser -d $pgDb
+$process = Start-Process -FilePath docker `
+  -ArgumentList @('compose','exec','-T','postgres','psql','-v','ON_ERROR_STOP=1','--single-transaction','-U',$pgUser,'-d',$pgDb) `
+  -RedirectStandardInput ([System.IO.Path]::GetFullPath($InputFile)) `
+  -NoNewWindow -Wait -PassThru
+if ($process.ExitCode -ne 0) {
+  throw "psql restore failed with exit code $($process.ExitCode)."
+}
 Write-Host "Restore completed."

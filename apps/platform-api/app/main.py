@@ -1,23 +1,18 @@
 import logging
 import re
-import time
 from contextlib import asynccontextmanager
-from uuid import uuid4
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from sqlalchemy import text
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.core.http_security import add_http_security
 from app.core.observability import app_metrics
 from app.db.migration_status import migration_readiness
 from app.db.session import get_engine
@@ -61,58 +56,7 @@ app.add_exception_handler(
 )
 app.add_middleware(SlowAPIMiddleware)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials='*' not in settings.cors_origins,
-    allow_methods=['*'],
-    allow_headers=['*'],
-)
-
-if settings.effective_allowed_hosts:
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.effective_allowed_hosts)
-
-
-class RequestContextMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        request_id = request.headers.get('x-request-id') or str(uuid4())
-        start = time.perf_counter()
-        try:
-            response: Response = await call_next(request)
-        except Exception:
-            duration_ms = round((time.perf_counter() - start) * 1000, 2)
-            app_metrics.record_exception()
-            logger.exception(
-                'request_failed method=%s path=%s duration_ms=%.2f request_id=%s',
-                request.method,
-                request.url.path,
-                duration_ms,
-                request_id,
-            )
-            raise
-        duration_ms = round((time.perf_counter() - start) * 1000, 2)
-        response.headers['X-Request-ID'] = request_id
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-Frame-Options'] = 'DENY'
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-        if request.url.path.startswith('/api/'):
-            response.headers['Cache-Control'] = 'no-store'
-
-        app_metrics.record_http(response.status_code)
-        logger.info(
-            'request_completed method=%s path=%s status=%s duration_ms=%.2f request_id=%s',
-            request.method,
-            request.url.path,
-            response.status_code,
-            duration_ms,
-            request_id,
-        )
-        return response
-
-
-app.add_middleware(RequestContextMiddleware)
+add_http_security(app)
 app.include_router(api_router, prefix='/api/v1')
 
 
@@ -149,10 +93,17 @@ def health() -> dict:
             type(exc).__name__,
             redacted[:300],
         )
-    return {
+    payload = {
         'status': 'ok' if db_status == 'ok' else 'degraded',
         'db': db_status,
         'schema': schema['status'],
         'revision': schema['current'],
         'expected_revision': schema['expected'],
     }
+    # A reachable database with an unapplied schema is not healthy. Failing
+    # readiness here prevents traffic from reaching code that expects newer
+    # columns/constraints while still exposing the live revision.
+    ready = payload['status'] == 'ok' and payload['schema'] == 'current'
+    if not ready:
+        payload['status'] = 'degraded'
+    return JSONResponse(payload, status_code=200 if ready else 503)

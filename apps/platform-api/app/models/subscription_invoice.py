@@ -45,7 +45,7 @@ class SubscriptionInvoice(UUIDTimestampMixin, Base):
     grace_days: Mapped[int] = mapped_column(Integer, nullable=False)
     grace_ends_at: Mapped[date] = mapped_column(Date, nullable=False)
     designated_account_id: Mapped[UUID] = mapped_column(
-        UUIDType, ForeignKey('collection_accounts.id', ondelete='RESTRICT'), nullable=False
+        UUIDType, ForeignKey('collection_accounts.id', ondelete='RESTRICT'), nullable=False, index=True
     )
     status: Mapped[str] = mapped_column(String(24), default='issued', nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

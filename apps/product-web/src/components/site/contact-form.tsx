@@ -6,7 +6,7 @@ import { CheckCircle2, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const CONTACT_ENDPOINT =
-  process.env.NEXT_PUBLIC_CONTACT_FORM_ENDPOINT || 'https://formsubmit.co/ajax/nahomgwmichael@gmail.com';
+  process.env.NEXT_PUBLIC_CONTACT_FORM_ENDPOINT || '';
 
 export function ContactForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -17,10 +17,12 @@ export function ContactForm() {
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    
-    // We inject the subject and other formsubmit config fields
+    if (!CONTACT_ENDPOINT) {
+      setStatus('error');
+      return;
+    }
+
     formData.append('_subject', 'New Contact Request from FreightPilot Website');
-    formData.append('_captcha', 'false');
 
     try {
       const response = await fetch(CONTACT_ENDPOINT, {

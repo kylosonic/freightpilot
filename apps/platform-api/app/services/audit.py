@@ -45,7 +45,7 @@ def record_audit_event(
     event = AuditEvent(
         event_type=event_type,
         entity_type=entity_type,
-        entity_id=entity_id,
+        entity_id=str(entity_id) if entity_id is not None else None,
         actor_user_id=actor.id if actor else None,
         organization_id=organization_id or resolve_actor_organization_id(db, actor),
         description=description,
@@ -103,7 +103,10 @@ def auto_resolve_late_pickup(alert_id: UUID, db: Session) -> dict[str, Any]:
         raise ValueError(f"Alert '{alert_id}' has no related route entity")
 
     route = db.execute(
-        select(RouteSchedule).where(RouteSchedule.id == route_id)
+        select(RouteSchedule).where(
+            RouteSchedule.id == route_id,
+            RouteSchedule.organization_id == alert.organization_id,
+        )
     ).scalar_one_or_none()
 
     if route is None:
@@ -119,6 +122,7 @@ def auto_resolve_late_pickup(alert_id: UUID, db: Session) -> dict[str, Any]:
     # 3. Query all IDLE assets with known positions
     idle_assets = db.execute(
         select(FleetAsset).where(
+            FleetAsset.organization_id == alert.organization_id,
             FleetAsset.status == 'IDLE',
             FleetAsset.latitude.isnot(None),
             FleetAsset.longitude.isnot(None),

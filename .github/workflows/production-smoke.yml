@@ -30,13 +30,13 @@ jobs:
           assert health['status'] == 'ok', health
           assert health['schema'] == 'current', health
           assert health['revision'] == health['expected_revision'], health
-          assert health['revision'] == '20261107_0026', health
+          assert health['revision'] == '20261122_0027', health
 
       - name: API schema revision endpoint
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
             https://freightpilot-api.freightpilot.workers.dev/api/v1/health/schema \
-            | python3 -c "import json,sys; schema=json.load(sys.stdin); assert schema == {'status': 'current', 'current': '20261107_0026', 'expected': '20261107_0026'}, schema"
+            | python3 -c "import json,sys; schema=json.load(sys.stdin); assert schema == {'status': 'current', 'current': '20261122_0027', 'expected': '20261122_0027'}, schema"
 
       - name: Public surfaces
         run: |
@@ -74,6 +74,25 @@ jobs:
                   'strict-transport-security:',
               ):
                   assert name in headers, (path, name)
+          PY
+
+      - name: API security headers are published
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --dump-header /tmp/freightpilot-api-headers.txt \
+            https://freightpilot-api.freightpilot.workers.dev/health > /dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+
+          headers = Path('/tmp/freightpilot-api-headers.txt').read_text(encoding='utf-8').lower()
+          for name in (
+              'content-security-policy:',
+              'x-content-type-options: nosniff',
+              'x-frame-options: deny',
+              'strict-transport-security:',
+              'cache-control: no-store',
+          ):
+              assert name in headers, name
           PY
 
       - name: Legacy addresses redirect to current sites

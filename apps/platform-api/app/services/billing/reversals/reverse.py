@@ -81,7 +81,7 @@ def reverse_verification(
         select(PaymentReceipt).where(
             PaymentReceipt.id == receipt_id,
             PaymentReceipt.organization_id == organization_id,
-        )
+        ).with_for_update()
     ).scalar_one_or_none()
     if receipt is None:
         raise ReversalError(404, 'Receipt not found')
@@ -118,7 +118,7 @@ def reverse_verification(
 
     # The EXACT NB-20.3 copy, in-product only (NO SMS — NB-16 is the only
     # SMS state; NO refund execution — NB-20.5).
-    message = build_reversal_message(verified_event.payload or {}, decided, reason)
+    message = build_reversal_message(verified_event.payload or {}, decided, reason)[:512]
     db.add(
         Notification(
             organization_id=org.id,

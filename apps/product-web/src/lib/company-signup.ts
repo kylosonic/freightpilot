@@ -85,6 +85,7 @@ export async function companySignup(payload: CompanySignupRequest): Promise<Comp
   try {
     response = await fetch(`${apiBase}/auth/company-signup`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },

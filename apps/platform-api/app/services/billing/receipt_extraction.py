@@ -205,6 +205,8 @@ def _post_chat_completion(url: str, api_key: str, payload: dict) -> dict:
         )
     except httpx.HTTPError as exc:
         raise ProviderAdapterError(f'chat-completions HTTP error: {exc}') from exc
+    except Exception as exc:  # noqa: BLE001 - Workers transport errors are runtime-specific
+        raise ProviderAdapterError(f'chat-completions transport unavailable: {exc}') from exc
     if response.status_code >= 300:
         raise ProviderAdapterError(f'chat-completions returned HTTP {response.status_code}')
     try:

@@ -6,6 +6,7 @@ proof), operational usability of seeded data, supersede semantics
 (decision #3) and org-scoped uploads (decision #13).
 """
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pandas as pd
@@ -17,6 +18,7 @@ from app.models.fleet_asset import FleetAsset
 from app.models.inventory import Inventory
 from app.models.item import Item
 from app.models.order import HistoricalOrder
+from app.models.route import RouteSchedule
 from app.models.warehouse import Warehouse
 from tests.conftest import (
     real_inventory_csv,
@@ -246,6 +248,43 @@ def test_supersede_keeps_sample_warehouse_referenced_by_real_inventory(
     codes = {w.code for w in remaining}
     assert kept.code in codes
     assert 'WH-REAL-1' in codes
+
+
+def test_supersede_keeps_sample_warehouse_referenced_by_route(
+    client, db_session: Session, signup_workspace, seed_csv_path, upload_csv
+):
+    org_id, token = signup_workspace(name='Route Supersede Co')
+    org_uuid = UUID(org_id)
+    warehouses = db_session.execute(
+        select(Warehouse)
+        .where(Warehouse.organization_id == org_uuid)
+        .order_by(Warehouse.code)
+    ).scalars().all()
+    assert len(warehouses) >= 2
+    route = RouteSchedule(
+        organization_id=org_uuid,
+        route_name='Active sample route',
+        schedule_date=datetime.now(UTC).date(),
+        start_warehouse_id=warehouses[0].id,
+        vehicle_capacity_units=100,
+        status='active',
+    )
+    db_session.add(route)
+    db_session.commit()
+
+    response = upload_csv(
+        token,
+        'warehouses',
+        content=real_warehouse_csv([
+            ('WH-REAL-ROUTE', 'Real Route WH', '1 Rd', 'Addis', 'AA', 'Ethiopia', 9.0, 38.7, 100),
+        ]),
+    )
+    assert response.status_code == 200, response.text
+    db_session.expire_all()
+
+    kept = db_session.get(Warehouse, warehouses[0].id)
+    assert kept is not None
+    assert kept.data_origin == 'sample'
 
 
 def test_supersede_deletes_dangling_sample_inventory_orders(

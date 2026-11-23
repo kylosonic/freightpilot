@@ -35,6 +35,12 @@ _GATEWAY_TIMEOUT_SECONDS = 15.0
 _MAX_ERROR_MESSAGE_CHARS = 200
 
 
+def _escalation_body(org_name: str) -> str:
+    available = _SMS_MAX_CHARS - len(ESCALATION_SMS_TEMPLATE.format(name=''))
+    name = (org_name or 'your workspace').strip()[: max(1, available)].rstrip()
+    return ESCALATION_SMS_TEMPLATE.format(name=name)
+
+
 def mask_phone(phone: str) -> str:
     """Mask a phone for audit payloads: first 3 chars + last 2, stars between."""
     if len(phone) <= 4:
@@ -126,7 +132,7 @@ def send_escalation_sms(db: Session, org: Organization, receipt: PaymentReceipt)
             organization_id=org.id,
             receipt_id=receipt.id,
             to_phone='',
-            body=ESCALATION_SMS_TEMPLATE.format(name=org.name),
+            body=_escalation_body(org.name),
             status='failed',
             error_message='no_phone_on_file',
         )
@@ -143,8 +149,7 @@ def send_escalation_sms(db: Session, org: Organization, receipt: PaymentReceipt)
         )
         return row
 
-    body = ESCALATION_SMS_TEMPLATE.format(name=org.name)
-    assert len(body) <= _SMS_MAX_CHARS, 'escalation SMS template exceeds 160 characters'
+    body = _escalation_body(org.name)
     row = enqueue_sms(
         db,
         organization_id=org.id,

@@ -73,11 +73,11 @@ class DispatchRun(UUIDTimestampMixin, Base):
         UUIDType, ForeignKey('drivers.id', ondelete='SET NULL'), nullable=True, index=True
     )
     created_by_user_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True
     )
     cash_closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cash_closed_by_user_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True
     )
     cash_declared_etb: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     cash_handed_over_etb: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
@@ -111,7 +111,7 @@ class DeliveryOrder(UUIDTimestampMixin, Base):
         index=True,
     )
     item_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('items.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('items.id', ondelete='SET NULL'), nullable=True, index=True
     )
     dispatch_run_id: Mapped[UUID | None] = mapped_column(
         UUIDType, ForeignKey('dispatch_runs.id', ondelete='SET NULL'), nullable=True, index=True
@@ -165,7 +165,7 @@ class DeliveryProof(UUIDTimestampMixin, Base):
     proof_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
     proof_kind: Mapped[str] = mapped_column(String(16), default='photo', nullable=False)
     content_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, deferred=True)
     file_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     recipient_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)

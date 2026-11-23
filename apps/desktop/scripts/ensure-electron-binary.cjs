@@ -88,7 +88,15 @@ async function readSmallEntry(archive, entry) {
   }
   const stream = await openEntryStream(archive, entry);
   const chunks = [];
-  for await (const chunk of stream) chunks.push(chunk);
+  let bytes = 0;
+  for await (const chunk of stream) {
+    bytes += chunk.length;
+    if (bytes > MAX_SYMLINK_BYTES) {
+      stream.destroy();
+      throw new Error(`[desktop] Symlink target exceeded the byte limit: ${entry.fileName}`);
+    }
+    chunks.push(chunk);
+  }
   return Buffer.concat(chunks).toString('utf8');
 }
 
@@ -187,7 +195,10 @@ async function ensureElectronBinary() {
   fs.rmSync(distDir, { recursive: true, force: true });
   fs.mkdirSync(distDir, { recursive: true });
 
-  const checksums = fs.existsSync(checksumsPath) ? require(checksumsPath) : undefined;
+  if (!fs.existsSync(checksumsPath)) {
+    throw new Error('[desktop] Electron checksums.json is missing; refusing an unverified binary download.');
+  }
+  const checksums = require(checksumsPath);
   const zipPath = await downloadArtifact({
     version,
     artifactName: 'electron',

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models.inventory import Inventory
@@ -41,30 +40,31 @@ class InventoryRepository(BaseRepository[Inventory]):
         quantity_on_hand: int,
         safety_stock: int,
     ) -> Inventory:
-        stmt = pg_insert(Inventory).values(
-            warehouse_id=warehouse_id,
-            item_id=item_id,
-            organization_id=organization_id,
-            quantity_on_hand=quantity_on_hand,
-            safety_stock=safety_stock,
+        stmt = select(Inventory).where(
+            Inventory.warehouse_id == warehouse_id,
+            Inventory.item_id == item_id,
         )
-        stmt = stmt.on_conflict_do_update(
-            constraint='uq_inventory_warehouse_item',
-            set_={
-                'quantity_on_hand': quantity_on_hand,
-                'safety_stock': safety_stock,
-                'updated_at': func.now(),
-            },
-        )
-        self.db.execute(stmt)
-        self.db.commit()
-
-        return self.db.execute(
-            select(Inventory).where(
-                Inventory.warehouse_id == warehouse_id,
-                Inventory.item_id == item_id,
+        if organization_id is not None:
+            stmt = stmt.where(Inventory.organization_id == organization_id)
+        row = self.db.execute(stmt.with_for_update()).scalar_one_or_none()
+        if row is None:
+            row = Inventory(
+                warehouse_id=warehouse_id,
+                item_id=item_id,
+                organization_id=organization_id,
+                data_origin='real',
+                quantity_on_hand=quantity_on_hand,
+                safety_stock=safety_stock,
             )
-        ).scalar_one()
+            self.db.add(row)
+        else:
+            row.organization_id = organization_id or row.organization_id
+            row.data_origin = 'real'
+            row.quantity_on_hand = quantity_on_hand
+            row.safety_stock = safety_stock
+            self.db.add(row)
+        self.db.flush()
+        return row
 
     def get_overview_by_org(self, organization_id: str) -> list[dict]:
         stmt = (

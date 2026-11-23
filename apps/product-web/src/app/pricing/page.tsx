@@ -44,12 +44,13 @@ const faqJsonLd = {
 };
 
 export default function PricingPage() {
+  const structuredData = JSON.stringify(faqJsonLd).replace(/</g, '\\u003c');
   return (
     <>
       {/* JSON-LD structured data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: structuredData }}
       />
 
       <PageHero

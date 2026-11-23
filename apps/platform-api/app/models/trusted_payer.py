@@ -27,5 +27,5 @@ class TrustedPayer(UUIDTimestampMixin, Base):
     )
     sender_name: Mapped[str] = mapped_column(String(128), nullable=False)
     added_by_user_id: Mapped[UUID | None] = mapped_column(
-        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True
+        UUIDType, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True
     )
