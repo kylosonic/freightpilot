@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.inventory import Inventory
@@ -48,15 +49,27 @@ class InventoryRepository(BaseRepository[Inventory]):
             stmt = stmt.where(Inventory.organization_id == organization_id)
         row = self.db.execute(stmt.with_for_update()).scalar_one_or_none()
         if row is None:
-            row = Inventory(
-                warehouse_id=warehouse_id,
-                item_id=item_id,
-                organization_id=organization_id,
-                data_origin='real',
-                quantity_on_hand=quantity_on_hand,
-                safety_stock=safety_stock,
-            )
-            self.db.add(row)
+            try:
+                with self.db.begin_nested():
+                    row = Inventory(
+                        warehouse_id=warehouse_id,
+                        item_id=item_id,
+                        organization_id=organization_id,
+                        data_origin='real',
+                        quantity_on_hand=quantity_on_hand,
+                        safety_stock=safety_stock,
+                    )
+                    self.db.add(row)
+                    self.db.flush()
+            except IntegrityError:
+                # Another request inserted the row after our SELECT. Re-read it
+                # under the unique key and apply this request's values.
+                row = self.db.execute(stmt.with_for_update()).scalar_one()
+                row.organization_id = organization_id or row.organization_id
+                row.data_origin = 'real'
+                row.quantity_on_hand = quantity_on_hand
+                row.safety_stock = safety_stock
+                self.db.add(row)
         else:
             row.organization_id = organization_id or row.organization_id
             row.data_origin = 'real'

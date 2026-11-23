@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { downloadArtifact } = require('@electron/get');
 const yauzl = require('yauzl');
-const { safeArchivePath } = require('./archive-path.cjs');
+const { assertSymlinkTargetInside, safeArchivePath } = require('./archive-path.cjs');
 
 const checkOnly = process.argv.includes('--check');
 const MAX_ARCHIVE_BYTES = 1024 * 1024 * 1024;
@@ -139,6 +139,7 @@ async function extractArchive(zipPath, destination) {
           ) {
             throw new Error(`[desktop] Unsafe symlink in Electron archive: ${entry.fileName}`);
           }
+          assertSymlinkTargetInside(destination, resolvedTarget, entry.fileName);
           fs.mkdirSync(path.dirname(targetPath), { recursive: true });
           fs.rmSync(targetPath, { force: true });
           fs.symlinkSync(linkTarget, targetPath);

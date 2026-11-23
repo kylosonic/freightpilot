@@ -52,7 +52,16 @@ if (-not $PythonExe) {
 
 function Set-WorkerSecret([string]$name, [string]$value) {
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = 'npx'
+    $isWindowsHost = $IsWindows -or $env:OS -eq 'Windows_NT'
+    if ($isWindowsHost) {
+        $psi.FileName = if ($env:ComSpec) { $env:ComSpec } else { 'cmd.exe' }
+        $psi.ArgumentList.Add('/d')
+        $psi.ArgumentList.Add('/s')
+        $psi.ArgumentList.Add('/c')
+        $psi.ArgumentList.Add('npx.cmd')
+    } else {
+        $psi.FileName = 'npx'
+    }
     $psi.ArgumentList.Add('wrangler')
     $psi.ArgumentList.Add('secret')
     $psi.ArgumentList.Add('put')
@@ -70,9 +79,13 @@ function Set-WorkerSecret([string]$name, [string]$value) {
     $process = [System.Diagnostics.Process]::Start($psi)
     $process.StandardInput.WriteLine($value)
     $process.StandardInput.Close()
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
+    # Drain both streams concurrently. Reading one to completion before the
+    # other can deadlock when wrangler fills the unread pipe.
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
     $process.WaitForExit()
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
     if ($process.ExitCode -ne 0) {
         Die "wrangler secret put $name failed:`n$stdout`n$stderr"
     }

@@ -43,6 +43,9 @@ export async function listReceiptQueue(): Promise<ReceiptQueueItem[]> {
 
 export async function getReceiptFileUrl(id: string): Promise<string> {
   const { data } = await api.get<Blob>(`/receipts/queue/${id}/file`, { responseType: 'blob' });
+  if (!['image/png', 'image/jpeg', 'application/pdf'].includes(data.type)) {
+    throw new Error('Receipt file type is not allowed.');
+  }
   return URL.createObjectURL(data);
 }
 

@@ -7,10 +7,12 @@ export function ProtectedRoute({
   children,
   allowedRoles,
   allowPlatformAdmin = false,
+  requirePlatformAdmin = false,
 }: {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
   allowPlatformAdmin?: boolean;
+  requirePlatformAdmin?: boolean;
 }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -28,6 +30,10 @@ export function ProtectedRoute({
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  if (requirePlatformAdmin && !user.is_platform_admin) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role) && !(allowPlatformAdmin && user.is_platform_admin)) {

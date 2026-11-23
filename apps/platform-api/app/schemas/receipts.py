@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.schemas.common import UUIDString
 
+
 class ReceiptStatus(StrEnum):
     PENDING = 'pending'
     VERIFIED = 'verified'
@@ -77,6 +78,7 @@ class ReceiptQueueItemRead(BaseModel):
     organization_id: UUIDString
     organization_name: str
     invoice_number: str | None = None
+    invoice_balance_etb: Decimal | None = None
     designated_bank_code: str | None = None
     status: ReceiptStatus
     verdict: Verdict | None = None
@@ -115,11 +117,17 @@ class VerdictRequest(BaseModel):
     partial_credit_amount_etb: Decimal | None = None
 
     @model_validator(mode='after')
-    def _validate_shape(self) -> 'VerdictRequest':
+    def _validate_shape(self) -> VerdictRequest:
         if self.partial_credit_amount_etb is not None and self.partial_credit_amount_etb <= 0:
             raise ValueError('partial_credit_amount_etb must be positive')
-        if self.partial_credit_amount_etb is not None and self.large_surplus_decision != LargeSurplusDecision.PARTIAL_IGNORE:
-            raise ValueError('partial_credit_amount_etb is only valid with large_surplus_decision=partial_ignore')
+        if (
+            self.partial_credit_amount_etb is not None
+            and self.large_surplus_decision != LargeSurplusDecision.PARTIAL_IGNORE
+        ):
+            raise ValueError(
+                'partial_credit_amount_etb is only valid with '
+                'large_surplus_decision=partial_ignore'
+            )
         return self
 
 

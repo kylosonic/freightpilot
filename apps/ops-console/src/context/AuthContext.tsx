@@ -32,6 +32,46 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+async function clearDriverOfflineState() {
+  await clearAllQueuedProofs().catch(() => undefined);
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('freightpilot_driver_')) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch {
+      // Storage can be disabled by browser privacy settings.
+    }
+  }
+  if (typeof caches !== 'undefined') {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith('freightpilot-driver'))
+          .map((key) => caches.delete(key)),
+      );
+    } catch {
+      // Cache storage can be unavailable in private or restricted contexts.
+    }
+  }
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(
+        registrations
+          .filter((registration) => registration.scope.includes('/driver'))
+          .map((registration) => registration.unregister()),
+      );
+    } catch {
+      // Registration cleanup is best-effort during session teardown.
+    }
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<UserRead | null>(null);
@@ -49,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setOrgId(null);
       queryClient.clear();
       clearLiveSession();
-      void clearAllQueuedProofs().catch(() => undefined);
+      void clearDriverOfflineState();
     });
   }, [queryClient]);
 
@@ -131,21 +171,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // cookie might already be gone
     }
     clearAuthStorage();
-    await clearAllQueuedProofs().catch(() => undefined);
+    await clearDriverOfflineState();
     setUser(null);
     setOrgId(null);
     queryClient.clear();
     clearLiveSession();
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('freightpilot_driver_')) {
-        localStorage.removeItem(key);
-      }
-    }
-    if ('caches' in window) {
-      void caches.keys().then((keys) =>
-        Promise.all(keys.map((key) => caches.delete(key))),
-      );
-    }
   }, [queryClient]);
 
   const value = useMemo(

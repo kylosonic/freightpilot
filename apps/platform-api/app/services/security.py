@@ -58,7 +58,12 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return False
 
 
-_DUMMY_TIMING_HASH = hash_password('__dummy_timing_guard__')
+# Static PBKDF2 material keeps module import cheap. Login misses still pay the
+# full 600,000-iteration verification cost just like a real account lookup.
+_DUMMY_TIMING_HASH = (
+    'pbkdf2_sha256$timing-guard-v1$'
+    'WFaZ46w_ZI8HofyaNTNoIl0BNWjzsGOIP1OTFglOKfw='
+)
 
 
 def verify_dummy_password(password: str = '__dummy_timing_probe__') -> bool:

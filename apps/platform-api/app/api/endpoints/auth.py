@@ -12,6 +12,7 @@ from app.api.security import (
     get_current_membership,
     get_current_user,
     get_current_user_from_token,
+    is_platform_admin_user,
     require_roles,
 )
 from app.core.config import settings
@@ -81,6 +82,13 @@ def _set_auth_cookie(response: Response, token: str) -> None:
         secure=secure,
         samesite='strict',
         path='/',
+    )
+
+
+def _user_read(user: User) -> UserRead:
+    """Serialize effective platform privilege, including the email allowlist."""
+    return UserRead.model_validate(user).model_copy(
+        update={'is_platform_admin': is_platform_admin_user(user)}
     )
 
 
@@ -222,7 +230,7 @@ def register_user(
     )
     db.commit()
     db.refresh(user)
-    return user
+    return _user_read(user)
 
 
 @router.post('/company-signup', response_model=CompanySignupResponse, status_code=201)
@@ -327,7 +335,7 @@ def company_signup(
     return CompanySignupResponse(
         access_token=token,
         expires_in_seconds=settings.jwt_access_token_expire_minutes * 60,
-        user=UserRead.model_validate(user),
+        user=_user_read(user),
         organization=OrganizationRead.model_validate(org),
     )
 
@@ -367,7 +375,7 @@ def login_user(payload: UserLogin, request: Request, response: Response, db: Ses
 
 @router.get('/me', response_model=UserRead)
 def me(current_user: User = Depends(get_current_user)):
-    return UserRead.model_validate(current_user)
+    return _user_read(current_user)
 
 
 @router.get('/users', response_model=list[UserRead])
@@ -383,7 +391,7 @@ def list_users(
         .where(OrganizationMembership.is_active.is_(True))
         .order_by(User.username)
     ).scalars().all()
-    return rows
+    return [_user_read(user) for user in rows]
 
 
 @router.post('/logout')

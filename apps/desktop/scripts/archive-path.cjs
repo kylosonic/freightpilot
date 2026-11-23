@@ -37,4 +37,19 @@ function safeArchivePath(root, entryName) {
   return destination;
 }
 
-module.exports = { safeArchivePath };
+function assertSymlinkTargetInside(root, target, entryName) {
+  const rootReal = fs.realpathSync(root);
+  let probe = target;
+  while (!fs.existsSync(probe)) {
+    const parent = path.dirname(probe);
+    if (parent === probe) break;
+    probe = parent;
+  }
+  const resolvedReal = fs.realpathSync(probe);
+  const relative = path.relative(rootReal, resolvedReal);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new Error(`[desktop] Symlink target escapes the destination: ${entryName}`);
+  }
+}
+
+module.exports = { assertSymlinkTargetInside, safeArchivePath };

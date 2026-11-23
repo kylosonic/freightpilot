@@ -1,6 +1,7 @@
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -235,6 +236,43 @@ def test_renewal_uses_current_subscription_tier(db_session: Session):
     assert renewal.id != first.id
     assert renewal.tier == 'scale'
     assert renewal.flat_amount_etb == Decimal('10000.00')
+
+
+@pytest.mark.parametrize(
+    ('new_tier', 'expected_rate', 'expected_total'),
+    [
+        ('scale', Decimal('0.20'), Decimal('10100.00')),
+        ('enterprise', Decimal('0.20'), Decimal('45100.00')),
+    ],
+)
+def test_renewal_overage_uses_prior_invoice_tier(
+    db_session: Session,
+    new_tier: str,
+    expected_rate: Decimal,
+    expected_total: Decimal,
+):
+    org = _org(db_session, tier='starter')
+    _ended_trial(
+        db_session,
+        org,
+        'starter',
+        started=datetime(2026, 7, 24, 10, 0, tzinfo=UTC),
+        ended=datetime(2026, 7, 31, 10, 0, tzinfo=UTC),
+    )
+    first = invoices.issue_first_invoice(db_session, org, datetime(2026, 8, 1, tzinfo=UTC))
+    first.balance_remaining_etb = Decimal('0.00')
+    first.status = 'paid'
+    _counter(db_session, org, 'delivery_tasks', 3000, (date(2026, 8, 1), date(2026, 8, 31)))
+    org.subscription_tier = new_tier
+    db_session.commit()
+
+    renewal = invoices.issue_next_invoice(db_session, org, datetime(2026, 9, 1, tzinfo=UTC))
+
+    overage = next(line for line in renewal.lines if line.kind == 'overage_delivery_tasks')
+    assert renewal.tier == new_tier
+    assert overage.quantity == 500
+    assert overage.unit_price_etb == expected_rate
+    assert renewal.total_etb == expected_total
 
 
 def test_plan_change_invoice_is_immediate_and_unique(db_session: Session):

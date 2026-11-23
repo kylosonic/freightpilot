@@ -88,9 +88,7 @@ function RailLink({ item, onNavigate, compact = false }: { item: RailItem; onNav
 export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onToggleCompact }: WorkspaceRailProps) {
   const displayName = user?.full_name || user?.email || user?.username || 'Workspace member';
   const role = user?.role || 'viewer';
-  const canVerifyPayments = Boolean(
-    user?.is_platform_admin || role === 'admin' || role === 'owner',
-  );
+  const canVerifyPayments = Boolean(user?.is_platform_admin);
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,

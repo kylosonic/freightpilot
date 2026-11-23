@@ -150,6 +150,7 @@ def _issue_invoice(
     now: datetime,
     wallet_credit_etb: Decimal = Decimal('0.00'),
     due_date: date | None = None,
+    overage_tier: str | None = None,
 ) -> SubscriptionInvoice:
     flat = pricing.flat_price_etb(tier)
     account = designate_account(db, org, ordinal)
@@ -184,7 +185,7 @@ def _issue_invoice(
     ]
     total = flat
     for metric, units in overage.items():
-        rate = pricing.overage_rate_etb(tier, metric)
+        rate = pricing.overage_rate_etb(overage_tier or tier, metric)
         if rate is None:
             # No overage rate for this metric on this tier — skip the line.
             continue
@@ -237,6 +238,7 @@ def _issue_invoice(
             'designated_account': account.bank_code,
             'grace_days': grace_days,
             'wallet_credit_etb': str(wallet_credit_etb),
+            'overage_tier': overage_tier or tier,
         },
     )
     return invoice
@@ -284,7 +286,7 @@ def issue_next_invoice(db: Session, org: Organization, now: datetime) -> Subscri
     flat = pricing.flat_price_etb(tier)
     pre_wallet_total = flat
     for metric, units in overage.items():
-        rate = pricing.overage_rate_etb(tier, metric)
+        rate = pricing.overage_rate_etb(last.tier, metric)
         if rate is None:
             continue
         pre_wallet_total = pre_wallet_total + quantize_money(Decimal(units) * rate)
@@ -301,6 +303,7 @@ def issue_next_invoice(db: Session, org: Organization, now: datetime) -> Subscri
         ordinal=ordinal,
         now=now,
         wallet_credit_etb=wallet_credit_etb,
+        overage_tier=last.tier,
     )
     applied, _remaining = wallet.apply_available_wallet_credits(db, org, invoice, pre_wallet_total)
     record_audit_event(

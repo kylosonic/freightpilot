@@ -109,7 +109,7 @@ class _GroupDurableObject(DurableObject):
     """
 
     group = ''
-    _rate_windows: dict[str, tuple[int, int]]
+    _rate_windows: dict[str, tuple[float, int]]
 
     def __init__(self, state: Any, env: Any):
         super().__init__(state, env)
@@ -125,18 +125,22 @@ class _GroupDurableObject(DurableObject):
         headers = getattr(request, 'headers', None)
         client_ip = headers.get('CF-Connecting-IP') if headers is not None else None
         client_key = str(client_ip or 'unknown-client')
-        bucket = int(time.time()) // period
+        now = time.time()
+        bucket = int(now) // period
+        expires_at = float((bucket + 1) * period)
         key = f'{path}:{client_key}'
-        previous_bucket, count = self._rate_windows.get(key, (bucket, 0))
-        count = 1 if previous_bucket != bucket else count + 1
-        self._rate_windows[key] = (bucket, count)
+        previous_expiry, count = self._rate_windows.get(key, (expires_at, 0))
+        count = 1 if previous_expiry <= now else count + 1
+        self._rate_windows[key] = (expires_at, count)
         if len(self._rate_windows) > 2048:
-            oldest_keeper = int(time.time()) // 3600 - 1
             self._rate_windows = {
                 window_key: window
                 for window_key, window in self._rate_windows.items()
-                if window[0] >= oldest_keeper
+                if window[0] > now
             }
+            if len(self._rate_windows) > 2048:
+                newest = sorted(self._rate_windows.items(), key=lambda item: item[1][0])[-2048:]
+                self._rate_windows = dict(newest)
         if count <= limit:
             return None
 
@@ -149,11 +153,12 @@ class _GroupDurableObject(DurableObject):
             'Retry-After': str(period),
         }
         origin = headers.get('Origin') if headers is not None else None
-        allowed_origins = {
-            item.strip()
-            for item in str(getattr(self.env, 'CORS_ORIGINS', '') or '').split(',')
-            if item.strip()
-        }
+        configured_origins = str(getattr(self.env, 'CORS_ORIGINS', '') or '').split(',')
+        allowed_origins = {item.strip() for item in configured_origins if item.strip()}
+        if not allowed_origins:
+            from app.core.config import DEFAULT_CORS_ORIGINS
+
+            allowed_origins = set(DEFAULT_CORS_ORIGINS)
         if origin and origin in allowed_origins:
             headers_out['Access-Control-Allow-Origin'] = origin
             headers_out['Access-Control-Allow-Credentials'] = 'true'

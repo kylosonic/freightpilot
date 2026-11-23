@@ -300,7 +300,14 @@ def supersede_sample_rows(db: Session, org: Organization, category: str, now: da
                 HistoricalOrder,
                 HistoricalOrder.warehouse_id if category == 'warehouses' else HistoricalOrder.item_id,
             ),
-            (Shipment, Shipment.origin_warehouse_id if category == 'warehouses' else Shipment.item_id),
+            (
+                Shipment,
+                Shipment.origin_warehouse_id if category == 'warehouses' else Shipment.item_id,
+            ),
+            (
+                Shipment,
+                Shipment.destination_warehouse_id if category == 'warehouses' else None,
+            ),
             (
                 RouteSchedule,
                 RouteSchedule.start_warehouse_id if category == 'warehouses' else None,

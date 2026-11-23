@@ -45,6 +45,35 @@ def test_me_returns_platform_admin_privilege(client: TestClient, db_session: Ses
     assert response.json()['is_platform_admin'] is True
 
 
+def test_me_returns_allowlisted_platform_admin_privilege(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch,
+):
+    allowed_email = 'allowlisted-reviewer@platform-check.example'
+    monkeypatch.setattr(settings, 'platform_admin_emails', [allowed_email])
+    user = User(
+        username='allowlisted-platform-reviewer',
+        email=allowed_email,
+        password_hash=hash_password('VeryStrongPass9'),
+        role=UserRole.ADMIN,
+        is_active=True,
+        is_platform_admin=False,
+    )
+    db_session.add(user)
+    db_session.commit()
+    token = create_access_token(
+        subject=str(user.id),
+        role=UserRole.ADMIN,
+        token_version=user.token_version,
+    )
+
+    response = client.get('/api/v1/auth/me', headers={'Authorization': f'Bearer {token}'})
+
+    assert response.status_code == 200
+    assert response.json()['is_platform_admin'] is True
+
+
 def test_tenant_owner_cannot_open_platform_receipt_queue(client: TestClient, db_session: Session):
     org = Organization(
         name='Customer Co',

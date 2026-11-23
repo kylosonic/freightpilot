@@ -117,7 +117,13 @@ def upload_receipt_endpoint(
     if not _matches_receipt_signature(file.content_type or '', file_bytes):
         raise HTTPException(status_code=415, detail='Receipt content does not match the declared file type.')
 
-    org = db.get(Organization, membership.organization_id)
+    # Serialize quota admission per workspace. Without this lock, concurrent
+    # uploads can both observe spare capacity and exceed the configured quota.
+    org = db.execute(
+        select(Organization)
+        .where(Organization.id == membership.organization_id)
+        .with_for_update()
+    ).scalar_one_or_none()
     if org is None:
         raise HTTPException(status_code=404, detail='Organization not found')
 
@@ -130,7 +136,10 @@ def upload_receipt_endpoint(
     if int(used_bytes) + len(file_bytes) > settings.receipt_org_quota_bytes:
         raise HTTPException(status_code=413, detail='This workspace has reached its receipt storage limit.')
     if int(pending_count) >= settings.receipt_pending_limit:
-        raise HTTPException(status_code=429, detail='Too many receipts are waiting for review. Please wait for a decision.')
+        raise HTTPException(
+            status_code=429,
+            detail='Too many receipts are waiting for review. Please wait for a decision.',
+        )
 
     lifecycle.refresh_workspace_state(db, org, datetime.now(UTC))
 

@@ -56,7 +56,7 @@ export default function App() {
             <Route path="/account" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><AccountPage /></ProtectedRoute>} />
             <Route path="/providers" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator']}><ProvidersPage /></ProtectedRoute>} />
             <Route path="/receipts" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><ReceiptsPage /></ProtectedRoute>} />
-            <Route path="/admin/receipts" element={<ProtectedRoute allowedRoles={['admin', 'owner']} allowPlatformAdmin><AdminReceiptsPage /></ProtectedRoute>} />
+            <Route path="/admin/receipts" element={<ProtectedRoute requirePlatformAdmin><AdminReceiptsPage /></ProtectedRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

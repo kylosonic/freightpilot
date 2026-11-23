@@ -60,7 +60,13 @@ def _decision(client: TestClient, token: str, receipt_id: str, body: dict):
 
 
 def _add_trusted(db_session: Session, org_id, sender: str, admin_id=None) -> None:
-    db_session.add(TrustedPayer(organization_id=org_id, sender_name=sender.casefold(), added_by_user_id=admin_id))
+    db_session.add(
+        TrustedPayer(
+            organization_id=org_id,
+            sender_name=sender.casefold(),
+            added_by_user_id=admin_id,
+        )
+    )
     db_session.commit()
 
 
@@ -104,11 +110,23 @@ def test_queue_gate_denies_operator_and_viewer(
     )
     db_session.commit()
 
-    op_token = client.post('/api/v1/auth/login', json={'username': 'operator', 'password': 'operator12345'}).json()['access_token']
-    viewer_token = client.post('/api/v1/auth/login', json={'username': 'viewer', 'password': 'viewer12345'}).json()['access_token']
+    op_token = client.post(
+        '/api/v1/auth/login',
+        json={'username': 'operator', 'password': 'operator12345'},
+    ).json()['access_token']
+    viewer_token = client.post(
+        '/api/v1/auth/login',
+        json={'username': 'viewer', 'password': 'viewer12345'},
+    ).json()['access_token']
 
-    assert client.get('/api/v1/receipts/queue', headers={'Authorization': f'Bearer {op_token}'}).status_code == 403
-    assert client.get('/api/v1/receipts/queue', headers={'Authorization': f'Bearer {viewer_token}'}).status_code == 403
+    assert client.get(
+        '/api/v1/receipts/queue',
+        headers={'Authorization': f'Bearer {op_token}'},
+    ).status_code == 403
+    assert client.get(
+        '/api/v1/receipts/queue',
+        headers={'Authorization': f'Bearer {viewer_token}'},
+    ).status_code == 403
 
 
 def test_queue_item_renders_flags(
@@ -130,6 +148,7 @@ def test_queue_item_renders_flags(
     assert item['is_large_surplus'] is True
     assert item['is_wrong_bank_within_portfolio'] is True
     assert item['surplus_etb'] == '1480.00'
+    assert item['invoice_balance_etb'] == '4520.00'
     assert item['recommended_verdict'] == 'verify'
 
 

@@ -53,6 +53,20 @@ describe('Shell chrome', () => {
     expect(html).toContain('Verify payments');
   });
 
+  it('does not show platform review navigation to tenant admins or owners', () => {
+    for (const role of ['admin', 'owner'] as const) {
+      const html = renderToString(
+        <StaticRouter location="/routes">
+          <ShellSidebar
+            user={{ ...fixtureUser, role, is_platform_admin: false }}
+            onLogout={() => undefined}
+          />
+        </StaticRouter>,
+      );
+      expect(html).not.toContain('Verify payments');
+    }
+  });
+
   it('renders the shell header context label, descriptor, and identity chips', () => {
     const html = renderToString(
       <StaticRouter location="/">
