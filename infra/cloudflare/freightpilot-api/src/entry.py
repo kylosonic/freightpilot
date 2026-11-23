@@ -32,6 +32,7 @@ ENV_NAMES = (
     'JWT_SECRET_KEY',
     'LOG_LEVEL',
     'PLATFORM_ADMIN_EMAILS',
+    'PLATFORM_ADMIN_BOOTSTRAP_ENABLED',
     'PROVIDER_KEY_ENCRYPTION_SECRET',
     'PROVIDER_KEY_ENCRYPTION_PREVIOUS_SECRET',
     'PROOF_ORG_QUOTA_BYTES',
@@ -129,20 +130,39 @@ class _GroupDurableObject(DurableObject):
         previous_bucket, count = self._rate_windows.get(key, (bucket, 0))
         count = 1 if previous_bucket != bucket else count + 1
         self._rate_windows[key] = (bucket, count)
+        if len(self._rate_windows) > 2048:
+            oldest_keeper = int(time.time()) // 3600 - 1
+            self._rate_windows = {
+                window_key: window
+                for window_key, window in self._rate_windows.items()
+                if window[0] >= oldest_keeper
+            }
         if count <= limit:
             return None
 
         from workers import Response
 
+        headers_out = {
+            **_SECURITY_HEADERS,
+            'content-type': 'application/json',
+            'cache-control': 'no-store',
+            'Retry-After': str(period),
+        }
+        origin = headers.get('Origin') if headers is not None else None
+        allowed_origins = {
+            item.strip()
+            for item in str(getattr(self.env, 'CORS_ORIGINS', '') or '').split(',')
+            if item.strip()
+        }
+        if origin and origin in allowed_origins:
+            headers_out['Access-Control-Allow-Origin'] = origin
+            headers_out['Access-Control-Allow-Credentials'] = 'true'
+            headers_out['Vary'] = 'Origin'
+
         return Response(
             dumps({'detail': 'Too many requests'}),
             status=429,
-            headers={
-                **_SECURITY_HEADERS,
-                'content-type': 'application/json',
-                'cache-control': 'no-store',
-                'Retry-After': str(period),
-            },
+            headers=headers_out,
         )
 
     async def fetch(self, request: Any):
@@ -257,6 +277,7 @@ class FreightPilotHealth(DurableObject):
                     'expected_revision': expected_revision,
                 }
             ),
+            status=200 if status == 'ok' else 503,
             headers={
                 **_SECURITY_HEADERS,
                 'content-type': 'application/json',

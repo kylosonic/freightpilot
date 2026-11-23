@@ -6,9 +6,11 @@ import type { UserRole } from '../types/auth';
 export function ProtectedRoute({
   children,
   allowedRoles,
+  allowPlatformAdmin = false,
 }: {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
+  allowPlatformAdmin?: boolean;
 }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -28,7 +30,7 @@ export function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && !allowedRoles.includes(user.role) && !(allowPlatformAdmin && user.is_platform_admin)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

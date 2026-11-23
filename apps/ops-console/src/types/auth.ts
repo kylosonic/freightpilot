@@ -7,6 +7,7 @@ export type UserRead = {
   full_name?: string | null;
   role: UserRole;
   is_active: boolean;
+  is_platform_admin?: boolean;
   created_at: string;
 };
 

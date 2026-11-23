@@ -276,7 +276,10 @@ def issue_next_invoice(db: Session, org: Organization, now: datetime) -> Subscri
         select(SubscriptionInvoice.id).where(SubscriptionInvoice.organization_id == org.id)
     ).scalars().all()
     ordinal = len(count) + 1
-    overage = _overage_units(db, org, tier, last.billing_period_start, last.billing_period_end)
+    # Overage belongs to the plan that was active during the closed period.
+    # Using the newly selected tier here would retroactively erase or inflate
+    # charges when a customer changes plans shortly before renewal.
+    overage = _overage_units(db, org, last.tier, last.billing_period_start, last.billing_period_end)
 
     flat = pricing.flat_price_etb(tier)
     pre_wallet_total = flat

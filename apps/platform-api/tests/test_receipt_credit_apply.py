@@ -13,7 +13,7 @@ from app.services.billing import invoices as invoices_service
 from tests.conftest import mock_extraction_payload, sample_receipt_bytes
 
 
-def _upload(client: TestClient, token: str, *, amount: str, ref: str, sender: str = 'Mulugeta Tesfaye', bank: str = 'cbe'):
+def _upload(client: TestClient, token: str, *, amount: str | None, ref: str, sender: str = 'Mulugeta Tesfaye', bank: str = 'cbe'):
     payload = mock_extraction_payload(
         fields={
             'sender_name': sender,
@@ -120,6 +120,33 @@ def test_large_surplus_requires_admin_decision_422_without(
     db_session.refresh(invoice)
     assert invoice.balance_remaining_etb == Decimal('4520.00')
     assert invoice.status == 'issued'
+
+
+def test_verified_amount_recomputes_large_surplus_before_credit(
+    client: TestClient, db_session: Session, make_paid_org_with_open_invoice
+):
+    org, invoice, token = make_paid_org_with_open_invoice()
+    assert _upload(client, token, amount=None, ref='TXN-L0').status_code == 200
+    receipt_id = _receipt_id(client, token)
+
+    missing_decision = _verify(
+        client,
+        token,
+        receipt_id,
+        verified_amount_etb='6000.00',
+    )
+    assert missing_decision.status_code == 422
+    db_session.refresh(invoice)
+    assert invoice.balance_remaining_etb == Decimal('4520.00')
+
+    accepted = _verify(
+        client,
+        token,
+        receipt_id,
+        verified_amount_etb='6000.00',
+        large_surplus_decision='credit_forward',
+    )
+    assert accepted.status_code == 200
 
 
 def test_large_surplus_credit_forward_closes_invoice_and_wallets(

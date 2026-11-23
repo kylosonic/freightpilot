@@ -669,6 +669,7 @@ export type ReceiptQueueItem = {
   organization_id: string;
   organization_name: string;
   invoice_number: string | null;
+  invoice_balance_etb: string | null;
   designated_bank_code: string | null;
   status: ReceiptStatus;
   verdict: Verdict | null;

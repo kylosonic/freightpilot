@@ -12,6 +12,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from app.core.config import settings
+
+WS_TOKEN_TTL_MINUTES = 5
+WS_TOKEN_TTL_SECONDS = WS_TOKEN_TTL_MINUTES * 60
 from app.schemas.auth import UserRole
 
 _PBKDF2_ITERATIONS = 600_000
@@ -103,7 +106,7 @@ def create_ws_token_for_org(
 ) -> str:
     """Short-lived Live Updates credential with a WS-only token type."""
     now = datetime.now(UTC)
-    expire = now + (expires_delta or timedelta(minutes=5))
+    expire = now + (expires_delta or timedelta(minutes=WS_TOKEN_TTL_MINUTES))
     payload = {
         'sub': str(subject),
         'role': role,

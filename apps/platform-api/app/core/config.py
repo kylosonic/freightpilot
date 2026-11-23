@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     provider_key_encryption_secret: str = ''
     provider_key_encryption_previous_secret: str = ''
     platform_admin_emails: Annotated[list[str], NoDecode] = []
+    # Public signup must never create a global administrator unless the
+    # developer explicitly opts into that local-only shortcut. An omitted
+    # APP_ENV previously defaulted to development and made every signup a
+    # platform admin.
+    platform_admin_bootstrap_enabled: bool = False
     cors_origins: Annotated[list[str], NoDecode] = DEFAULT_CORS_ORIGINS.copy()
     allowed_hosts: Annotated[list[str], NoDecode] = [
         'localhost',

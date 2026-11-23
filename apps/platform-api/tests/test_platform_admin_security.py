@@ -1,11 +1,48 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.auth import UserRole
-from app.services.security import create_access_token_for_org, hash_password
+from app.services.security import create_access_token, create_access_token_for_org, hash_password
+
+
+def test_public_signup_does_not_bootstrap_platform_admin(client: TestClient, monkeypatch):
+    monkeypatch.setattr(settings, 'platform_admin_bootstrap_enabled', False)
+    response = client.post(
+        '/api/v1/auth/company-signup',
+        json={
+            'company_name': 'Admin Bootstrap Check Co',
+            'company_email': 'owner@admin-bootstrap-check.example',
+            'password': 'VeryStrongPass9',
+            'full_name': 'Owner User',
+        },
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()['user']['is_platform_admin'] is False
+
+
+def test_me_returns_platform_admin_privilege(client: TestClient, db_session: Session):
+    user = User(
+        username='me-platform-reviewer',
+        email='reviewer@me-platform-check.example',
+        password_hash=hash_password('VeryStrongPass9'),
+        role=UserRole.ADMIN,
+        is_active=True,
+        is_platform_admin=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    token = create_access_token(
+        subject=str(user.id),
+        role=UserRole.ADMIN,
+        token_version=user.token_version,
+    )
+    response = client.get('/api/v1/auth/me', headers={'Authorization': f'Bearer {token}'})
+    assert response.status_code == 200
+    assert response.json()['is_platform_admin'] is True
 
 
 def test_tenant_owner_cannot_open_platform_receipt_queue(client: TestClient, db_session: Session):

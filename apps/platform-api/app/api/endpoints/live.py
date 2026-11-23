@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy import asc, func, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.api.security import get_current_user_from_token, scoped_to_organization
@@ -49,6 +49,36 @@ def _live_principal(token: str, db: Session):
     if organization is None or not organization.is_active:
         raise ValueError('Workspace is inactive')
     return user, membership, organization
+
+
+def _live_tick(token: str, organization_id: UUID, bind: object) -> tuple[dict, object]:
+    """Re-authorize before doing work, then build one tenant snapshot."""
+    tick_db = None
+    try:
+        tick_db = Session(bind=bind, autoflush=False, autocommit=False)
+        membership = _live_principal(token, tick_db)[1]
+        if membership.organization_id != organization_id:
+            raise ValueError('Organization membership changed')
+        return _gather_snapshot(tick_db, organization_id), membership
+    finally:
+        if tick_db is not None:
+            tick_db.close()
+
+
+async def _wait_for_next_tick(websocket: WebSocket, seconds: float = 5.0) -> None:
+    """Wait one full tick while draining client frames without rebuilding data."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + seconds
+    while True:
+        remaining = deadline - loop.time()
+        if remaining <= 0:
+            return
+        try:
+            message = await asyncio.wait_for(websocket.receive(), timeout=remaining)
+        except TimeoutError:
+            return
+        if message.get('type') == 'websocket.disconnect':
+            raise WebSocketDisconnect(message.get('code', 1000))
 
 
 def _gather_snapshot(db: Session, organization_id: UUID | None = None) -> dict:
@@ -323,16 +353,6 @@ async def websocket_updates(
 
     engine = db.get_bind()
 
-    def _new_session() -> Session:
-        return sessionmaker(bind=engine, autoflush=False, autocommit=False)()
-
-    def _snapshot(organization_id):
-        tick_db = _new_session()
-        try:
-            return _gather_snapshot(tick_db, organization_id), _live_principal(token, tick_db)[1]
-        finally:
-            tick_db.close()
-
     try:
         membership = _live_principal(token, db)[1]
     except Exception:
@@ -344,11 +364,15 @@ async def websocket_updates(
     organization_id = membership.organization_id
 
     app_metrics.record_ws_open()
-
     try:
         while True:
             try:
-                payload, current_membership = await run_in_threadpool(_snapshot, organization_id)
+                payload, current_membership = await run_in_threadpool(
+                    _live_tick,
+                    token,
+                    organization_id,
+                    engine,
+                )
             except Exception:
                 await websocket.close(code=1008, reason='Session is no longer authorized')
                 return
@@ -356,9 +380,8 @@ async def websocket_updates(
                 await websocket.close(code=1008, reason='Session is no longer authorized')
                 return
             await websocket.send_json(payload)
-            try:
-                await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
-            except TimeoutError:
-                continue
+            await _wait_for_next_tick(websocket)
     except WebSocketDisconnect:
         return
+    finally:
+        app_metrics.record_ws_close()

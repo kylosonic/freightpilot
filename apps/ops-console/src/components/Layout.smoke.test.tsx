@@ -79,7 +79,7 @@ describe('Layout shell smoke (TECH-72 / NB-55)', () => {
     expect(html).toContain('Planning');
     expect(html).toContain('Import data');
     expect(html).toContain('Payments');
-    expect(html).toContain('Verify payments');
+    expect(html).not.toContain('Verify payments');
     expect(html).toContain('Integrations');
     // Identity footer + logout.
     expect(html).toContain('Log out');

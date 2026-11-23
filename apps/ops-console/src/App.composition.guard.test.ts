@@ -71,7 +71,7 @@ describe('App route composition guard (TECH-72 / NB-55)', () => {
       "<Route path=\"/receipts\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><ReceiptsPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
-      "<Route path=\"/admin/receipts\" element={<ProtectedRoute allowedRoles={['admin', 'owner']}><AdminReceiptsPage /></ProtectedRoute>} />",
+      "<Route path=\"/admin/receipts\" element={<ProtectedRoute allowedRoles={['admin', 'owner']} allowPlatformAdmin><AdminReceiptsPage /></ProtectedRoute>} />",
     );
   });
 

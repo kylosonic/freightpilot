@@ -17,6 +17,7 @@ Imports: models, audit, ``credits``/``sms``/``trusted_payers`` and
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -228,6 +229,13 @@ def _apply_verify(
                 'The receipt amount could not be read. Enter the verified amount before approving it.',
             )
         receipt.amount_etb = request.verified_amount_etb
+        db.add(receipt)
+    if receipt.amount_etb is not None:
+        receipt.is_large_surplus = (
+            credits.classify_surplus(receipt.amount_etb, invoice.balance_remaining_etb)
+            == 'large_surplus'
+        )
+        receipt.surplus_etb = max(Decimal('0.00'), receipt.amount_etb - invoice.balance_remaining_etb)
         db.add(receipt)
     if receipt.is_large_surplus and request.large_surplus_decision is None:
         raise ReceiptVerdictError(

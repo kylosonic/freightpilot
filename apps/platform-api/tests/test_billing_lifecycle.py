@@ -269,3 +269,49 @@ def test_locked_workspace_cannot_switch_to_free(db_session: Session):
     db_session.refresh(org)
     assert org.subscription_tier == 'starter'
     assert org.billing_phase == 'hard_locked'
+
+
+def test_switching_to_free_closes_open_trial(db_session: Session):
+    org = _org(db_session)
+    now = datetime(2026, 8, 5, 9, 0, tzinfo=UTC)
+    _start_trial(db_session, org, 'starter', now)
+
+    lifecycle.apply_tier_selection(db_session, org, 'free', now + timedelta(hours=12))
+    db_session.refresh(org)
+
+    assert org.subscription_tier == 'free'
+    assert org.trial_started_at is None
+    assert org.trial_ends_at is None
+    assert lifecycle.derive_phase(db_session, org, now + timedelta(hours=13)) == WorkspacePhase.FREE
+    trial = _trial_records(db_session, org, 'starter')[0]
+    assert _utc(trial.ended_at) == now + timedelta(hours=12)
+
+
+def test_paid_downgrade_keeps_active_workspace_and_does_not_issue_extra_invoice(db_session: Session):
+    org = _org(db_session)
+    trial_end = datetime(2026, 9, 30, 10, 0, tzinfo=UTC)
+    _start_trial(db_session, org, 'enterprise', trial_end - timedelta(hours=168))
+    org.trial_ends_at = trial_end
+    db_session.commit()
+
+    first_day = datetime(2026, 10, 1, 0, 0, tzinfo=UTC)
+    assert lifecycle.refresh_workspace_state(db_session, org, first_day) == WorkspacePhase.GRACE
+    invoice = db_session.execute(
+        select(SubscriptionInvoice).where(SubscriptionInvoice.organization_id == org.id)
+    ).scalars().one()
+    invoice.balance_remaining_etb = 0
+    invoice.status = 'paid'
+    db_session.add(invoice)
+    db_session.commit()
+
+    change_day = datetime(2026, 10, 15, 9, 0, tzinfo=UTC)
+    assert lifecycle.derive_phase(db_session, org, change_day) == WorkspacePhase.ACTIVE
+    result = lifecycle.apply_tier_selection(db_session, org, 'starter', change_day)
+
+    invoices = db_session.execute(
+        select(SubscriptionInvoice).where(SubscriptionInvoice.organization_id == org.id)
+    ).scalars().all()
+    assert result.billing_phase == WorkspacePhase.ACTIVE
+    assert result.tier == 'starter'
+    assert len(invoices) == 1
+    assert invoices[0].id == invoice.id

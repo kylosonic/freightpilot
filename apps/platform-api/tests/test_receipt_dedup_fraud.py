@@ -136,9 +136,11 @@ def test_duplicate_fraud_flag_pair_in_audit(
     assert len(attempts) == 1
     assert len(flagged) == 1
     assert str(attempts[0].entity_id) == str(attempt.id)
-    assert attempts[0].payload['original_receipt_id'] == str(original.id)
+    assert attempts[0].payload['original_receipt_id'] is None
+    assert attempts[0].payload['cross_tenant_match'] is True
     assert str(flagged[0].entity_id) == str(original.id)
-    assert flagged[0].payload['duplicate_receipt_id'] == str(attempt.id)
+    assert flagged[0].payload['duplicate_receipt_id'] is None
+    assert flagged[0].payload['cross_tenant_match'] is True
 
 
 def test_second_verify_same_ref_409_and_forced_duplicate_reject(

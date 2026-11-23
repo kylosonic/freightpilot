@@ -102,6 +102,7 @@ def queue_item_payload(db: Session, receipt: PaymentReceipt) -> dict:
         'organization_id': receipt.organization_id,
         'organization_name': org.name if org else '',
         'invoice_number': invoice.invoice_number if invoice else None,
+        'invoice_balance_etb': invoice.balance_remaining_etb if invoice else None,
         'designated_bank_code': invoice.designated_account.bank_code if invoice else None,
         'status': receipt.status,
         'verdict': receipt.verdict,

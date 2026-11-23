@@ -16,6 +16,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.session import get_db
+from app.core.config import settings
 from app.main import app
 from app.models import load_all_models
 from app.models.audit_event import AuditEvent
@@ -35,6 +36,11 @@ from app.schemas.auth import UserRole
 from app.services.security import create_access_token, hash_password
 
 load_all_models()
+
+# Tests explicitly opt into the public-signup admin shortcut so the fixture
+# workspaces can exercise platform review surfaces. Production defaults to
+# fail-closed and must opt in deliberately.
+settings.platform_admin_bootstrap_enabled = True
 
 
 @pytest.fixture()

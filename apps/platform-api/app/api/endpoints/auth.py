@@ -33,6 +33,7 @@ from app.schemas.auth import (
 )
 from app.services.audit import record_audit_event
 from app.services.security import (
+    WS_TOKEN_TTL_SECONDS,
     create_access_token,
     create_access_token_for_org,
     create_ws_token_for_org,
@@ -268,11 +269,14 @@ def company_signup(
         password_hash=hash_password(payload.password),
         role=UserRole.ADMIN,
         is_active=True,
-        # Local development and the test suite sign up one owner to exercise
-        # both customer and review workflows in an isolated workspace.
-        # Production still requires the explicit flag or allowlisted email.
+        # Public signup never grants global review authority by accident.
+        # Local demo/test flows must opt in explicitly, and production
+        # deployment should use the allowlist instead.
         is_platform_admin=(
-            settings.app_env in ('development', 'test')
+            (
+                settings.app_env in ('development', 'test')
+                and settings.platform_admin_bootstrap_enabled
+            )
             or normalized_email in set(settings.platform_admin_emails)
         ),
     )
@@ -363,7 +367,7 @@ def login_user(payload: UserLogin, request: Request, response: Response, db: Ses
 
 @router.get('/me', response_model=UserRead)
 def me(current_user: User = Depends(get_current_user)):
-    return current_user
+    return UserRead.model_validate(current_user)
 
 
 @router.get('/users', response_model=list[UserRead])
@@ -408,5 +412,5 @@ def get_token_for_ws(
     )
     return TokenResponse(
         access_token=token,
-        expires_in_seconds=settings.jwt_access_token_expire_minutes * 60,
+        expires_in_seconds=WS_TOKEN_TTL_SECONDS,
     )

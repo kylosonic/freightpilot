@@ -208,12 +208,15 @@ def apply_tier_selection(db: Session, org: Organization, tier: str, now: datetim
             org.trial_started_at = None
             org.trial_ends_at = None
     else:
+        if phase == WorkspacePhase.TRIAL:
+            end_current_trial(db, org, now)
         org.trial_started_at = None
         org.trial_ends_at = None
 
     org.subscription_tier = tier
     plan_change_invoice = None
-    if phase == WorkspacePhase.ACTIVE and tier != 'free' and tier != from_tier:
+    is_upgrade = pricing.flat_price_etb(tier) > pricing.flat_price_etb(from_tier)
+    if phase == WorkspacePhase.ACTIVE and tier != 'free' and tier != from_tier and is_upgrade:
         plan_change_invoice = invoices_service.issue_plan_change_invoice(db, org, tier, now)
     final_phase = derive_phase(db, org, now)
     org.billing_phase = final_phase.value

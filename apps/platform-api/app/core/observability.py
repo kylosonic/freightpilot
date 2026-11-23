@@ -28,6 +28,10 @@ class AppMetrics:
         with self._lock:
             self.websocket_connections += 1
 
+    def record_ws_close(self) -> None:
+        with self._lock:
+            self.websocket_connections = max(0, self.websocket_connections - 1)
+
     def record_exception(self) -> None:
         with self._lock:
             self.unhandled_exceptions += 1

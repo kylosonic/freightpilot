@@ -17,12 +17,12 @@ class DockAppointment(UUIDTimestampMixin, Base):
         UUIDType, ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True, index=True
     )
     warehouse_id: Mapped[UUID] = mapped_column(UUIDType, ForeignKey('warehouses.id', ondelete='CASCADE'), index=True, nullable=False)
-    truck_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    truck_id: Mapped[str] = mapped_column(String(128), nullable=False)
     status: Mapped[str] = mapped_column(String(64), default='scheduled', nullable=False)
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expected_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, onupdate=func.now()
     )
 
     warehouse = relationship('Warehouse')

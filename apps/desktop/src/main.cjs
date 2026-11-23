@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { pathToFileURL } = require('url');
+const { isExactFileUrl } = require('./file-url.cjs');
 
 const DEFAULT_CONFIG = {
   opsConsoleUrl:
@@ -65,27 +65,29 @@ function getConfigPath() {
   return path.join(app.getPath('userData'), 'freightpilot-desktop-config.json');
 }
 
-function sanitizeUrl(value, fallback) {
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return fallback;
-    }
-    return parsed.toString();
-  } catch {
-    return fallback;
-  }
-}
-
 function isLoopbackHostname(hostname) {
-  return ['localhost', '127.0.0.1', '::1'].includes(hostname.toLowerCase());
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  return ['localhost', '127.0.0.1', '::1'].includes(normalized);
 }
 
 function isPrivateIpv4(hostname) {
   const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
   if (!match) return false;
-  const [a, b] = match.slice(1).map(Number);
-  return a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  const [a, b, c] = match.slice(1).map(Number);
+  return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254)
+    || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
+    || (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19))
+    || (a === 192 && b === 0 && c === 0);
+}
+
+function isPrivateIpv6(hostname) {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!normalized.includes(':')) return false;
+  if (normalized === '::1' || normalized === '::') return true;
+  if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
+  if (/^fe[89ab]/.test(normalized)) return true;
+  if (normalized.startsWith('::ffff:')) return true;
+  return false;
 }
 
 function sanitizeExternalUrl(value) {
@@ -106,10 +108,13 @@ function sanitizeConsoleUrl(value) {
   try {
     const parsed = new URL(String(value));
     if (parsed.username || parsed.password) return '';
-    if (parsed.protocol !== 'https:' && !( !app.isPackaged && parsed.protocol === 'http:' && isLoopbackHostname(parsed.hostname))) {
+    if (parsed.protocol !== 'https:' && !(!app.isPackaged && parsed.protocol === 'http:' && isLoopbackHostname(parsed.hostname))) {
       return '';
     }
-    if (!isLoopbackHostname(parsed.hostname) && (isPrivateIpv4(parsed.hostname) || parsed.hostname === '0.0.0.0')) {
+    if (app.isPackaged && isLoopbackHostname(parsed.hostname)) {
+      return '';
+    }
+    if (!isLoopbackHostname(parsed.hostname) && (isPrivateIpv4(parsed.hostname) || isPrivateIpv6(parsed.hostname) || parsed.hostname === '0.0.0.0')) {
       return '';
     }
     return parsed.toString();
@@ -119,20 +124,23 @@ function sanitizeConsoleUrl(value) {
 }
 
 function normalizeConfig(raw) {
-  const merged = {
-    ...DEFAULT_CONFIG,
-    ...(raw || {}),
-    onboarding: {
-      ...DEFAULT_CONFIG.onboarding,
-      ...((raw && raw.onboarding) || {}),
-    },
-  };
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const onboarding = source.onboarding && typeof source.onboarding === 'object' ? source.onboarding : {};
+  const normalizedOnboarding = { ...DEFAULT_CONFIG.onboarding };
+  for (const [key, value] of Object.entries(DEFAULT_CONFIG.onboarding)) {
+    if (typeof value === 'boolean' && typeof onboarding[key] === 'boolean') {
+      normalizedOnboarding[key] = onboarding[key];
+    }
+  }
+  if (Number.isInteger(onboarding.activeStep)) {
+    normalizedOnboarding.activeStep = Math.max(0, Math.min(8, onboarding.activeStep));
+  }
 
   return {
-    ...merged,
-    opsConsoleUrl: sanitizeUrl(merged.opsConsoleUrl, DEFAULT_CONFIG.opsConsoleUrl),
-    productSignupUrl: sanitizeUrl(merged.productSignupUrl, DEFAULT_CONFIG.productSignupUrl),
-    docsUrl: sanitizeUrl(merged.docsUrl, DEFAULT_CONFIG.docsUrl),
+    opsConsoleUrl: sanitizeConsoleUrl(source.opsConsoleUrl) || DEFAULT_CONFIG.opsConsoleUrl,
+    productSignupUrl: sanitizeExternalUrl(source.productSignupUrl) || DEFAULT_CONFIG.productSignupUrl,
+    docsUrl: sanitizeExternalUrl(source.docsUrl) || DEFAULT_CONFIG.docsUrl,
+    onboarding: normalizedOnboarding,
   };
 }
 
@@ -190,18 +198,39 @@ async function testConsoleReachability(url) {
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const response = await fetch(target, {
-      method: 'GET',
-      redirect: 'follow',
-      signal: controller.signal,
-    });
+    let current = target;
+    let response;
+    for (let hop = 0; hop < 4; hop += 1) {
+      response = await fetch(current, {
+        method: 'GET',
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      if (response.status < 300 || response.status >= 400) break;
+      const location = response.headers.get('location');
+      if (!location) {
+        clearTimeout(timeout);
+        return { ok: false, status: response.status, statusText: response.statusText, url: current, message: 'Console redirected without a destination.' };
+      }
+      const next = new URL(location, current).toString();
+      const safeNext = sanitizeConsoleUrl(next);
+      if (!safeNext) {
+        clearTimeout(timeout);
+        return { ok: false, status: 0, statusText: 'Blocked redirect', url: next, message: 'Console redirected to an unsafe address.' };
+      }
+      current = safeNext;
+      if (hop === 3) {
+        clearTimeout(timeout);
+        return { ok: false, status: 0, statusText: 'Too many redirects', url: current, message: 'Console redirected too many times.' };
+      }
+    }
 
     clearTimeout(timeout);
     return {
       ok: response.ok,
       status: response.status,
       statusText: response.statusText,
-      url: target,
+      url: current,
       message: response.ok
         ? 'Console endpoint is reachable.'
         : `Console returned ${response.status} ${response.statusText}`,
@@ -230,10 +259,7 @@ function isAllowedNavigation(url, policy) {
   try {
     const parsed = new URL(url);
     if (policy.setup) {
-      if (parsed.protocol !== 'file:') return false;
-      const target = path.resolve(decodeURIComponent(parsed.pathname));
-      const relative = path.relative(__dirname, target);
-      return !relative.startsWith('..') && !path.isAbsolute(relative);
+      return isExactFileUrl(url, path.join(__dirname, 'onboarding.html'));
     }
     const target = new URL(policy.target);
     return parsed.origin === target.origin && (parsed.protocol === 'https:' || parsed.protocol === 'http:');
@@ -243,15 +269,24 @@ function isAllowedNavigation(url, policy) {
 }
 
 function attachNavigationPolicy(win, policy) {
-  const blockUnexpected = (event, url) => {
-    if (isAllowedNavigation(url, policy)) return;
+  const state = win.__freightpilotNavigationPolicy || { policy };
+  win.__freightpilotNavigationPolicy = state;
+  if (state.installed) {
+    state.policy = policy;
+    return;
+  }
+  state.installed = true;
+  const blockUnexpected = (event, url, openExternal) => {
+    if (isAllowedNavigation(url, state.policy)) return;
     event.preventDefault();
-    const safe = sanitizeExternalUrl(url);
-    if (safe) void shell.openExternal(safe).catch(() => {});
+    if (openExternal) {
+      const safe = sanitizeExternalUrl(url);
+      if (safe) void shell.openExternal(safe).catch(() => {});
+    }
   };
 
-  win.webContents.on('will-navigate', blockUnexpected);
-  win.webContents.on('will-redirect', blockUnexpected);
+  win.webContents.on('will-navigate', (event, url) => blockUnexpected(event, url, true));
+  win.webContents.on('will-redirect', (event, url) => blockUnexpected(event, url, false));
   win.webContents.on('will-attach-webview', (event) => event.preventDefault());
   win.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   win.webContents.session.setPermissionCheckHandler(() => false);
@@ -383,9 +418,11 @@ function createSetupWindow() {
 }
 
 function createConsoleWindow(url) {
-  const target = sanitizeUrl(url, readConfig().opsConsoleUrl);
+  const fallback = readConfig().opsConsoleUrl;
+  const target = sanitizeConsoleUrl(url) || fallback;
 
   if (consoleWindow && !consoleWindow.isDestroyed()) {
+    attachNavigationPolicy(consoleWindow, { target });
     consoleWindow.loadURL(target);
     consoleWindow.focus();
     return consoleWindow;
@@ -420,6 +457,12 @@ function createConsoleWindow(url) {
 /* ── IPC handlers ───────────────────────────────────────────── */
 
 function assertTrustedIpcSender(event) {
+  if (!setupWindow || setupWindow.isDestroyed()) {
+    throw new Error('Untrusted IPC sender');
+  }
+  if (event.senderFrame !== setupWindow.webContents.mainFrame) {
+    throw new Error('Untrusted IPC sender');
+  }
   const senderUrl = event.senderFrame?.url || '';
   if (!isAllowedNavigation(senderUrl, { setup: true })) {
     throw new Error('Untrusted IPC sender');

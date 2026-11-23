@@ -64,7 +64,7 @@ Invoke-RestMethod http://localhost:8000/health
 A healthy response has this shape:
 
 ```json
-{"status":"ok","db":"ok","schema":"current","revision":"20261107_0026","expected_revision":"20261107_0026"}
+{"status":"ok","db":"ok","schema":"current","revision":"20261122_0027","expected_revision":"20261122_0027"}
 ```
 
 Stop the stack with:
@@ -165,7 +165,7 @@ $env:DATABASE_URL = "postgresql+psycopg://user:password@host:5432/database"
 python -m alembic upgrade head
 ```
 
-The current migration head is `20261107_0026`. Migration ordering is checked by `tests/test_migration_chain_integrity.py`.
+The current migration head is `20261122_0027`. Migration ordering is checked by `tests/test_migration_chain_integrity.py`.
 
 The Alembic chain is the repository's only schema path. A separate hosted authentication or data API is not part of the running application.
 

@@ -35,6 +35,7 @@ export function clearLiveSession(): void {
 export function useLiveUpdates({ getToken, enabled, onMessage }: Props) {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
+  const reconnectAttemptRef = useRef(0);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
@@ -64,6 +65,7 @@ export function useLiveUpdates({ getToken, enabled, onMessage }: Props) {
       socketRef.current = socket;
 
       socket.onopen = () => {
+        reconnectAttemptRef.current = 0;
         socket.send(JSON.stringify({ type: 'auth', token }));
       };
 
@@ -79,11 +81,17 @@ export function useLiveUpdates({ getToken, enabled, onMessage }: Props) {
       };
 
       socket.onclose = () => {
+        // Socket credentials are intentionally short-lived. Never reuse the
+        // expired token after the server closes the connection.
+        _wsToken = null;
         if (cancelled || reconnectTimerRef.current !== null) return;
+        const attempt = reconnectAttemptRef.current;
+        reconnectAttemptRef.current = attempt + 1;
+        const delay = Math.min(30_000, 1_000 * 2 ** Math.min(attempt, 5));
         reconnectTimerRef.current = window.setTimeout(() => {
           reconnectTimerRef.current = null;
           void connect();
-        }, 3000);
+        }, delay);
       };
     }
 

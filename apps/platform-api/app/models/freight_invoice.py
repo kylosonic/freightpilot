@@ -23,8 +23,8 @@ class FreightInvoice(UUIDTimestampMixin, Base):
     actual_rate: Mapped[float] = mapped_column(Float, nullable=False)
     variance: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(64), default='matched', nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, onupdate=func.now()
     )
 
     order = relationship('HistoricalOrder')

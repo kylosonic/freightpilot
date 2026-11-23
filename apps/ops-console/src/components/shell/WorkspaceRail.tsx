@@ -88,6 +88,15 @@ function RailLink({ item, onNavigate, compact = false }: { item: RailItem; onNav
 export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onToggleCompact }: WorkspaceRailProps) {
   const displayName = user?.full_name || user?.email || user?.username || 'Workspace member';
   const role = user?.role || 'viewer';
+  const canVerifyPayments = Boolean(
+    user?.is_platform_admin || role === 'admin' || role === 'owner',
+  );
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.to !== '/admin/receipts' || canVerifyPayments),
+    }))
+    .filter((group) => group.items.length > 0);
   const initials = displayName
     .split(/\s+/)
     .filter(Boolean)
@@ -125,7 +134,7 @@ export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onT
 
       <nav className={`min-h-0 flex-1 overflow-y-auto pb-4 pt-2 ${compact ? 'px-2' : 'px-3'}`} aria-label="Workspace views">
         <div className="space-y-5">
-          {navGroups.map((group) => (
+          {visibleGroups.map((group) => (
             <section key={group.label} aria-labelledby={`rail-${group.label.replace(/\s+/g, '-').toLowerCase()}`}>
               <p id={`rail-${group.label.replace(/\s+/g, '-').toLowerCase()}`} className={`mb-1.5 px-2 text-[12px] font-medium text-[#85857e] ${compact ? 'sr-only' : ''}`}>
                 {group.label}

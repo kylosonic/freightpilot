@@ -277,6 +277,16 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(false);
   const removeMutation = useRemoveTrustedPayer();
+  const needsVerifiedAmount = !item.extracted_fields['transfer_amount'];
+  const enteredAmount = Number(verifiedAmount);
+  const invoiceBalance = Number(item.invoice_balance_etb);
+  const enteredAmountNeedsSurplusDecision = (
+    needsVerifiedAmount
+    && Number.isFinite(enteredAmount)
+    && Number.isFinite(invoiceBalance)
+    && enteredAmount > invoiceBalance + 1000
+  );
+  const requiresSurplusDecision = item.is_large_surplus || enteredAmountNeedsSurplusDecision;
 
   useEffect(() => {
     return () => {
@@ -315,13 +325,13 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         note: verdict === 'escalate' ? note : null,
         admin_note: adminNote || null,
         trusted_payer_action: verdict === 'verify' ? trustedPayerAction : null,
-        large_surplus_decision: verdict === 'verify' && item.is_large_surplus ? surplusDecision : null,
+        large_surplus_decision: verdict === 'verify' && requiresSurplusDecision ? surplusDecision : null,
         partial_credit_amount_etb:
-          verdict === 'verify' && item.is_large_surplus && surplusDecision === 'partial_ignore'
+          verdict === 'verify' && requiresSurplusDecision && surplusDecision === 'partial_ignore'
             ? partialAmount
             : null,
         verified_amount_etb:
-          verdict === 'verify' && !item.extracted_fields['transfer_amount']
+          verdict === 'verify' && needsVerifiedAmount
             ? verifiedAmount
             : null,
       });
@@ -491,7 +501,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
           })}
         </div>
 
-        {verdict === 'verify' && item.is_large_surplus ? (
+        {verdict === 'verify' && requiresSurplusDecision ? (
           <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
             <p className="text-xs font-semibold text-[#885100]">{LARGE_SURPLUS_FLAG}</p>
             <div className="mt-2 grid gap-3 md:grid-cols-3">
@@ -522,7 +532,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         ) : null}
 
         {verdict === 'verify' ? (
-          !item.extracted_fields['transfer_amount'] ? (
+          needsVerifiedAmount ? (
             <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
               <label htmlFor="verified-amount" className="text-xs font-semibold text-[#885100]">
                 Amount shown on the receipt (ETB)

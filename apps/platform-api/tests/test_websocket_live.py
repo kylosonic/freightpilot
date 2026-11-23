@@ -18,6 +18,7 @@ def test_websocket_live_accepts_token_and_streams_snapshot(client: TestClient, a
         headers={'Authorization': f'Bearer {admin_token}'},
     )
     assert scoped.status_code == 200, scoped.text
+    assert scoped.json()['expires_in_seconds'] == 300
     with client.websocket_connect('/api/v1/live/updates') as ws:
         ws.send_json({'type': 'auth', 'token': scoped.json()['access_token']})
         payload = ws.receive_json()

@@ -13,6 +13,7 @@ const fixtureUser: UserRead = {
   full_name: 'Captain Test',
   role: 'operator',
   is_active: true,
+  is_platform_admin: false,
   created_at: '2026-08-08T00:00:00Z',
 };
 
@@ -35,12 +36,21 @@ describe('Shell chrome', () => {
     expect(html).toContain('Planning');
     expect(html).toContain('Import data');
     expect(html).toContain('Payments');
-    expect(html).toContain('Verify payments');
+    expect(html).not.toContain('Verify payments');
     expect(html).toContain('Integrations');
     expect(html).toContain('Log out');
     expect(html).toContain('captain@testco.com');
     expect(html).toContain('operator');
     expect(html).toContain('aria-current="page"');
+  });
+
+  it('shows platform review navigation only to platform administrators', () => {
+    const html = renderToString(
+      <StaticRouter location="/routes">
+        <ShellSidebar user={{ ...fixtureUser, is_platform_admin: true }} onLogout={() => undefined} />
+      </StaticRouter>,
+    );
+    expect(html).toContain('Verify payments');
   });
 
   it('renders the shell header context label, descriptor, and identity chips', () => {

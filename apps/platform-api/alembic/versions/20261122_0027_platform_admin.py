@@ -37,6 +37,8 @@ _FK_INDEXES = (
     ('route_stops', 'warehouse_id'),
     ('shipments', 'route_schedule_id'),
     ('sms_messages', 'receipt_id'),
+    ('dock_appointments', 'warehouse_id'),
+    ('freight_invoices', 'order_id'),
     ('wallet_credits', 'receipt_id'),
     ('wallet_credits', 'applied_to_invoice_id'),
     ('cash_collections', 'settled_by_id'),
@@ -46,10 +48,15 @@ _FK_INDEXES = (
 def _has_index_covering_column(inspector, table: str, column: str) -> bool:
     if not inspector.has_table(table):
         return True
-    return any(
+    indexed = any(
         index.get('column_names') and index['column_names'][0] == column
         for index in inspector.get_indexes(table)
     )
+    constrained = any(
+        constraint.get('column_names') and constraint['column_names'][0] == column
+        for constraint in inspector.get_unique_constraints(table)
+    )
+    return indexed or constrained
 
 
 def _ensure_fk_indexes() -> None:
@@ -101,7 +108,11 @@ def upgrade() -> None:
         ),
         None,
     )
-    if receipt_fk is not None and receipt_fk.get('options', {}).get('ondelete') != 'CASCADE':
+    if (
+        op.get_bind().dialect.name != 'sqlite'
+        and receipt_fk is not None
+        and receipt_fk.get('options', {}).get('ondelete') != 'CASCADE'
+    ):
         with op.batch_alter_table('wallet_credits') as batch_op:
             batch_op.drop_constraint(receipt_fk['name'], type_='foreignkey')
             batch_op.create_foreign_key(
@@ -114,6 +125,33 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    inspector = sa.inspect(op.get_bind())
+    if inspector.has_table('threshold_crossings'):
+        threshold_checks = {
+            constraint['name']
+            for constraint in inspector.get_check_constraints('threshold_crossings')
+        }
+        if 'ck_threshold_crossing_level' in threshold_checks:
+            with op.batch_alter_table('threshold_crossings') as batch_op:
+                batch_op.drop_constraint('ck_threshold_crossing_level', type_='check')
+
+    if op.get_bind().dialect.name != 'sqlite' and inspector.has_table('wallet_credits'):
+        wallet_fks = inspector.get_foreign_keys('wallet_credits')
+        receipt_fk = next(
+            (fk for fk in wallet_fks if fk.get('constrained_columns') == ['receipt_id']),
+            None,
+        )
+        if receipt_fk is not None and receipt_fk.get('name'):
+            with op.batch_alter_table('wallet_credits') as batch_op:
+                batch_op.drop_constraint(receipt_fk['name'], type_='foreignkey')
+                batch_op.create_foreign_key(
+                    'fk_wallet_credits_receipt_id_payment_receipts_restrict',
+                    'payment_receipts',
+                    ['receipt_id'],
+                    ['id'],
+                    ondelete='RESTRICT',
+                )
+
     columns = {column['name'] for column in sa.inspect(op.get_bind()).get_columns('users')}
     if 'is_platform_admin' in columns:
         with op.batch_alter_table('users') as batch_op:
