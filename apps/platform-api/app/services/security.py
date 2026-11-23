@@ -2,34 +2,43 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
 import secrets
+import sys
 from base64 import urlsafe_b64encode
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from app.core.config import settings
+from app.schemas.auth import UserRole
 
 WS_TOKEN_TTL_MINUTES = 5
 WS_TOKEN_TTL_SECONDS = WS_TOKEN_TTL_MINUTES * 60
-from app.schemas.auth import UserRole
 
 _PBKDF2_ITERATIONS = 600_000
 
 
+def _uses_worker_crypto() -> bool:
+    return sys.platform == 'emscripten' or os.environ.get('CLOUDFLARE_WORKER') == '1'
+
+
 def _pbkdf2_hash(password: str, salt: str, iterations: int = _PBKDF2_ITERATIONS) -> str:
-    # Use cryptography's optimized PBKDF2 implementation. The Python Workers
-    # runtime exposes hashlib.pbkdf2_hmac but currently produces unstable
-    # authentication results in Pyodide.
-    digest = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt.encode('utf-8'),
-        iterations=iterations,
-    ).derive(password.encode('utf-8'))
+    if _uses_worker_crypto():
+        from app.services.worker_crypto import pbkdf2_sha256
+
+        digest = pbkdf2_sha256(password, salt, iterations)
+    else:
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+        digest = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt.encode('utf-8'),
+            iterations=iterations,
+        ).derive(password.encode('utf-8'))
     return urlsafe_b64encode(digest).decode('utf-8')
 
 
@@ -126,21 +135,35 @@ def decode_access_token(token: str) -> dict:
         raise ValueError('Invalid or expired token') from exc
 
 
-def _fernet_from_seed(seed: str) -> Fernet:
+def _fernet_from_seed(seed: str) -> Any:
     digest = hashlib.sha256(seed.encode('utf-8')).digest()
-    return Fernet(urlsafe_b64encode(digest))
+    key = urlsafe_b64encode(digest)
+    if _uses_worker_crypto():
+        from app.services.worker_crypto import WorkerFernet
+
+        return WorkerFernet(key)
+
+    from cryptography.fernet import Fernet
+
+    return Fernet(key)
 
 
-def _provider_key_fernet():
+def _provider_key_fernet() -> Any:
     # seeded from the guarded effective secret; dev/test fallback
     # to the JWT secret is preserved when the raw value is empty.
-    from cryptography.fernet import MultiFernet
-
     seed = settings.effective_provider_key_encryption_secret or settings.effective_jwt_secret_key
     primary = _fernet_from_seed(seed)
     prev = settings.provider_key_encryption_previous_secret
     if prev and prev != seed:
-        return MultiFernet([primary, _fernet_from_seed(prev)])
+        keys = [primary, _fernet_from_seed(prev)]
+        if _uses_worker_crypto():
+            from app.services.worker_crypto import WorkerMultiFernet
+
+            return WorkerMultiFernet(keys)
+
+        from cryptography.fernet import MultiFernet
+
+        return MultiFernet(keys)
     return primary
 
 

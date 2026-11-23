@@ -23,17 +23,6 @@ version = "1.5.1"
 wheels = [{ url = "https://files.pythonhosted.org/packages/c9/7f/09065fd9e27da0eda08b4d6897f1c13535066174cc023af248fc2a8d5e5a/asn1crypto-1.5.1-py2.py3-none-any.whl", upload-time = 2022-03-15T14:46:51Z, size = 105045, hashes = { sha256 = "db4e40728b728508912cbb3d44f19ce188f218e9eba635821bb4b68564f8fd67" } }]
 
 [[packages]]
-name = "cffi"
-version = "2.0.0"
-marker = "python_full_version >= '3.9' and platform_python_implementation != 'PyPy'"
-wheels = [{ url = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/cffi-2.0.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl", hashes = { sha256 = "9ae1a61096321cef7248e02293f42d000fa87b73a3e795705a2444290590459d" } }]
-
-[[packages]]
-name = "cryptography"
-version = "47.0.0"
-wheels = [{ url = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/cryptography-47.0.0-cp314-abi3-pyemscripten_2026_0_wasm32.whl", hashes = { sha256 = "0b41491ced2cf85046559cac2502e875492cbef6d332addafa680e41be27f0ad" } }]
-
-[[packages]]
 name = "deprecated"
 version = "3.0.1"
 wheels = [{ url = "https://files.pythonhosted.org/packages/82/f0/07de837adfa09d592747b82fd74316e88285d2d7057551f30e4b5ef81bd8/deprecated-3.0.1-py3-none-any.whl", upload-time = 2026-10-30T11:15:38Z, size = 22191, hashes = { sha256 = "eda314c115e8bc0fe52b90a6869e19240ac3cedb7449adfdba5981cf9ef693e1" } }]
@@ -82,10 +71,9 @@ version = "1.31.6"
 wheels = [{ url = "https://files.pythonhosted.org/packages/a4/f6/28aa670fead0076daf55a59cbcfa1bb0ace9568427eb2c463f2598e8bb23/pg8000-1.31.6-py3-none-any.whl", upload-time = 2026-10-26T17:58:55Z, size = 57878, hashes = { sha256 = "1ffe27af94fa5b37ce6885b98d591dc75562ff076859bf50ca7729af59345a80" } }]
 
 [[packages]]
-name = "pycparser"
-version = "3.12"
-marker = "python_full_version >= '3.9' and implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'"
-wheels = [{ url = "https://files.pythonhosted.org/packages/b6/ae/315bbeee126a769cbde43cf4908acb4b40408d8bf8bbf334dd7368d8dadf/pycparser-3.12-py3-none-any.whl", upload-time = 2026-10-22T13:40:02Z, size = 62600, hashes = { sha256 = "a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e" } }]
+name = "pycryptodome"
+version = "3.23.0"
+wheels = [{ url = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pycryptodome-3.23.0-cp37-abi3-pyemscripten_2026_0_wasm32.whl", hashes = { sha256 = "67b86abb0de02dceebf422d10fc6e0e3754aea08626d1957e6fe69b75cbf644d" } }]
 
 [[packages]]
 name = "pydantic"
