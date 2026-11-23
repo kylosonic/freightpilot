@@ -52,12 +52,13 @@ function Ok([string]$t) { Write-Host "  [ok] $t" -ForegroundColor Green }
 function Die([string]$t) { Write-Host "  [xx] $t" -ForegroundColor Red; throw $t }
 
 if (-not $NeonApiKey) { Die 'No Neon API key. Set $env:NEON_API_KEY or pass -NeonApiKey.' }
-$env:NEON_API_KEY = $NeonApiKey
 if (-not (Test-Path $neon)) { Die "neonctl not found at $neon. Run scripts/setup_neon_production.ps1 once to install it." }
 if (-not $PythonExe) {
     $candidate = Join-Path $repoRoot '.venv/Scripts/python.exe'
     $PythonExe = if (Test-Path $candidate) { $candidate } else { 'python' }
 }
+try {
+$env:NEON_API_KEY = $NeonApiKey
 
 # Shared probe: counts + migration head. Emitted as one JSON line so the two
 # sides can be compared exactly rather than by eyeballing printed text.
@@ -197,21 +198,17 @@ with psycopg.connect(os.environ["FP_URL"], connect_timeout=25) as c:
 }
 finally {
     Step 'Cleaning up'
-    try {
-        & $neon branches delete $branchId --project-id $ProjectId 2>&1 | Out-Null
-        Start-Sleep -Seconds 5
-        $remainingRaw = (& $neon branches list --project-id $ProjectId --output json 2>&1) -join "`n"
-        $remainingExit = $LASTEXITCODE
-        if ($remainingExit -ne 0) { Die "could not verify restore-branch cleanup:`n$remainingRaw" }
-        try { $remaining = $remainingRaw | ConvertFrom-Json } catch { Die "cleanup returned unparseable output: $remainingRaw" }
-        $names = (@($remaining) | ForEach-Object { $_.name }) -join ', '
-        if ($names -match ('(^|, )' + [regex]::Escape($DrillBranch) + '(,|$)')) {
-            Die "drill branch still exists after cleanup (remaining: $names)"
-        }
-        Ok "drill branch deleted (remaining: $names)"
-    } finally {
-        Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
+    & $neon branches delete $branchId --project-id $ProjectId 2>&1 | Out-Null
+    Start-Sleep -Seconds 5
+    $remainingRaw = (& $neon branches list --project-id $ProjectId --output json 2>&1) -join "`n"
+    $remainingExit = $LASTEXITCODE
+    if ($remainingExit -ne 0) { Die "could not verify restore-branch cleanup:`n$remainingRaw" }
+    try { $remaining = $remainingRaw | ConvertFrom-Json } catch { Die "cleanup returned unparseable output: $remainingRaw" }
+    $names = (@($remaining) | ForEach-Object { $_.name }) -join ', '
+    if ($names -match ('(^|, )' + [regex]::Escape($DrillBranch) + '(,|$)')) {
+        Die "drill branch still exists after cleanup (remaining: $names)"
     }
+    Ok "drill branch deleted (remaining: $names)"
 }
 
 $recordDir = Join-Path $repoRoot '.artifacts'
@@ -234,3 +231,6 @@ Result: PASS — production data is restorable and the restore is isolated.
 Ok "record written to $($record -replace [regex]::Escape($repoRoot), '.')"
 
 Write-Host "`nRestore drill PASSED." -ForegroundColor Green
+} finally {
+    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
+}
