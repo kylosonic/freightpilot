@@ -14,6 +14,7 @@ from app.api.security import (
     get_current_user_from_token,
     is_platform_admin_user,
     require_roles,
+    validate_uuid,
 )
 from app.core.config import settings
 from app.db.session import get_db
@@ -93,7 +94,13 @@ def _user_read(user: User) -> UserRead:
 
 
 def _clear_auth_cookie(response: Response) -> None:
-    response.delete_cookie(key=_COOKIE_NAME, path='/')
+    response.delete_cookie(
+        key=_COOKIE_NAME,
+        path='/',
+        httponly=True,
+        secure=settings.app_env not in ('development', 'test'),
+        samesite='strict',
+    )
 
 
 def _slugify(name: str) -> str:
@@ -159,7 +166,22 @@ def register_user(
         actor = get_current_user_from_token(credentials.credentials, db)
         if actor.role != UserRole.ADMIN:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Admin role required')
-        actor_membership = MembershipRepository(db).get_active_membership(actor.id)
+        requested_org_id = request.headers.get('X-Organization-Id')
+        if requested_org_id:
+            actor_membership = MembershipRepository(db).get_active_membership(
+                actor.id,
+                org_id=validate_uuid(
+                    requested_org_id,
+                    detail='Invalid organization identifier',
+                ),
+            )
+            if actor_membership is None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail='No active membership in the requested workspace',
+                )
+        else:
+            actor_membership = MembershipRepository(db).get_active_membership(actor.id)
         if actor_membership is None or actor_membership.role not in {
             OrganizationRole.OWNER,
             OrganizationRole.ADMIN,

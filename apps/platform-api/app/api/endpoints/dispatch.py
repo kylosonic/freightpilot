@@ -282,7 +282,10 @@ def list_delivery_orders(
 ):
     stmt = select(DeliveryOrder).where(DeliveryOrder.organization_id == membership.organization_id)
     if run_id:
-        stmt = stmt.where(DeliveryOrder.dispatch_run_id == run_id)
+        stmt = stmt.where(
+            DeliveryOrder.dispatch_run_id
+            == validate_uuid(run_id, detail='Invalid dispatch run identifier')
+        )
     if status_filter:
         stmt = stmt.where(DeliveryOrder.status == status_filter)
     orders = db.execute(stmt.order_by(DeliveryOrder.created_at.desc())).scalars().all()
@@ -463,7 +466,9 @@ def plan_dispatch_run(
         db.execute(
             select(DeliveryOrder).where(
                 DeliveryOrder.organization_id == organization_id,
-                DeliveryOrder.id.in_([UUID(str(order_id)) for order_id in order_ids]),
+                DeliveryOrder.id.in_(
+                    [validate_uuid(order_id, detail='Invalid order identifier') for order_id in order_ids]
+                ),
                 DeliveryOrder.status == 'planned',
             )
             .with_for_update()

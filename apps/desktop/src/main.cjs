@@ -133,7 +133,7 @@ function normalizeConfig(raw) {
     }
   }
   if (Number.isInteger(onboarding.activeStep)) {
-    normalizedOnboarding.activeStep = Math.max(0, Math.min(8, onboarding.activeStep));
+    normalizedOnboarding.activeStep = Math.max(0, Math.min(4, onboarding.activeStep));
   }
 
   return {
@@ -173,7 +173,7 @@ function writeConfig(partial) {
       }
     }
     if (Number.isInteger(patch.onboarding.activeStep)) {
-      nextRaw.onboarding.activeStep = Math.max(0, Math.min(8, patch.onboarding.activeStep));
+      nextRaw.onboarding.activeStep = Math.max(0, Math.min(4, patch.onboarding.activeStep));
     }
   }
   const configPath = getConfigPath();
@@ -398,6 +398,7 @@ function createSetupWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      devTools: !app.isPackaged,
       preload: path.join(__dirname, 'preload.cjs'),
     },
   });
@@ -441,6 +442,7 @@ function createConsoleWindow(url) {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      devTools: !app.isPackaged,
     },
   });
 

@@ -13,6 +13,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.cash_collection import CashCollection
@@ -59,23 +60,30 @@ def open_for_shipment(
     record = get_by_shipment(db, shipment.id)
 
     if record is None:
-        record = CashCollection(
-            organization_id=shipment.organization_id,
-            shipment_id=shipment.id,
-            driver_id=shipment.driver_id,
-            expected_etb=expected,
-            collected_etb=ZERO,
-            shortfall_etb=expected,
-            status='outstanding',
-        )
-        db.add(record)
+        try:
+            with db.begin_nested():
+                record = CashCollection(
+                    organization_id=shipment.organization_id,
+                    shipment_id=shipment.id,
+                    driver_id=shipment.driver_id,
+                    expected_etb=expected,
+                    collected_etb=ZERO,
+                    shortfall_etb=expected,
+                    status='outstanding',
+                )
+                db.add(record)
+                db.flush()
+        except IntegrityError:
+            record = get_by_shipment(db, shipment.id)
+            if record is None:
+                raise
 
     # A shipment that already settled must not be silently reopened by a retry.
-    if record.status == 'settled':
+    if record.status in {'settled', 'voided'}:
         return record
 
     # The driver may have changed since the record was opened; keep it current.
-    if record.driver_id is None and shipment.driver_id is not None:
+    if record.driver_id != shipment.driver_id:
         record.driver_id = shipment.driver_id
 
     if collected is not None:
@@ -101,6 +109,14 @@ def declare(
     note: str | None = None,
 ) -> CashCollection:
     """Record what the driver says they are holding."""
+    if record.status == 'voided':
+        raise ValueError('This cash record was voided')
+    if record.status == 'settled':
+        raise ValueError('This cash record is already settled')
+    if collected < ZERO:
+        raise ValueError('Collected cash cannot be negative')
+    if collected > record.expected_etb:
+        raise ValueError('Collected cash cannot exceed the expected cash amount')
     record.collected_etb = collected
     record.shortfall_etb = compute_shortfall(record.expected_etb, collected)
     record.status = 'collected'
@@ -124,6 +140,10 @@ def settle(
     written off — it is deliberately not zeroed, because a written-off shortfall
     is exactly the number an operator needs at month end.
     """
+    if record.status == 'voided':
+        raise ValueError('This cash record was voided')
+    if record.status == 'settled':
+        return record
     record.status = 'settled'
     record.settled_at = datetime.now(UTC)
     record.settled_by_id = settled_by
@@ -133,28 +153,68 @@ def settle(
     return record
 
 
+def _serialize_records(
+    records: list[CashCollection],
+    *,
+    drivers_by_id: dict[UUID, Driver],
+    shipments_by_id: dict[UUID, Shipment],
+    supplied_shipments: dict[UUID, Shipment] | None = None,
+) -> list[dict]:
+    supplied_shipments = supplied_shipments or {}
+    rows: list[dict] = []
+    for record in records:
+        driver = drivers_by_id.get(record.driver_id) if record.driver_id else None
+        shipment = supplied_shipments.get(record.shipment_id) or shipments_by_id.get(record.shipment_id)
+        rows.append(
+            {
+                'id': record.id,
+                'created_at': record.created_at,
+                'shipment_id': record.shipment_id,
+                'shipment_no': shipment.shipment_no if shipment else 'unknown',
+                'driver_id': record.driver_id,
+                'driver_name': driver.full_name if driver else None,
+                'expected_etb': record.expected_etb,
+                'collected_etb': record.collected_etb,
+                'shortfall_etb': record.shortfall_etb,
+                'status': record.status,
+                'collected_at': record.collected_at,
+                'settled_at': record.settled_at,
+                'note': record.note,
+            }
+        )
+    return rows
+
+
+def serialize_many(db: Session, records: list[CashCollection]) -> list[dict]:
+    if not records:
+        return []
+    driver_ids = {record.driver_id for record in records if record.driver_id is not None}
+    shipment_ids = {record.shipment_id for record in records if record.shipment_id is not None}
+    drivers = (
+        db.execute(select(Driver).where(Driver.id.in_(driver_ids))).scalars().all()
+        if driver_ids
+        else []
+    )
+    shipments = (
+        db.execute(select(Shipment).where(Shipment.id.in_(shipment_ids))).scalars().all()
+        if shipment_ids
+        else []
+    )
+    return _serialize_records(
+        records,
+        drivers_by_id={driver.id: driver for driver in drivers},
+        shipments_by_id={shipment.id: shipment for shipment in shipments},
+    )
+
+
 def serialize(db: Session, record: CashCollection, shipment: Shipment | None = None) -> dict:
-    """Shape a cash record for the API, resolving the driver name for display."""
-    driver_name = None
-    if record.driver_id is not None:
-        driver = db.get(Driver, record.driver_id)
-        driver_name = driver.full_name if driver else None
-    shipment_no = shipment.shipment_no if shipment else None
-    if shipment_no is None:
-        owner = db.get(Shipment, record.shipment_id)
-        shipment_no = owner.shipment_no if owner else 'unknown'
-    return {
-        'id': record.id,
-        'created_at': record.created_at,
-        'shipment_id': record.shipment_id,
-        'shipment_no': shipment_no,
-        'driver_id': record.driver_id,
-        'driver_name': driver_name,
-        'expected_etb': record.expected_etb,
-        'collected_etb': record.collected_etb,
-        'shortfall_etb': record.shortfall_etb,
-        'status': record.status,
-        'collected_at': record.collected_at,
-        'settled_at': record.settled_at,
-        'note': record.note,
-    }
+    """Shape one cash record for the API without scanning the ledger."""
+    supplied = {shipment.id: shipment} if shipment is not None else {}
+    driver = db.get(Driver, record.driver_id) if record.driver_id is not None else None
+    owner = shipment or db.get(Shipment, record.shipment_id)
+    return _serialize_records(
+        [record],
+        drivers_by_id={driver.id: driver} if driver else {},
+        shipments_by_id={owner.id: owner} if owner else {},
+        supplied_shipments=supplied,
+    )[0]

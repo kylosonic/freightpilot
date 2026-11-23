@@ -7,8 +7,17 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 
 class UUIDType(TypeDecorator):
-    impl = CHAR(32)
+    impl = CHAR(36)
     cache_ok = True
+
+    @staticmethod
+    def _coerce(value: object) -> UUID:
+        if isinstance(value, UUID):
+            return value
+        try:
+            return UUID(str(value))
+        except (TypeError, ValueError, AttributeError):
+            raise ValueError('Invalid UUID value') from None
 
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
@@ -18,13 +27,14 @@ class UUIDType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
+        parsed = self._coerce(value)
         if dialect.name == 'postgresql':
-            return value if isinstance(value, UUID) else UUID(str(value))
-        return str(value)
+            return parsed
+        return str(parsed)
 
     def process_result_value(self, value, dialect):
         if value is None:
             return value
         if dialect.name == 'postgresql':
-            return value
-        return UUID(value)
+            return self._coerce(value)
+        return self._coerce(value)

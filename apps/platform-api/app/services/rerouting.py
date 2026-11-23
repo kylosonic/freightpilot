@@ -33,12 +33,13 @@ def generate_rerouting_plan(
         RouteSchedule.organization_id == shipment.organization_id,
         RouteSchedule.start_warehouse_id == shipment.origin_warehouse_id,
         RouteSchedule.status == 'active',
+        RouteSchedule.id != shipment.route_schedule_id,
     ).join(
         RouteStop,
         RouteStop.route_schedule_id == RouteSchedule.id,
     ).where(
         RouteStop.warehouse_id == shipment.destination_warehouse_id,
-    ).distinct()
+    ).distinct().order_by(RouteSchedule.id)
     alternative_route = db.execute(stmt).scalars().first()
 
     if alternative_route is None:

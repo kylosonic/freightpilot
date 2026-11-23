@@ -191,7 +191,7 @@ function SettleCashDialog({
 
 export function DriversPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const canManageFleet = user?.role === 'admin' || user?.role === 'owner';
 
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [ledger, setLedger] = useState<CashLedgerSummary>(EMPTY_LEDGER);
@@ -475,7 +475,7 @@ export function DriversPage() {
                 >
                   What is on the van
                 </button>
-                {isAdmin && driver.status === 'active' ? (
+                {canManageFleet && driver.status === 'active' ? (
                   <button
                     type="button"
                     onClick={() => onDeactivate(driver)}
@@ -572,7 +572,7 @@ export function DriversPage() {
                     Record cash
                   </button>
                 ) : null}
-                {isAdmin && record.status !== 'settled' && record.status !== 'voided' ? (
+                {canManageFleet && record.status !== 'settled' && record.status !== 'voided' ? (
                   <button
                     type="button"
                     onClick={() => setSettleTarget(record)}

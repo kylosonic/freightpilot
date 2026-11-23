@@ -1,4 +1,4 @@
-const CACHE = 'freightpilot-driver-v1';
+const CACHE = 'freightpilot-driver-v2';
 const SHELL = ['/driver', '/manifest.webmanifest', '/driver-icon.svg'];
 
 self.addEventListener('install', (event) => {

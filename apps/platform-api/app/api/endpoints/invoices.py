@@ -1,6 +1,8 @@
 import io
+import math
+from decimal import Decimal
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +10,7 @@ from app.api.security import (
     get_current_membership,
     require_roles,
     require_writable_workspace,
+    validate_uuid,
 )
 from app.core.config import settings
 from app.db.session import get_db
@@ -23,6 +26,8 @@ router = APIRouter()
 
 @router.get('', response_model=list[FreightInvoiceRead])
 def get_invoices(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     membership: OrganizationMembership = Depends(get_current_membership),
     _: User = Depends(require_roles(UserRole.VIEWER, UserRole.OPERATOR, UserRole.ADMIN)),
@@ -31,6 +36,9 @@ def get_invoices(
         select(FreightInvoice).where(
             FreightInvoice.organization_id == membership.organization_id
         )
+        .order_by(FreightInvoice.created_at.desc(), FreightInvoice.id)
+        .offset(skip)
+        .limit(limit)
     ).scalars().all()
     return rows
 
@@ -59,32 +67,65 @@ def upload_invoices(
     if missing:
         raise HTTPException(status_code=400, detail=f'Missing required columns: {sorted(missing)}')
 
-    results = []
-    for _, row in df.iterrows():
-        order_id = str(row['order_id'])
-        carrier_id = str(row['carrier_id'])
-        actual_rate = float(row['actual_rate'])
+    parsed_rows: list[tuple[str, str, Decimal]] = []
+    for index, row in df.iterrows():
+        row_number = index + 2
+        raw_order_id = str(row['order_id']).strip()
+        try:
+            order_id = str(validate_uuid(raw_order_id, detail='Invalid order identifier'))
+        except HTTPException:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Row {row_number}: order_id must be a UUID',
+            ) from None
 
-        order = db.execute(
+        raw_carrier_id = row['carrier_id']
+        if pd.isna(raw_carrier_id):
+            raise HTTPException(status_code=400, detail=f'Row {row_number}: carrier_id is required')
+        carrier_id = str(raw_carrier_id).strip()
+        if not carrier_id or carrier_id.casefold() == 'nan':
+            raise HTTPException(status_code=400, detail=f'Row {row_number}: carrier_id is required')
+
+        try:
+            actual_rate_value = float(row['actual_rate'])
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f'Row {row_number}: actual_rate must be numeric') from None
+        if not math.isfinite(actual_rate_value) or actual_rate_value < 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Row {row_number}: actual_rate must be finite and non-negative',
+            )
+        parsed_rows.append((order_id, carrier_id, Decimal(str(actual_rate_value))))
+
+    orders_by_id: dict[str, HistoricalOrder] = {}
+    if parsed_rows:
+        order_ids = {order_id for order_id, _, _ in parsed_rows}
+        orders = db.execute(
             select(HistoricalOrder).where(
-                HistoricalOrder.id == order_id,
+                HistoricalOrder.id.in_(order_ids),
                 HistoricalOrder.organization_id == writable.organization_id,
             )
-        ).scalar_one_or_none()
-        if not order:
+        ).scalars().all()
+        orders_by_id = {str(order.id): order for order in orders}
+
+    results = []
+    tolerance = Decimal('0.01')
+    for order_id, carrier_id, actual_rate in parsed_rows:
+        order = orders_by_id.get(order_id)
+        if order is None:
             continue
 
-        quoted_rate = order.quantity * order.unit_price
+        quoted_rate = Decimal(str(order.quantity)) * Decimal(str(order.unit_price))
         variance = actual_rate - quoted_rate
-        status = 'mismatch_flagged' if variance != 0 else 'matched'
+        status = 'matched' if abs(variance) <= tolerance else 'mismatch_flagged'
 
         invoice = FreightInvoice(
             organization_id=writable.organization_id,
             order_id=order_id,
             carrier_id=carrier_id,
-            quoted_rate=quoted_rate,
-            actual_rate=actual_rate,
-            variance=variance,
+            quoted_rate=float(quoted_rate),
+            actual_rate=float(actual_rate),
+            variance=float(variance),
             status=status,
         )
         db.add(invoice)

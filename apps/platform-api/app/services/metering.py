@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.usage_meter import OrganizationUsageCounter
@@ -45,15 +46,25 @@ def record_usage_for_user_membership(
     ).scalar_one_or_none()
 
     if not counter:
-        counter = OrganizationUsageCounter(
-            organization_id=organization_id,
-            metric=metric,
-            period_start=period_start,
-            period_end=period_end,
-            used_units=0,
-        )
-        db.add(counter)
-        db.flush()
+        try:
+            with db.begin_nested():
+                counter = OrganizationUsageCounter(
+                    organization_id=organization_id,
+                    metric=metric,
+                    period_start=period_start,
+                    period_end=period_end,
+                    used_units=0,
+                )
+                db.add(counter)
+                db.flush()
+        except IntegrityError:
+            counter = db.execute(
+                select(OrganizationUsageCounter).where(
+                    OrganizationUsageCounter.organization_id == organization_id,
+                    OrganizationUsageCounter.metric == metric,
+                    OrganizationUsageCounter.period_start == period_start,
+                )
+            ).scalar_one()
 
     db.execute(
         update(OrganizationUsageCounter)

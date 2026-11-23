@@ -42,6 +42,21 @@ const launchOptions: Array<{ value: SignupTier; label: string }> = [
 const fieldClassName =
   'peer min-h-12 w-full rounded-md border border-[#dfdeda] bg-white px-3 pb-2.5 pt-6 text-base text-[#252522] outline-none transition placeholder:text-transparent focus:border-[#176b5c] focus:ring-2 focus:ring-[#176b5c]/15 sm:text-sm';
 
+export function safeConsoleRedirect(value: string, nodeEnv = process.env.NODE_ENV): string {
+  try {
+    const target = new URL(value);
+    if (target.username || target.password) return '';
+    if (target.protocol === 'https:') return value;
+    const localHost = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(target.hostname);
+    if (nodeEnv !== 'production' && target.protocol === 'http:' && localHost) {
+      return value;
+    }
+  } catch {
+    return '';
+  }
+  return '';
+}
+
 export function SignupForm() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusTone, setStatusTone] = useState<'success' | 'error' | null>(null);
@@ -75,10 +90,16 @@ export function SignupForm() {
       trackEvent('signup_success');
       setStatusTone('success');
       setStatusMessage(signupSuccessMessage);
+      const consoleUrl = safeConsoleRedirect(externalLinks.console);
+      if (!consoleUrl) {
+        setStatusTone('error');
+        setStatusMessage('Your workspace is ready, but the console address needs to be fixed. Please contact support.');
+        return;
+      }
       // The ops console bootstraps the session from the supply_chain_token
       // cookie (AuthContext → /auth/me → /); same-site it lands on the
       // workspace, otherwise on its existing /login.
-      window.location.assign(externalLinks.console);
+      window.location.assign(consoleUrl);
     } catch (error) {
       // Distinguish a rejected signup from a broken funnel: the behaviour
       // contract requires launch-form errors to be visible within minutes, and

@@ -15,8 +15,8 @@ router = APIRouter()
 
 @router.get('', response_model=list[HistoricalOrderRead])
 def list_orders(
-    skip: int = 0,
-    limit: int = Query(default=200, le=1000),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=200, ge=1, le=1000),
     db: Session = Depends(get_db),
     _: User = Depends(require_roles(UserRole.VIEWER, UserRole.OPERATOR, UserRole.ADMIN)),
     membership: OrganizationMembership = Depends(get_current_membership),

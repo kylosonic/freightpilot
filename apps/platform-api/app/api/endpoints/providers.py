@@ -9,6 +9,7 @@ from app.api.security import (
     get_current_user,
     require_org_roles,
     require_writable_workspace,
+    validate_uuid,
 )
 from app.db.session import get_db
 from app.models.membership import OrganizationMembership
@@ -25,7 +26,12 @@ from app.schemas.provider import (
     ProviderKeyTestResponse,
 )
 from app.services.audit import record_audit_event
-from app.services.security import decrypt_provider_key, encrypt_provider_key, mask_provider_key
+from app.services.security import (
+    ProviderKeyDecryptError,
+    decrypt_provider_key,
+    encrypt_provider_key,
+    mask_provider_key,
+)
 
 router = APIRouter()
 
@@ -51,11 +57,13 @@ def create_provider_key(
     membership: OrganizationMembership = Depends(require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
+    provider_name = payload.provider_name.strip().lower()
+    key_name = payload.key_name.strip()
     duplicate = db.execute(
         select(ProviderApiKey).where(
             ProviderApiKey.organization_id == membership.organization_id,
-            ProviderApiKey.provider_name == payload.provider_name,
-            ProviderApiKey.key_name == payload.key_name,
+            ProviderApiKey.provider_name == provider_name,
+            ProviderApiKey.key_name == key_name,
             ProviderApiKey.status == 'active',
         )
     ).scalar_one_or_none()
@@ -66,8 +74,8 @@ def create_provider_key(
     key = ProviderApiKey(
         organization_id=membership.organization_id,
         created_by_user_id=user.id,
-        provider_name=payload.provider_name.strip().lower(),
-        key_name=payload.key_name.strip(),
+        provider_name=provider_name,
+        key_name=key_name,
         masked_key=mask_provider_key(api_key),
         encrypted_key=encrypt_provider_key(api_key),
         status='active',
@@ -98,7 +106,7 @@ def revoke_provider_key(
     membership: OrganizationMembership = Depends(require_org_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)),
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
-    key = db.get(ProviderApiKey, key_id)
+    key = db.get(ProviderApiKey, validate_uuid(key_id, detail='Provider key not found'))
     if not key or key.organization_id != membership.organization_id:
         raise HTTPException(status_code=404, detail='Provider key not found')
 
@@ -131,7 +139,7 @@ def test_provider_key(
     writable: OrganizationMembership | None = Depends(require_writable_workspace),
 ):
 
-    key = db.get(ProviderApiKey, key_id)
+    key = db.get(ProviderApiKey, validate_uuid(key_id, detail='Provider key not found'))
     if not key or key.organization_id != membership.organization_id:
         raise HTTPException(status_code=404, detail='Provider key not found')
 
@@ -143,7 +151,15 @@ def test_provider_key(
             message='Key is not active',
         )
 
-    decrypted = decrypt_provider_key(key.encrypted_key)
+    try:
+        decrypted = decrypt_provider_key(key.encrypted_key)
+    except ProviderKeyDecryptError:
+        return ProviderKeyTestResponse(
+            key_id=key.id,
+            provider_name=key.provider_name,
+            ok=False,
+            message='Key cannot be decrypted; replace or rotate it.',
+        )
     is_valid_shape = len(decrypted.strip()) >= 12
     return ProviderKeyTestResponse(
         key_id=key.id,
@@ -181,7 +197,10 @@ def set_provider_preference(
     if not organization:
         raise HTTPException(status_code=404, detail='Organization not found')
 
-    key = db.get(ProviderApiKey, payload.key_id)
+    key = db.get(
+        ProviderApiKey,
+        validate_uuid(payload.key_id, detail='Provider key not found'),
+    )
     if not key or key.organization_id != membership.organization_id:
         raise HTTPException(status_code=404, detail='Provider key not found')
     if key.status != 'active':

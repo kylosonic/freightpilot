@@ -52,6 +52,29 @@ def test_malformed_org_header_is_a_client_error(client: TestClient, admin_token:
     assert response.json()['detail'] == 'Invalid organization identifier'
 
 
+def test_malformed_dispatch_identifiers_are_client_errors(client: TestClient, admin_token: str):
+    filtered = client.get(
+        '/api/v1/dispatch/orders?run_id=not-a-uuid',
+        headers={'Authorization': f'Bearer {admin_token}'},
+    )
+    assert filtered.status_code == 422
+
+    planned = client.post(
+        '/api/v1/dispatch/runs',
+        headers={'Authorization': f'Bearer {admin_token}'},
+        json={
+            'route_name': 'Malformed order check',
+            'plan_date': '2026-11-24',
+            'start_label': 'Test depot',
+            'start_latitude': 9.0,
+            'start_longitude': 38.7,
+            'order_ids': ['not-a-uuid'],
+            'vehicle_capacity_units': 100,
+        },
+    )
+    assert planned.status_code == 422
+
+
 def test_health_is_degraded_when_schema_is_pending(client: TestClient, monkeypatch):
     engine = create_engine('sqlite+pysqlite:///:memory:')
     monkeypatch.setattr(main_module, 'get_engine', lambda: engine)

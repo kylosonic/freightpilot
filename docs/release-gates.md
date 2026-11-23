@@ -6,11 +6,14 @@ A change is ready to merge when the checks in `.github/workflows/ci.yml` pass. T
 
 | Job | Checks |
 | --- | --- |
-| `backend-tests` | Hash-pinned Python install, full pytest suite, Ruff syntax and undefined-name checks |
+| `backend-tests` | Hash-pinned Python install, full pytest suite, Ruff syntax and undefined-name checks, focused mypy gate |
 | `backend-dependency-audit` | `pip-audit` against `requirements.lock` |
+| `backend-postgres` | Alembic upgrade, live PostgreSQL schema/UUID checks, PostgreSQL-backed regression tests |
+| `worker-dependency-audit` | Worker lockfile audit with `--no-deps` |
 | `ops-console` | Clean install, typecheck, lint, tests, production build, deployed-dependency audit |
-| `product-web` | Clean install, tests, production build, bundle budget, deployed-dependency audit |
+| `product-web` | Clean install, TypeScript check, tests, production build, bundle budget, deployed-dependency audit |
 | `desktop` | Clean install, archive-path tests, Electron runtime check, dependency audit |
+| `docker` | Compose configuration validation and production image builds |
 
 The npm applications are installed independently from their per-application lockfiles. The repository root intentionally has no workspace lockfile.
 

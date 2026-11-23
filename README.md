@@ -146,6 +146,10 @@ The main backend settings are documented in `apps/platform-api/.env.example`.
 - `DATABASE_URL` selects the database.
 - `JWT_SECRET_KEY` signs login tokens.
 - `PROVIDER_KEY_ENCRYPTION_SECRET` encrypts stored provider API keys.
+- `PROVIDER_KEY_ENCRYPTION_PREVIOUS_SECRET` is optional and is used only during a staged provider-key rotation.
+- `PLATFORM_ADMIN_EMAILS` is a comma-separated allowlist for platform-review access. It does not grant tenant access by itself.
+- `PLATFORM_ADMIN_BOOTSTRAP_ENABLED` is a local-demo shortcut. Keep it `false` in production and use the email allowlist instead.
+- `CONSOLE_URL` is the public operations-console origin used in invitation, tracking, and driver links.
 - `PROOF_ORG_QUOTA_BYTES` limits delivery-proof storage per workspace.
 - `RECEIPT_EXTRACTION_MODE` selects the receipt extraction adapter.
 - `SMTP_*` enables invitation email delivery. When SMTP is not configured, the console still returns a copyable invitation link.
@@ -153,7 +157,18 @@ The main backend settings are documented in `apps/platform-api/.env.example`.
 
 Production startup rejects missing secrets, known placeholder values, and incomplete collection-account settings.
 
-The product site reads `NEXT_PUBLIC_PLATFORM_API_URL`, `NEXT_PUBLIC_APP_CONSOLE_URL`, `NEXT_PUBLIC_DOCS_URL`, `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`, and `NEXT_PUBLIC_SITE_URL` from `apps/product-web/.env.example`.
+The product site reads `NEXT_PUBLIC_PLATFORM_API_URL`, `NEXT_PUBLIC_APP_CONSOLE_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT`, `NEXT_PUBLIC_DOCS_URL`, `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`, and `NEXT_PUBLIC_SITE_URL` from `apps/product-web/.env.example`.
+
+### Rotate a provider encryption key
+
+Stored provider keys use `MultiFernet`, so a rotation can be completed without invalidating existing encrypted rows.
+
+1. Copy the current value into `PROVIDER_KEY_ENCRYPTION_PREVIOUS_SECRET` and deploy that change first.
+2. Generate a new value for `PROVIDER_KEY_ENCRYPTION_SECRET` and deploy it while the previous secret remains configured.
+3. Run provider-key tests to confirm both old and new ciphertext remain readable.
+4. Keep the previous secret until a separate, reviewed data migration has re-encrypted every stored key.
+
+`scripts/rotate_and_deploy.ps1` does not re-encrypt provider keys, and this repository does not yet include an automated re-encryption command. Do not remove `PROVIDER_KEY_ENCRYPTION_PREVIOUS_SECRET` based only on a successful deployment.
 
 ## Database migrations
 
@@ -208,7 +223,9 @@ Validate the Compose file:
 docker compose config --quiet
 ```
 
-CI runs the backend suite, Python dependency audit, console checks, product-site checks, desktop tests, the Electron runtime check, and dependency audits. It installs each npm application with `npm ci` from the matching lockfile.
+CI runs these blocking jobs: backend tests; backend ruff plus a focused mypy gate for the reliability modules; PostgreSQL migration and schema tests; Python and Worker dependency audits; operations-console typecheck, lint, tests, build, and deployed dependency audit; product-site tests, TypeScript check, build, bundle budget, and deployed dependency audit; desktop tests, Electron runtime check, and dependency audit; and Docker Compose validation plus deployable image builds. Each npm application installs with `npm ci` from its matching lockfile.
+
+The full backend tree still has a SQLAlchemy typing backlog. The mypy CI gate covers the reliability modules changed in this pass, while the full pytest suite remains the broad behavioral gate.
 
 ## Deployment
 
@@ -222,14 +239,19 @@ npm run cloudflare:deploy
 ```
 
 The API deployment stages the FastAPI application and Alembic migration files,
-then deploys the Worker and its Hyperdrive binding. The web and console
-deployments build their static output first. The individual commands are
-`cloudflare:deploy:web`, `cloudflare:deploy:console`, and `cloudflare:deploy:api`.
+then deploys the Worker and its Hyperdrive binding. `cloudflare:deploy:redirect`
+deploys the redirect Worker; `cloudflare:deploy:console` deploys the Pages
+operations console. The combined deploy builds both frontends once before
+uploading them. The individual commands are `cloudflare:deploy:web`,
+`cloudflare:deploy:console`, `cloudflare:deploy:redirect`, and
+`cloudflare:deploy:api`. Wrangler is pinned in the root scripts so local and
+release runs use the same CLI version.
 Production API secrets are managed as Cloudflare Worker secrets:
 
 ```powershell
 npx wrangler secret put JWT_SECRET_KEY --config infra/cloudflare/freightpilot-api/wrangler.jsonc
 npx wrangler secret put PROVIDER_KEY_ENCRYPTION_SECRET --config infra/cloudflare/freightpilot-api/wrangler.jsonc
+npx wrangler secret put PLATFORM_ADMIN_EMAILS --config infra/cloudflare/freightpilot-api/wrangler.jsonc
 ```
 
 Before deploying code that depends on a new migration, apply the migration:

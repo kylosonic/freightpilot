@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.organization import Organization
@@ -119,7 +120,13 @@ def _crossing(db: Session, org_id, period_start: date, level: str) -> ThresholdC
     ).scalar_one_or_none()
 
 
-def pitch_state(db: Session, org: Organization, now: datetime) -> dict:
+def pitch_state(
+    db: Session,
+    org: Organization,
+    now: datetime,
+    *,
+    state: FreeCapState | None = None,
+) -> dict:
     """Cross + compose the pitch payload fragment (decision #6).
 
     Fires (INSERT + audit) any threshold <= current utilization not yet
@@ -128,21 +135,28 @@ def pitch_state(db: Session, org: Organization, now: datetime) -> dict:
     if org.subscription_tier != 'free':
         return {'banner': None, 'dismissible': False, 'fired': []}
 
-    state = free_cap_state(db, org, now)
+    state = state or free_cap_state(db, org, now)
     period_start = state.period_start
     utilization_pct = state.utilization_pct
     fired: list[str] = []
 
     for level, threshold in (('p60', 60), ('p80', 80)):
         if utilization_pct >= threshold and _crossing(db, org.id, period_start, level) is None:
-            db.add(
-                ThresholdCrossing(
-                    organization_id=org.id,
-                    period_start=period_start,
-                    threshold_level=level,
-                    fired_at=now,
-                )
-            )
+            try:
+                with db.begin_nested():
+                    db.add(
+                        ThresholdCrossing(
+                            organization_id=org.id,
+                            period_start=period_start,
+                            threshold_level=level,
+                            fired_at=now,
+                        )
+                    )
+                    db.flush()
+            except IntegrityError:
+                if _crossing(db, org.id, period_start, level) is None:
+                    raise
+                continue
             record_audit_event(
                 db,
                 event_type='usage.pitch_fired',

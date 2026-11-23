@@ -163,8 +163,6 @@ def test_fernet_binding_uses_effective_encryption_secret(monkeypatch):
     decrypt; an empty production secret raises ValueError at encrypt time."""
     import app.services.security as security_mod
 
-    from cryptography.fernet import InvalidToken
-
     prod = _prod_settings()
     monkeypatch.setattr(security_mod, 'settings', prod)
 
@@ -173,7 +171,7 @@ def test_fernet_binding_uses_effective_encryption_secret(monkeypatch):
 
     other = _prod_settings(provider_key_encryption_secret='z' * 40)
     monkeypatch.setattr(security_mod, 'settings', other)
-    with pytest.raises(InvalidToken):
+    with pytest.raises(security_mod.ProviderKeyDecryptError):
         security_mod.decrypt_provider_key(token)
 
     empty = _prod_settings(provider_key_encryption_secret='')

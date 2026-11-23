@@ -20,6 +20,7 @@ export type NavItem = {
 };
 
 export type FeatureCard = {
+  id?: string;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -212,18 +213,21 @@ export const footerNavigation = {
 
 export const platformStacks: FeatureCard[] = [
   {
+    id: 'control-tower',
     icon: Layers3,
     title: 'Control Tower',
     description: 'One place to plan routes, follow shipments, and handle problems.',
     detail: 'Your team can plan the day and respond to changes without switching between tools.',
   },
   {
+    id: 'decision-studio',
     icon: Workflow,
     title: 'Route planning',
     description: 'Compare routes by time, cost, and the stops they can cover.',
     detail: 'Use the same route plan when you dispatch deliveries.',
   },
   {
+    id: 'launch-workstation',
     icon: Orbit,
     title: 'Guided setup',
     description: 'See each setup step and know who needs to do it.',

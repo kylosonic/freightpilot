@@ -276,7 +276,7 @@ function PlanRow({
       <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{plan.rationale}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {userRole === 'admin' && plan.status === 'pending_approval' ? (
+        {(userRole === 'admin' || userRole === 'owner') && plan.status === 'pending_approval' ? (
           <>
             <button
               onClick={() => onApprove(plan.id)}

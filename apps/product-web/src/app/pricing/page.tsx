@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
-import { BadgeCheck, CircleHelp } from 'lucide-react';
+import { BadgeCheck } from 'lucide-react';
 
 import { FaqAccordion } from '@/components/site/faq-accordion';
 import { MagneticLink } from '@/components/site/magnetic-link';
 import { PageHero } from '@/components/site/page-hero';
 import { SectionHeading } from '@/components/site/section-heading';
-import { SpotlightCard } from '@/components/site/spotlight-card';
 import {
   faqItems,
   partialPaymentStory,

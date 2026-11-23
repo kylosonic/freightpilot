@@ -32,7 +32,7 @@ from app.models.provider_key import ProviderApiKey
 from app.models.receipt_extraction import ReceiptExtraction
 from app.models.user import User
 from app.services.audit import record_audit_event
-from app.services.security import decrypt_provider_key
+from app.services.security import ProviderKeyDecryptError, decrypt_provider_key
 
 EXTRACTION_FIELDS = (
     'sender_name',
@@ -129,7 +129,14 @@ def extract_receipt(
                 has_key=True,
                 raw_response=raw,
             )
-        except (ProviderAdapterError, ValueError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        except (
+            ProviderAdapterError,
+            ProviderKeyDecryptError,
+            ValueError,
+            json.JSONDecodeError,
+            KeyError,
+            TypeError,
+        ) as exc:
             result = _empty_result(has_key=True, error=str(exc))
 
     row = ReceiptExtraction(

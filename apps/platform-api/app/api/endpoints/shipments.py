@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import asc, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.security import (
@@ -14,6 +15,7 @@ from app.api.security import (
     require_writable_workspace,
     resolve_scoped_organization,
     scoped_to_organization,
+    validate_uuid,
 )
 from app.db.session import get_db
 from app.models.alert import Alert
@@ -39,33 +41,65 @@ from app.services.audit import record_audit_event
 router = APIRouter()
 
 
+def _shipments_to_read(db: Session, shipments: list[Shipment] | tuple[Shipment, ...]) -> list[ShipmentRead]:
+    if not shipments:
+        return []
+    warehouse_ids = {
+        warehouse_id
+        for shipment in shipments
+        for warehouse_id in (shipment.origin_warehouse_id, shipment.destination_warehouse_id)
+        if warehouse_id is not None
+    }
+    item_ids = {shipment.item_id for shipment in shipments if shipment.item_id is not None}
+    driver_ids = {shipment.driver_id for shipment in shipments if shipment.driver_id is not None}
+    warehouses = {
+        row.id: row
+        for row in db.execute(select(Warehouse).where(Warehouse.id.in_(warehouse_ids))).scalars().all()
+    } if warehouse_ids else {}
+    items = {
+        row.id: row
+        for row in db.execute(select(Item).where(Item.id.in_(item_ids))).scalars().all()
+    } if item_ids else {}
+    drivers = {
+        row.id: row
+        for row in db.execute(select(Driver).where(Driver.id.in_(driver_ids))).scalars().all()
+    } if driver_ids else {}
+
+    rows: list[ShipmentRead] = []
+    for shipment in shipments:
+        origin = warehouses.get(shipment.origin_warehouse_id)
+        destination = warehouses.get(shipment.destination_warehouse_id)
+        item = items.get(shipment.item_id)
+        driver = drivers.get(shipment.driver_id) if shipment.driver_id else None
+        rows.append(
+            ShipmentRead(
+                id=shipment.id,
+                created_at=shipment.created_at,
+                shipment_no=shipment.shipment_no,
+                route_schedule_id=shipment.route_schedule_id,
+                origin_warehouse_code=origin.code if origin else 'unknown',
+                destination_warehouse_code=destination.code if destination else 'unknown',
+                sku=item.sku if item else 'unknown',
+                quantity_units=shipment.quantity_units,
+                planned_departure=shipment.planned_departure,
+                expected_delivery=shipment.expected_delivery,
+                actual_delivery=shipment.actual_delivery,
+                status=ShipmentStatus(shipment.status),
+                last_known_location=shipment.last_known_location,
+                delay_reason=shipment.delay_reason,
+                proof_of_delivery_ref=shipment.proof_of_delivery_ref,
+                scope_3_emissions_kg=shipment.scope_3_emissions_kg,
+                driver_id=shipment.driver_id,
+                driver_name=driver.full_name if driver else None,
+                cod_amount_etb=shipment.cod_amount_etb or 0,
+                client_ref=shipment.client_ref,
+            )
+        )
+    return rows
+
+
 def _shipment_to_read(db: Session, shipment: Shipment) -> ShipmentRead:
-    origin = db.get(Warehouse, shipment.origin_warehouse_id)
-    destination = db.get(Warehouse, shipment.destination_warehouse_id)
-    item = db.get(Item, shipment.item_id)
-    driver = db.get(Driver, shipment.driver_id) if shipment.driver_id else None
-    return ShipmentRead(
-        id=shipment.id,
-        created_at=shipment.created_at,
-        shipment_no=shipment.shipment_no,
-        route_schedule_id=shipment.route_schedule_id,
-        origin_warehouse_code=origin.code if origin else 'unknown',
-        destination_warehouse_code=destination.code if destination else 'unknown',
-        sku=item.sku if item else 'unknown',
-        quantity_units=shipment.quantity_units,
-        planned_departure=shipment.planned_departure,
-        expected_delivery=shipment.expected_delivery,
-        actual_delivery=shipment.actual_delivery,
-        status=ShipmentStatus(shipment.status),
-        last_known_location=shipment.last_known_location,
-        delay_reason=shipment.delay_reason,
-        proof_of_delivery_ref=shipment.proof_of_delivery_ref,
-        scope_3_emissions_kg=shipment.scope_3_emissions_kg,
-        driver_id=shipment.driver_id,
-        driver_name=driver.full_name if driver else None,
-        cod_amount_etb=shipment.cod_amount_etb or 0,
-        client_ref=shipment.client_ref,
-    )
+    return _shipments_to_read(db, [shipment])[0]
 
 
 @router.get('', response_model=list[ShipmentRead])
@@ -79,8 +113,10 @@ def list_shipments(
     # active organization membership, so an org-less actor is denied upstream.
     organization_id = membership.organization_id
     stmt = scoped_to_organization(select(Shipment), Shipment, organization_id)
-    shipments = db.execute(stmt.order_by(asc(Shipment.created_at))).scalars().all()
-    return [_shipment_to_read(db, shipment) for shipment in shipments]
+    shipments = db.execute(
+        stmt.order_by(asc(Shipment.created_at), Shipment.id)
+    ).scalars().all()
+    return _shipments_to_read(db, shipments)
 
 
 @router.post('', response_model=ShipmentRead, status_code=201)
@@ -152,9 +188,13 @@ def create_shipment(
         raise HTTPException(status_code=404, detail='SKU not found')
 
     if payload.route_schedule_id:
+        route_schedule_id = validate_uuid(
+            payload.route_schedule_id,
+            detail='Route schedule not found',
+        )
         route_stmt = order_by_organization_first(
             scoped_to_organization(
-                select(RouteSchedule).where(RouteSchedule.id == payload.route_schedule_id),
+                select(RouteSchedule).where(RouteSchedule.id == route_schedule_id),
                 RouteSchedule,
                 organization_id,
             ),
@@ -211,7 +251,19 @@ def create_shipment(
             'quantity_units': payload.quantity_units,
         },
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if payload.client_ref:
+            replay_stmt = select(Shipment).where(
+                Shipment.client_ref == payload.client_ref,
+                Shipment.organization_id == organization_id,
+            )
+            replayed = db.execute(replay_stmt).scalars().first()
+            if replayed is not None:
+                return _shipment_to_read(db, replayed)
+        raise HTTPException(status_code=409, detail='Shipment number already exists') from None
     db.refresh(shipment)
     return _shipment_to_read(db, shipment)
 

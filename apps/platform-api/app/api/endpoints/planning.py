@@ -9,11 +9,10 @@ from sqlalchemy.orm import Session
 
 from app.api.security import (
     get_current_membership,
-    order_by_organization_first,
-    organization_scoped_get,
     require_roles,
     require_writable_workspace,
     scoped_to_organization,
+    validate_uuid,
 )
 from app.db.session import get_db
 from app.models.inventory import Inventory
@@ -116,6 +115,17 @@ def generate_replenishment_plans(
             else order.order_date
         )
 
+    pending_rows = db.execute(
+        scoped_to_organization(
+            select(ReplenishmentPlan.warehouse_id, ReplenishmentPlan.item_id).where(
+                ReplenishmentPlan.status == ReplenishmentPlanStatus.PENDING_APPROVAL
+            ),
+            ReplenishmentPlan,
+            organization_id,
+        )
+    ).all()
+    pending_keys = {(row.warehouse_id, row.item_id) for row in pending_rows}
+
     created: list[tuple[ReplenishmentPlan, str, str]] = []
     for row in inventories:
         key = (row.Inventory.warehouse_id, row.Inventory.item_id)
@@ -135,21 +145,7 @@ def generate_replenishment_plans(
         if suggested <= 0:
             continue
 
-        existing_pending = db.execute(
-            order_by_organization_first(
-                scoped_to_organization(
-                    select(ReplenishmentPlan).where(
-                        ReplenishmentPlan.warehouse_id == row.Inventory.warehouse_id,
-                        ReplenishmentPlan.item_id == row.Inventory.item_id,
-                        ReplenishmentPlan.status == ReplenishmentPlanStatus.PENDING_APPROVAL,
-                    ),
-                    ReplenishmentPlan,
-                    organization_id,
-                ),
-                ReplenishmentPlan,
-            )
-        ).scalars().first()
-        if existing_pending:
+        if key in pending_keys:
             continue
 
         plan = ReplenishmentPlan(
@@ -163,7 +159,7 @@ def generate_replenishment_plans(
             rationale=(
                 f'Projected demand {projected} + safety stock '
                 f'{row.Inventory.safety_stock} - on hand {row.Inventory.quantity_on_hand}'
-            ),
+            )[:255],
             created_by_user_id=user.id,
         )
         db.add(plan)
@@ -195,14 +191,17 @@ def approve_replenishment_plan(
     user: User = Depends(require_roles(UserRole.ADMIN)),
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
-    plan = organization_scoped_get(
-        db,
-        ReplenishmentPlan,
-        plan_id,
-        writable.organization_id,
-        not_found_detail='Plan not found',
-        include_legacy_null=False,
-    )
+    plan_uuid = validate_uuid(plan_id, detail='Plan not found')
+    plan = db.execute(
+        select(ReplenishmentPlan)
+        .where(
+            ReplenishmentPlan.id == plan_uuid,
+            ReplenishmentPlan.organization_id == writable.organization_id,
+        )
+        .with_for_update()
+    ).scalar_one_or_none()
+    if plan is None:
+        raise HTTPException(status_code=404, detail='Plan not found')
     if plan.status != ReplenishmentPlanStatus.PENDING_APPROVAL:
         raise HTTPException(status_code=400, detail='Only pending plans can be approved')
 
@@ -212,7 +211,7 @@ def approve_replenishment_plan(
     plan.approved_at = datetime.now(UTC)
     plan.rejection_reason = None
     if payload.note:
-        plan.rationale = f'{plan.rationale}. Approval note: {payload.note}'
+        plan.rationale = f'{plan.rationale}. Approval note: {payload.note}'[:255]
     db.add(plan)
 
     record_audit_event(
@@ -241,14 +240,17 @@ def reject_replenishment_plan(
     user: User = Depends(require_roles(UserRole.ADMIN)),
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
-    plan = organization_scoped_get(
-        db,
-        ReplenishmentPlan,
-        plan_id,
-        writable.organization_id,
-        not_found_detail='Plan not found',
-        include_legacy_null=False,
-    )
+    plan_uuid = validate_uuid(plan_id, detail='Plan not found')
+    plan = db.execute(
+        select(ReplenishmentPlan)
+        .where(
+            ReplenishmentPlan.id == plan_uuid,
+            ReplenishmentPlan.organization_id == writable.organization_id,
+        )
+        .with_for_update()
+    ).scalar_one_or_none()
+    if plan is None:
+        raise HTTPException(status_code=404, detail='Plan not found')
     if plan.status != ReplenishmentPlanStatus.PENDING_APPROVAL:
         raise HTTPException(status_code=400, detail='Only pending plans can be rejected')
 

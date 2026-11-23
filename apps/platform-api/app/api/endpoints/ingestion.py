@@ -86,7 +86,8 @@ def _finish_csv_upload(
     if org is None:
         return
     now = datetime.now(UTC)
-    seeding.supersede_sample_rows(db, org, category, now)
+    if counts.get('records_created', 0) or counts.get('records_updated', 0):
+        seeding.supersede_sample_rows(db, org, category, now)
     activation_state.record_csv_upload(
         db, org.id, actor, category=category, counts=counts, now=now
     )

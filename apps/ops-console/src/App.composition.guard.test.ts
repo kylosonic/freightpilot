@@ -47,22 +47,22 @@ describe('App route composition guard (TECH-72 / NB-55)', () => {
 
   it('preserves the exact per-route allowedRoles arrays on every console child route', () => {
     expect(app).toContain(
-      "<Route path=\"/routes\" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><RoutesPage /></ProtectedRoute>} />",
+      "<Route path=\"/routes\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><RoutesPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
-      "<Route path=\"/upload\" element={<ProtectedRoute allowedRoles={['admin', 'operator']}><UploadPage /></ProtectedRoute>} />",
+      "<Route path=\"/upload\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator']}><UploadPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
-      "<Route path=\"/shipments\" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><ShipmentsPage /></ProtectedRoute>} />",
+      "<Route path=\"/shipments\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><ShipmentsPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
-      "<Route path=\"/alerts\" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><AlertsPage /></ProtectedRoute>} />",
+      "<Route path=\"/alerts\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><AlertsPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
-      "<Route path=\"/planning\" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><PlanningPage /></ProtectedRoute>} />",
+      "<Route path=\"/planning\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><PlanningPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
-      "<Route path=\"/account\" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><AccountPage /></ProtectedRoute>} />",
+      "<Route path=\"/account\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><AccountPage /></ProtectedRoute>} />",
     );
     expect(app).toContain(
       "<Route path=\"/providers\" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator']}><ProvidersPage /></ProtectedRoute>} />",

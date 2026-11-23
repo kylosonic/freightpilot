@@ -24,6 +24,7 @@ from app.api.security import (
     get_current_membership,
     require_org_roles,
     require_platform_admin,
+    validate_uuid,
 )
 from app.db.session import get_db
 from app.models.membership import OrganizationMembership
@@ -80,6 +81,13 @@ def _receipt_read(receipt) -> ReceiptRead:
 
 def _queue_item(db: Session, receipt) -> ReceiptQueueItemRead:
     return ReceiptQueueItemRead(**receipts_service.queue_item_payload(db, receipt))
+
+
+def _queue_items(db: Session, receipts) -> list[ReceiptQueueItemRead]:
+    return [
+        ReceiptQueueItemRead(**payload)
+        for payload in receipts_service.queue_item_payloads(db, receipts)
+    ]
 
 
 def _as_verdict_http(exc: ReceiptVerdictError) -> HTTPException:
@@ -223,16 +231,17 @@ def submit_dispute_endpoint(
     ),
 ):
     """Customer dispute (NB-17). Write-guard EXEMPT."""
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
     org = db.get(Organization, membership.organization_id)
     if org is None:
         raise HTTPException(status_code=404, detail='Organization not found')
     user = db.get(User, membership.user_id)
     try:
-        receipts_service.submit_dispute(db, org, user, receipt_id, payload.text.strip())
+        receipts_service.submit_dispute(db, org, user, str(receipt_uuid), payload.text.strip())
     except ReceiptVerdictError as exc:
         raise _as_verdict_http(exc) from None
     db.commit()  # get_db closes without commit; refresh only commits on phase change
-    receipt = db.get(PaymentReceipt, receipt_id)
+    receipt = db.get(PaymentReceipt, receipt_uuid)
     return _receipt_read(receipt)
 
 
@@ -243,10 +252,7 @@ def receipt_queue(
 ):
     """Admin verification queue (pending + escalated, oldest first).
     Write-guard EXEMPT — locked workspaces must still be serviced."""
-    return [
-        _queue_item(db, receipt)
-        for receipt in receipts_service.list_queue(db)
-    ]
+    return _queue_items(db, receipts_service.list_queue(db))
 
 
 @router.get('/queue/{receipt_id}', response_model=ReceiptQueueItemRead)
@@ -255,7 +261,8 @@ def receipt_queue_item(
     db: Session = Depends(get_db),
     _admin: User = Depends(require_platform_admin),
 ):
-    receipt = receipts_service.get_queue_item(db, receipt_id)
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
+    receipt = receipts_service.get_queue_item(db, str(receipt_uuid))
     if receipt is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     return _queue_item(db, receipt)
@@ -268,7 +275,8 @@ def receipt_queue_file(
     _admin: User = Depends(require_platform_admin),
 ):
     """Raw receipt bytes for the admin detail panel (DB blob re-display)."""
-    receipt = receipts_service.get_queue_item(db, receipt_id)
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
+    receipt = receipts_service.get_queue_item(db, str(receipt_uuid))
     if receipt is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     # the stored content_type is client-supplied. Force a
@@ -294,19 +302,20 @@ def render_decision_endpoint(
     EXEMPT. When the receipt has an open dispute, the same endpoint routes
     through dispute-resolution semantics (verify -> credit path;
     any rejection -> maintain_rejection)."""
-    target = db.get(PaymentReceipt, receipt_id)
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
+    target = db.get(PaymentReceipt, receipt_uuid)
     if target is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     try:
         if receipts_service.has_open_dispute(
-            db, receipt_id, target.organization_id
+            db, str(receipt_uuid), target.organization_id
         ):
             receipt = receipts_service.resolve_dispute(
-                db, user, receipt_id, payload, target.organization_id
+                db, user, str(receipt_uuid), payload, target.organization_id
             )
         else:
             receipt = receipts_service.render_verdict(
-                db, user, receipt_id, payload, target.organization_id
+                db, user, str(receipt_uuid), payload, target.organization_id
             )
     except ReceiptVerdictError as exc:
         raise _as_verdict_http(exc) from None

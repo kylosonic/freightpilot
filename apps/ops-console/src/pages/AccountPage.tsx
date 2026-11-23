@@ -471,7 +471,7 @@ export function AccountPage() {
         </div>
       </Panel>
 
-      {user?.role === 'admin' ? (
+      {user?.role === 'admin' || user?.role === 'owner' ? (
         <WorkspaceResetDangerZone
           organizationName={subscription?.organization_name ?? ''}
           isAdmin

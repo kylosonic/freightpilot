@@ -26,7 +26,7 @@ const csvSchemas = [
   },
   {
     name: 'Items',
-    columns: 'sku,name,category,unit_price,reorder_level',
+    columns: 'sku,name,category,unit_cost,reorder_level',
   },
   {
     name: 'Fleet assets',

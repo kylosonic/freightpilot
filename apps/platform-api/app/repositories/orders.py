@@ -20,7 +20,7 @@ class OrderRepository(BaseRepository[HistoricalOrder]):
             self.db.execute(
                 select(HistoricalOrder)
                 .where(HistoricalOrder.organization_id == organization_id)
-                .order_by(desc(HistoricalOrder.order_date))
+                .order_by(desc(HistoricalOrder.order_date), HistoricalOrder.id)
                 .offset(skip)
                 .limit(limit)
             ).scalars().all()

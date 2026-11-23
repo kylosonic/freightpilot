@@ -18,7 +18,6 @@
   "devDependencies": {
     "@electron/get": "^5.1.0",
     "electron": "^45.2.3",
-    "undici": "^8.12.4",
     "yauzl": "^3.4.0"
   }
 }

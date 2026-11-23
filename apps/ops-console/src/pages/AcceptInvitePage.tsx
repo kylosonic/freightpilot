@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { apiErrorMessage } from '../services/authErrors';
 import { setStoredToken } from '../services/api';
@@ -7,13 +7,24 @@ import { acceptInvitation } from '../services/teamApi';
 const FIELD = 'fp-input mt-1 min-h-10';
 
 export function AcceptInvitePage() {
-  const fragment = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '');
-  const token = new URLSearchParams(fragment).get('token') || '';
+  const [token] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token') || '';
+  });
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${window.location.search}`,
+    );
+  }, []);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();

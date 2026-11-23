@@ -16,6 +16,7 @@ export type CompanySignupResponse = {
 };
 
 const localApiBase = 'http://localhost:8000/api/v1';
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export const missingPlatformApiMessage =
   'Signup is temporarily unavailable on this deployment. The platform API URL is not configured.';
@@ -81,19 +82,24 @@ function normalizeError(raw: string, fallback: string): string {
 
 export async function companySignup(payload: CompanySignupRequest): Promise<CompanySignupResponse> {
   const apiBase = resolvePlatformApiBase();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response: Response;
   try {
     response = await fetch(`${apiBase}/auth/company-signup`, {
       method: 'POST',
       credentials: 'include',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
   } catch {
-    // Network failure (DNS, refused connection, offline).
+    // Network failure, timeout, DNS, refused connection, or offline.
     throw new Error(networkFailureMessage);
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (!response.ok) {

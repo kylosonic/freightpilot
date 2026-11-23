@@ -17,13 +17,14 @@ from app.models.dispute_thread import DisputeThread
 from app.models.organization import Organization
 from app.models.payment_receipt import PaymentReceipt
 from app.models.receipt_extraction import ReceiptExtraction
+from app.models.sender_fraud_flag import SenderFraudFlag
 from app.models.wallet_credit import WalletCredit
 from app.services.billing.receipt_extraction import (
     EXTRACTION_FIELDS,
     ZERO_CONFIDENCE_WARNING,
 )
 from app.services.billing.receipts.intake import recommended_verdict
-from app.services.billing.reversals import fraud_flags
+from app.services.billing.trusted_payers import normalize_sender
 
 
 def list_customer_receipts(db: Session, org: Organization) -> list[PaymentReceipt]:
@@ -65,11 +66,16 @@ def get_queue_item(
     return db.execute(statement).scalar_one_or_none()
 
 
-def queue_item_payload(db: Session, receipt: PaymentReceipt) -> dict:
-    """Build the admin queue-item dict (schema: ReceiptQueueItemRead)."""
-    extraction = db.execute(
-        select(ReceiptExtraction).where(ReceiptExtraction.receipt_id == receipt.id)
-    ).scalar_one_or_none()
+def _payload_from_maps(
+    db: Session,
+    receipt: PaymentReceipt,
+    *,
+    extractions: dict,
+    organizations: dict,
+    disputes: dict,
+    flags: dict,
+) -> dict:
+    extraction = extractions.get(receipt.id)
     field_columns = {
         'sender_name': receipt.sender_name,
         'sender_account_number': receipt.sender_account_number,
@@ -87,15 +93,14 @@ def queue_item_payload(db: Session, receipt: PaymentReceipt) -> dict:
         fields = field_columns
         confidence = dict.fromkeys(EXTRACTION_FIELDS, 0.0)
 
-    org = db.get(Organization, receipt.organization_id)
-    thread = db.execute(
-        select(DisputeThread).where(DisputeThread.receipt_id == receipt.id)
-    ).scalar_one_or_none()
+    org = organizations.get(receipt.organization_id)
+    thread = disputes.get(receipt.id)
     invoice = receipt.invoice
-
-    # NB-21.2 fraud-risk badge: ONE indexed lookup per item against
-    # sender_fraud_flags (blueprint risk #6) — display-only, never gates.
-    flag = fraud_flags.fraud_flag_read(db, receipt.organization_id, receipt.sender_name)
+    flag = (
+        flags.get((receipt.organization_id, normalize_sender(receipt.sender_name)))
+        if receipt.sender_name
+        else None
+    )
 
     return {
         'id': receipt.id,
@@ -131,6 +136,62 @@ def queue_item_payload(db: Session, receipt: PaymentReceipt) -> dict:
         'file_size_bytes': receipt.file_size_bytes,
         'created_at': receipt.created_at,
     }
+
+
+def queue_item_payloads(db: Session, receipts: list[PaymentReceipt]) -> list[dict]:
+    if not receipts:
+        return []
+    receipt_ids = {receipt.id for receipt in receipts}
+    organization_ids = {receipt.organization_id for receipt in receipts if receipt.organization_id}
+    extractions = {
+        row.receipt_id: row
+        for row in db.execute(
+            select(ReceiptExtraction).where(ReceiptExtraction.receipt_id.in_(receipt_ids))
+        ).scalars().all()
+    }
+    organizations = {
+        row.id: row
+        for row in db.execute(select(Organization).where(Organization.id.in_(organization_ids))).scalars().all()
+    } if organization_ids else {}
+    disputes = {
+        row.receipt_id: row
+        for row in db.execute(
+            select(DisputeThread).where(DisputeThread.receipt_id.in_(receipt_ids))
+        ).scalars().all()
+    }
+    sender_keys = {
+        (receipt.organization_id, normalize_sender(receipt.sender_name))
+        for receipt in receipts
+        if receipt.sender_name
+    }
+    sender_names = {key[1] for key in sender_keys}
+    flag_rows = db.execute(
+        select(SenderFraudFlag).where(
+            SenderFraudFlag.organization_id.in_({key[0] for key in sender_keys}),
+            SenderFraudFlag.sender_name.in_(sender_names),
+        )
+    ).scalars().all() if sender_keys else []
+    flags = {
+        (row.organization_id, row.sender_name): row
+        for row in flag_rows
+        if (row.organization_id, row.sender_name) in sender_keys
+    }
+    return [
+        _payload_from_maps(
+            db,
+            receipt,
+            extractions=extractions,
+            organizations=organizations,
+            disputes=disputes,
+            flags=flags,
+        )
+        for receipt in receipts
+    ]
+
+
+def queue_item_payload(db: Session, receipt: PaymentReceipt) -> dict:
+    """Build the admin queue-item dict (schema: ReceiptQueueItemRead)."""
+    return queue_item_payloads(db, [receipt])[0]
 
 
 def list_wallet(db: Session, org: Organization) -> tuple[Decimal, list[WalletCredit]]:

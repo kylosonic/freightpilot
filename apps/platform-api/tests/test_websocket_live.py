@@ -1,7 +1,12 @@
+import asyncio
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from starlette.websockets import WebSocketDisconnect
 
+from app.api.endpoints.live import _wait_for_next_tick
 from app.models.membership import OrganizationMembership
 
 
@@ -10,6 +15,21 @@ def test_websocket_live_rejects_missing_token(client: TestClient):
         ws.send_json({'type': 'auth'})
         data = ws.receive()
         assert data['type'] == 'websocket.close'
+
+
+def test_wait_for_next_tick_caps_client_frames():
+    class FrameFlood:
+        def __init__(self):
+            self.count = 0
+
+        async def receive(self):
+            self.count += 1
+            return {'type': 'websocket.receive', 'text': '{}'}
+
+    websocket = FrameFlood()
+    with pytest.raises(WebSocketDisconnect, match='Too many client frames'):
+        asyncio.run(_wait_for_next_tick(websocket, seconds=5.0))
+    assert websocket.count == 65
 
 
 def test_websocket_live_accepts_token_and_streams_snapshot(client: TestClient, admin_token: str):

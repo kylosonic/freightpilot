@@ -24,7 +24,7 @@ export default function SecurityPage() {
             <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
               <li>People sign in before they can see or change workspace data. Each person's role limits what they can do.</li>
               <li>Each company has its own workspace. A request for another company's record is refused, and we do not reveal whether that record exists.</li>
-              <li>Sign-in cookies cannot be read by page scripts and are only sent to FreightPilot. The console uses a short-lived access token that is cleared when someone switches accounts.</li>
+              <li>Sign-in cookies are marked HttpOnly and are only sent to FreightPilot. The operations console also keeps a short-lived sign-in token in that browser tab's session storage; it is cleared when the tab or session ends.</li>
               <li>AI provider keys are encrypted while stored. Keys are hidden in the console and can be removed.</li>
               <li>We keep a history of sensitive changes to routes, payments, settings, and AI providers.</li>
               <li>Our build process fixes dependency versions and checks them for known security problems.</li>

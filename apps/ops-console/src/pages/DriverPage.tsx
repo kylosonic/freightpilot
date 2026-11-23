@@ -8,6 +8,7 @@ import {
   uploadDriverProof,
 } from '../services/dispatchApi';
 import {
+  clearAllQueuedProofs,
   clearQueuedProofs,
   deleteQueuedProof,
   listQueuedProofs,
@@ -55,6 +56,10 @@ const copy = {
     choosePhoto: 'መጀመሪያ ፎቶ ይምረጡ።',
     status: 'ሁኔታ',
     collected: 'የተሰበሰበ ገንዘብ',
+    clearDevice: 'የመሣሪያ ውሂብ አጥፋ',
+    clearDeviceConfirm: 'በዚህ መሣሪያ ላይ የተቀመጡትን የመንገድ እና የማስረጃ ውሂብ ሁሉ ማጥፋት ይፈልጋሉ?',
+    deviceCleared: 'የተቀመጠው የመንገድ እና የመስቀል ውሂብ ከዚህ መሣሪያ ጸድቷል።',
+    deviceClearFailed: 'አንዳንድ የተቀመጠ ውሂብ ጸድቶ አልተቻለም። ሌሎች ገጾችን ይዝጉና እንደገና ይሞክሩ።',
   },
   en: {
     title: "Today's route",
@@ -80,6 +85,10 @@ const copy = {
     choosePhoto: 'Choose a photo first.',
     status: 'Status',
     collected: 'Cash collected',
+    clearDevice: 'Clear device data',
+    clearDeviceConfirm: 'Remove all saved route, queue, and proof data from this device?',
+    deviceCleared: 'Saved route and upload data was cleared from this device.',
+    deviceClearFailed: 'Some saved data could not be cleared. Close other driver tabs and try again.',
   },
 } as const;
 
@@ -150,10 +159,28 @@ function pruneDriverStorage(token: string) {
   }
 }
 
+function shouldQueueRequestError(error: unknown): boolean {
+  if (!(error instanceof DriverRequestError)) return true;
+  return error.status === 429 || error.status >= 500;
+}
+
+function isTerminalDriverError(error: unknown): error is DriverRequestError {
+  return (
+    error instanceof DriverRequestError &&
+    [401, 403, 410].includes(error.status)
+  );
+}
+
+function isTerminalManifestError(error: unknown): error is DriverRequestError {
+  return isTerminalDriverError(error) || (error instanceof DriverRequestError && error.status === 404);
+}
+
 export function DriverPage() {
-  const fragment = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '');
-  const fragmentToken = new URLSearchParams(fragment).get('token') || '';
-  const token = fragmentToken;
+  const [token] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    const fragment = window.location.hash.replace(/^#/, '');
+    return new URLSearchParams(fragment).get('token') || '';
+  });
   const [lang, setLang] = useState<'am' | 'en'>('am');
   const t = copy[lang];
   const [manifest, setManifest] = useState<DriverManifest | null>(null);
@@ -167,9 +194,74 @@ export function DriverPage() {
   const [cashValues, setCashValues] = useState<Record<string, string>>({});
   const [cashNotes, setCashNotes] = useState<Record<string, string>>({});
   const [proofFiles, setProofFiles] = useState<Record<string, File | null>>({});
-  const [pendingCount, setPendingCount] = useState(() => readQueue(token).length);
+  const [pendingCount, setPendingCount] = useState(0);
   const [queuedProofs, setQueuedProofs] = useState<QueuedProof[]>([]);
   const proofScope = tokenHash(token);
+
+  async function clearDriverSession(message: string) {
+    writeQueue(token, []);
+    setPendingCount(0);
+    try {
+      await clearQueuedProofs(proofScope);
+    } catch {
+      // Storage may already be unavailable; the visible state still resets.
+    }
+    setQueuedProofs([]);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(manifestKey(token));
+    }
+    setManifest(null);
+    setError(message);
+  }
+
+  async function clearDeviceData() {
+    if (!window.confirm(t.clearDeviceConfirm)) return;
+    setBusy(true);
+    let clearFailed = false;
+    try {
+      writeQueue(token, []);
+      try {
+        await clearAllQueuedProofs();
+      } catch {
+        clearFailed = true;
+      }
+      if (typeof localStorage !== 'undefined') {
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith(MANIFEST_PREFIX) || key.startsWith(QUEUE_PREFIX)) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+      if (typeof caches !== 'undefined') {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(
+            keys
+              .filter((key) => key.startsWith('freightpilot-driver-'))
+              .map((key) => caches.delete(key)),
+          );
+        } catch {
+          clearFailed = true;
+        }
+      }
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      setManifest(null);
+      setPendingCount(0);
+      setQueuedProofs([]);
+      setSyncError(null);
+      setNotice(null);
+      setError(null);
+      if (clearFailed) {
+        setError(t.deviceClearFailed);
+      } else {
+        setNotice(t.deviceCleared);
+      }
+    } catch {
+      setError(t.deviceClearFailed);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function refreshProofQueue() {
     if (!token) {
@@ -196,13 +288,8 @@ export function DriverPage() {
       localStorage.setItem(manifestStorageKey, JSON.stringify(cached));
       setError(null);
     } catch (err) {
-      if (
-        err instanceof DriverRequestError &&
-        [401, 403, 404, 410].includes(err.status)
-      ) {
-        localStorage.removeItem(manifestStorageKey);
-        setManifest(null);
-        setError(err.message);
+      if (isTerminalManifestError(err)) {
+        await clearDriverSession(err.message);
         return;
       }
       const raw = localStorage.getItem(manifestStorageKey);
@@ -265,60 +352,20 @@ export function DriverPage() {
     if (queue.length === 0 && proofs.length === 0) return;
     setBusy(true);
     const remaining: QueueItem[] = [];
-    let tokenInvalid = false;
-    for (const item of queue) {
-      try {
-        if (item.kind === 'status') {
-          await updateDriverOrderStatus(token, item.orderId, item.status, item.note);
-        } else {
-          await declareDriverCash(token, item.orderId, item.amount, item.note);
-        }
-      } catch (err) {
-        if (
-          err instanceof DriverRequestError &&
-          [401, 403, 404, 410].includes(err.status)
-        ) {
-          writeQueue(token, []);
-          setPendingCount(0);
-          await clearQueuedProofs(proofScope);
-          setQueuedProofs([]);
-          localStorage.removeItem(manifestKey(token));
-          setManifest(null);
-          setError(err.message);
-          tokenInvalid = true;
-          break;
-        }
-        if (
-          err instanceof DriverRequestError &&
-          err.status >= 400 &&
-          err.status < 500 &&
-          err.status !== 429
-        ) {
-          setSyncError(`One queued update was rejected: ${err.message}`);
-          continue;
-        }
-        remaining.push(item);
-      }
-    }
-    writeQueue(token, remaining);
-    setPendingCount(remaining.length);
     const remainingProofs: QueuedProof[] = [];
-    if (!tokenInvalid) {
-      for (const proof of proofs) {
+    let tokenInvalid = false;
+    try {
+      for (const item of queue) {
         try {
-          await uploadDriverProof(
-            token,
-            proof.orderId,
-            proof.blob,
-            proof.fileName,
-            proof.recipientName,
-            proof.notes,
-          );
-          await deleteQueuedProof(proof.id);
+          if (item.kind === 'status') {
+            await updateDriverOrderStatus(token, item.orderId, item.status, item.note);
+          } else {
+            await declareDriverCash(token, item.orderId, item.amount, item.note);
+          }
         } catch (err) {
           if (
             err instanceof DriverRequestError &&
-            [401, 403, 404, 410].includes(err.status)
+            isTerminalDriverError(err)
           ) {
             writeQueue(token, []);
             setPendingCount(0);
@@ -336,19 +383,64 @@ export function DriverPage() {
             err.status < 500 &&
             err.status !== 429
           ) {
-            await deleteQueuedProof(proof.id);
-            setSyncError(`One queued proof was rejected: ${err.message}`);
+            setSyncError(`One queued update was rejected: ${err.message}`);
             continue;
           }
-          remainingProofs.push(proof);
+          remaining.push(item);
         }
       }
-      setQueuedProofs(remainingProofs);
-    }
-    setBusy(false);
-    if (!tokenInvalid && remaining.length === 0 && remainingProofs.length === 0) {
-      setNotice(null);
-      await loadManifest();
+      writeQueue(token, remaining);
+      setPendingCount(remaining.length);
+      if (!tokenInvalid) {
+        for (const proof of proofs) {
+          try {
+            await uploadDriverProof(
+              token,
+              proof.orderId,
+              proof.blob,
+              proof.fileName,
+              proof.recipientName,
+              proof.notes,
+            );
+            await deleteQueuedProof(proof.id);
+          } catch (err) {
+            if (
+              err instanceof DriverRequestError &&
+              isTerminalDriverError(err)
+            ) {
+              writeQueue(token, []);
+              setPendingCount(0);
+              await clearQueuedProofs(proofScope);
+              setQueuedProofs([]);
+              localStorage.removeItem(manifestKey(token));
+              setManifest(null);
+              setError(err.message);
+              tokenInvalid = true;
+              break;
+            }
+            if (
+              err instanceof DriverRequestError &&
+              err.status >= 400 &&
+              err.status < 500 &&
+              err.status !== 429
+            ) {
+              await deleteQueuedProof(proof.id);
+              setSyncError(`One queued proof was rejected: ${err.message}`);
+              continue;
+            }
+            remainingProofs.push(proof);
+          }
+        }
+        setQueuedProofs(remainingProofs);
+      }
+      if (!tokenInvalid && remaining.length === 0 && remainingProofs.length === 0) {
+        setNotice(null);
+        await loadManifest();
+      }
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'Queued updates could not be sent.');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -357,7 +449,7 @@ export function DriverPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online]);
 
-  function queueOrRun(item: QueueItem) {
+  async function queueOrRun(item: QueueItem) {
     setSyncError(null);
     if (!online) {
       setPendingCount(enqueue(token, item));
@@ -369,10 +461,21 @@ export function DriverPage() {
       item.kind === 'status'
         ? updateDriverOrderStatus(token, item.orderId, item.status, item.note)
         : declareDriverCash(token, item.orderId, item.amount, item.note);
-    action
-      .then(() => loadManifest())
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Could not save the update.'))
-      .finally(() => setBusy(false));
+    try {
+      await action;
+      await loadManifest();
+    } catch (err) {
+      if (isTerminalDriverError(err)) {
+        await clearDriverSession(err.message);
+      } else if (shouldQueueRequestError(err)) {
+        setPendingCount(enqueue(token, item));
+        setNotice(t.offline);
+      } else {
+        setSyncError(err instanceof Error ? err.message : 'Could not save the update.');
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onProof(stop: DispatchStop) {
@@ -403,9 +506,9 @@ export function DriverPage() {
       setProofFiles((current) => ({ ...current, [stop.order_id]: null }));
       await loadManifest();
     } catch (err) {
-      if (err instanceof DriverRequestError && err.status >= 400 && err.status < 500) {
-        setError(err.message);
-      } else {
+      if (isTerminalDriverError(err)) {
+        await clearDriverSession(err.message);
+      } else if (shouldQueueRequestError(err)) {
         try {
           await queueDriverProof({
             scope: proofScope,
@@ -423,6 +526,8 @@ export function DriverPage() {
               : 'Could not save proof offline.',
           );
         }
+      } else {
+        setError(err instanceof Error ? err.message : 'Could not upload the proof.');
       }
     } finally {
       setBusy(false);
@@ -448,6 +553,14 @@ export function DriverPage() {
             {pendingCount + queuedProofs.length > 0 ? <span className="text-[#885100]">{pendingCount + queuedProofs.length} {t.queued}</span> : null}
             {busy ? <span className="text-[#17679b]">{t.sync}</span> : null}
           </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void clearDeviceData()}
+            className="mt-3 min-h-9 rounded-md border border-[#d7d7d2] bg-white px-3 text-xs font-medium text-[#6f3a35] disabled:opacity-40"
+          >
+            {t.clearDevice}
+          </button>
         </header>
 
         {error ? <p role="alert" className="rounded-md bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{error}</p> : null}

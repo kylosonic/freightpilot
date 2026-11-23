@@ -18,6 +18,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.activation_state import OrganizationActivationState
@@ -89,9 +90,17 @@ def _ensure_state_row(db: Session, org_id) -> OrganizationActivationState:
         )
     ).scalar_one_or_none()
     if state is None:
-        state = OrganizationActivationState(organization_id=org_id)
-        db.add(state)
-        db.flush()
+        try:
+            with db.begin_nested():
+                state = OrganizationActivationState(organization_id=org_id)
+                db.add(state)
+                db.flush()
+        except IntegrityError:
+            state = db.execute(
+                select(OrganizationActivationState).where(
+                    OrganizationActivationState.organization_id == org_id
+                )
+            ).scalar_one()
     return state
 
 
@@ -200,7 +209,7 @@ def activation_state_read(db: Session, org: Organization, now: datetime) -> Acti
             )
         )
 
-    pct = min(prefix * 20, 80)
+    pct = 100 if m6_completed else min(prefix * 20, 80)
     cap = freecap.free_cap_state(db, org, now)
     return ActivationStateRead(
         organization_id=str(org.id),
@@ -221,6 +230,6 @@ def activation_state_read(db: Session, org: Organization, now: datetime) -> Acti
             'utilization_pct': cap.utilization_pct,
             'message': cap.message,
         },
-        pitch=freecap.pitch_state(db, org, now),
+        pitch=freecap.pitch_state(db, org, now, state=cap),
         toast_fired=state.toast_fired_at is not None,
     )

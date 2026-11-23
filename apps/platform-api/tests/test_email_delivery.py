@@ -65,3 +65,38 @@ def test_invitation_email_uses_starttls_and_login(monkeypatch):
     plain = sent['message'].get_body(preferencelist=('plain',))
     assert plain is not None
     assert 'one-time' in plain.get_content()
+
+
+def test_invitation_email_hides_smtp_details_from_client(monkeypatch, caplog):
+    class FailingSMTP:
+        def __init__(self, host, port, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def send_message(self, message):
+            raise RuntimeError('smtp-credential-detail')
+
+    monkeypatch.setattr(settings, 'smtp_host', 'smtp.example.com')
+    monkeypatch.setattr(settings, 'smtp_port', 587)
+    monkeypatch.setattr(settings, 'smtp_username', '')
+    monkeypatch.setattr(settings, 'smtp_from_email', 'noreply@example.com')
+    monkeypatch.setattr(settings, 'smtp_use_tls', False)
+    monkeypatch.setattr(settings, 'smtp_use_ssl', False)
+    monkeypatch.setattr('app.services.email_delivery.smtplib.SMTP', FailingSMTP)
+
+    result = send_invitation_email(
+        to_email='operator@example.com',
+        organization_name='Example Logistics',
+        role='operator',
+        invite_url='https://console.example.com/accept-invite#token=one-time',
+    )
+
+    assert result.sent is False
+    assert result.error == 'Email delivery failed. Check the server logs for details.'
+    assert 'smtp-credential-detail' not in result.error
+    assert 'smtp-credential-detail' in caplog.text

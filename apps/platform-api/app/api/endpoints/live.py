@@ -6,14 +6,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy import asc, func, select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.api.security import get_current_user_from_token, scoped_to_organization
 from app.core.observability import app_metrics
-from app.db.session import get_db
+from app.db.session import get_engine
 from app.models.dispatch import DeliveryOrder, DispatchRun
 from app.models.driver import Driver
 from app.models.inventory import Inventory
@@ -31,6 +31,7 @@ from app.services.weather import simulated_weather_features
 router = APIRouter()
 
 _TERMINAL_DISPATCH_STATUSES = frozenset({'delivered', 'failed', 'cancelled'})
+_MAX_CLIENT_FRAMES_PER_TICK = 64
 
 
 def _live_principal(token: str, db: Session):
@@ -69,6 +70,7 @@ async def _wait_for_next_tick(websocket: WebSocket, seconds: float = 5.0) -> Non
     """Wait one full tick while draining client frames without rebuilding data."""
     loop = asyncio.get_running_loop()
     deadline = loop.time() + seconds
+    frame_count = 0
     while True:
         remaining = deadline - loop.time()
         if remaining <= 0:
@@ -77,6 +79,9 @@ async def _wait_for_next_tick(websocket: WebSocket, seconds: float = 5.0) -> Non
             message = await asyncio.wait_for(websocket.receive(), timeout=remaining)
         except TimeoutError:
             return
+        frame_count += 1
+        if frame_count > _MAX_CLIENT_FRAMES_PER_TICK:
+            raise WebSocketDisconnect(1008, 'Too many client frames')
         if message.get('type') == 'websocket.disconnect':
             raise WebSocketDisconnect(message.get('code', 1000))
 
@@ -329,7 +334,6 @@ def _dispatch_overview(db: Session, organization_id: UUID | None) -> dict:
 @router.websocket('/updates')
 async def websocket_updates(
     websocket: WebSocket,
-    db: Session = Depends(get_db),
 ):
     await websocket.accept()
     try:
@@ -351,16 +355,15 @@ async def websocket_updates(
         await websocket.close(code=1008, reason='Missing token')
         return
 
-    engine = db.get_bind()
-
+    engine = get_engine()
+    auth_db = Session(bind=engine, autoflush=False, autocommit=False)
     try:
-        membership = _live_principal(token, db)[1]
+        membership = _live_principal(token, auth_db)[1]
     except Exception:
         await websocket.close(code=1008, reason='Invalid, expired, or unauthorized token')
         return
     finally:
-        # Release the request session before the long-lived socket loop starts.
-        db.close()
+        auth_db.close()
     organization_id = membership.organization_id
 
     app_metrics.record_ws_open()

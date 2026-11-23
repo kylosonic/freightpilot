@@ -20,6 +20,10 @@ WS_TOKEN_TTL_SECONDS = WS_TOKEN_TTL_MINUTES * 60
 _PBKDF2_ITERATIONS = 600_000
 
 
+class ProviderKeyDecryptError(ValueError):
+    """Provider-key ciphertext could not be authenticated or decoded."""
+
+
 def _uses_worker_crypto() -> bool:
     return sys.platform == 'emscripten' or os.environ.get('CLOUDFLARE_WORKER') == '1'
 
@@ -178,8 +182,21 @@ def encrypt_provider_key(raw_key: str) -> str:
 
 
 def decrypt_provider_key(encrypted_key: str) -> str:
-    raw = _provider_key_fernet().decrypt(encrypted_key.encode('utf-8'))
-    return raw.decode('utf-8')
+    try:
+        raw = _provider_key_fernet().decrypt(encrypted_key.encode('utf-8'))
+        return raw.decode('utf-8')
+    except Exception as exc:
+        if _uses_worker_crypto():
+            from app.services.worker_crypto import WorkerFernetError
+
+            expected = WorkerFernetError
+        else:
+            from cryptography.fernet import InvalidToken
+
+            expected = InvalidToken
+        if isinstance(exc, expected):
+            raise ProviderKeyDecryptError('Provider key cannot be decrypted') from exc
+        raise
 
 
 def mask_provider_key(raw_key: str) -> str:

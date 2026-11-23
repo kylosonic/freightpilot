@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import threading
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from itertools import pairwise
@@ -35,9 +36,10 @@ def _week_start(value: Any) -> date:
 
 def _number(value: Any, default: float) -> float:
     try:
-        return float(value)
+        parsed = float(value)
     except (TypeError, ValueError):
         return default
+    return parsed if math.isfinite(parsed) else default
 
 
 def _mean(values: list[float], default: float = 0.0) -> float:
@@ -129,10 +131,9 @@ def _training_frame_hash(training_rows: list[dict[str, Any]]) -> str:
     return hashlib.sha256(encoded).hexdigest()[:16]
 
 
-_trained_model_cache: dict[str, Any] = {}
 _quality_cache: dict[str, dict[str, Any]] = {}
-_MODEL_CACHE_LIMIT = 10
 _QUALITY_CACHE_LIMIT = 10
+_QUALITY_CACHE_LOCK = threading.Lock()
 
 
 def _remember(cache: dict[str, Any], cache_key: str, value: Any, limit: int) -> None:
@@ -141,21 +142,9 @@ def _remember(cache: dict[str, Any], cache_key: str, value: Any, limit: int) -> 
     cache[cache_key] = value
 
 
-def _remember_model(cache_key: str, model: Any) -> None:
-    _remember(_trained_model_cache, cache_key, model, _MODEL_CACHE_LIMIT)
-
-
 def _remember_quality(cache_key: str, quality: dict[str, Any]) -> None:
-    _remember(_quality_cache, cache_key, quality, _QUALITY_CACHE_LIMIT)
-
-
-def _get_or_train_model(training_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    cache_key = _training_frame_hash(training_rows)
-    cached = _trained_model_cache.get(cache_key)
-    if isinstance(cached, list):
-        return cached
-    _remember_model(cache_key, training_rows)
-    return training_rows
+    with _QUALITY_CACHE_LOCK:
+        _remember(_quality_cache, cache_key, quality, _QUALITY_CACHE_LIMIT)
 
 
 def _series(
@@ -171,6 +160,19 @@ def _series(
         ),
         key=lambda row: row['week_start'],
     )
+
+
+def _index_training_rows(
+    training_rows: list[dict[str, Any]],
+) -> tuple[dict[tuple[str, str], list[dict[str, Any]]], list[date]]:
+    series_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in training_rows:
+        key = (str(row['warehouse_code']), str(row['sku']))
+        series_by_pair.setdefault(key, []).append(row)
+    for series in series_by_pair.values():
+        series.sort(key=lambda row: row['week_start'])
+    all_weeks = sorted({row['week_start'] for row in training_rows})
+    return series_by_pair, all_weeks
 
 
 def _linear_trend(x_values: list[float], y_values: list[float], future_x: float) -> float:
@@ -193,12 +195,19 @@ def _predict_row(
     sku: str,
     target_date: date,
     weather: dict[str, float],
+    *,
+    series_by_pair: dict[tuple[str, str], list[dict[str, Any]]] | None = None,
+    all_weeks: list[date] | None = None,
 ) -> float:
-    series = _series(training_rows, warehouse_code, sku)
+    series = (
+        series_by_pair.get((warehouse_code, sku), [])
+        if series_by_pair is not None
+        else _series(training_rows, warehouse_code, sku)
+    )
     if not series:
         return 0.0
 
-    all_weeks = sorted({row['week_start'] for row in training_rows})
+    all_weeks = all_weeks or sorted({row['week_start'] for row in training_rows})
     origin = all_weeks[0]
     x_values = [float((row['week_start'] - origin).days // 7) for row in series]
     y_values = [float(row['quantity']) for row in series]
@@ -227,9 +236,10 @@ def _evaluate_quality(
     training_rows: list[dict[str, Any]],
     cache_key: str,
 ) -> dict[str, Any]:
-    cached = _quality_cache.get(cache_key)
-    if cached is not None:
-        return cached
+    with _QUALITY_CACHE_LOCK:
+        cached = _quality_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
     weeks = sorted({row['week_start'] for row in training_rows})
     history_weeks = len(weeks)
@@ -259,6 +269,7 @@ def _evaluate_quality(
         _remember_quality(cache_key, result)
         return result
 
+    train_series, train_weeks = _index_training_rows(train_rows)
     predictions: list[float] = []
     actuals: list[float] = []
     for row in test_rows:
@@ -274,6 +285,8 @@ def _evaluate_quality(
                 row['sku'],
                 row['week_start'],
                 weather,
+                series_by_pair=train_series,
+                all_weeks=train_weeks,
             )
         )
         actuals.append(float(row['quantity']))
@@ -330,8 +343,15 @@ def _uncertainty(
     warehouse_code: str,
     sku: str,
     predicted: float,
+    *,
+    series_by_pair: dict[tuple[str, str], list[dict[str, Any]]] | None = None,
 ) -> float:
-    quantities = [float(row['quantity']) for row in _series(training_rows, warehouse_code, sku)]
+    series = (
+        series_by_pair.get((warehouse_code, sku), [])
+        if series_by_pair is not None
+        else _series(training_rows, warehouse_code, sku)
+    )
+    quantities = [float(row['quantity']) for row in series]
     if len(quantities) < 2:
         return abs(predicted) * 0.15
     differences = [
@@ -349,9 +369,9 @@ def forecast_weekly_demand(
 ) -> ForecastResult:
     training_rows = build_training_frame(orders)
     cache_key = _training_frame_hash(training_rows)
-    _get_or_train_model(training_rows)
     quality = _evaluate_quality(training_rows, cache_key)
     wape = quality.get('wape_percent')
+    series_by_pair, all_weeks = _index_training_rows(training_rows)
 
     latest_week = max(row['week_start'] for row in training_rows)
     combos = sorted(
@@ -376,12 +396,15 @@ def forecast_weekly_demand(
                 sku,
                 future_week,
                 weather,
+                series_by_pair=series_by_pair,
+                all_weeks=all_weeks,
             )
             spread = _uncertainty(
                 training_rows,
                 warehouse_code,
                 sku,
                 predicted,
+                series_by_pair=series_by_pair,
             )
             planning_low = max(0.0, predicted - 1.28 * spread)
             planning_high = predicted + 1.28 * spread
@@ -463,8 +486,6 @@ def calculate_arrival_probability(
     predicted_minutes = max(0.0, travel_minutes + stop_minutes + disruption_minutes)
 
     mean_duration = _mean(durations)
-    multiplier = (mean_duration / max(mean_duration, 1.0)) if mean_duration else 1.0
-    predicted_minutes *= multiplier
     coefficient_of_variation = _std(durations) / mean_duration if mean_duration else 1.0
     confidence = round(max(0.0, min(1.0, 1.0 - coefficient_of_variation)), 2)
 

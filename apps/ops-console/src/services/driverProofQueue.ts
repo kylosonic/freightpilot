@@ -30,7 +30,14 @@ function openDatabase(): Promise<IDBDatabase> {
   }
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    let request: IDBOpenDBRequest;
+    try {
+      request = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch (error) {
+      dbPromise = null;
+      reject(error instanceof Error ? error : new Error('Could not open proof storage'));
+      return;
+    }
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE)) {
@@ -39,7 +46,14 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error('Could not open proof storage'));
+    request.onerror = () => {
+      dbPromise = null;
+      reject(request.error ?? new Error('Could not open proof storage'));
+    };
+    request.onblocked = () => {
+      dbPromise = null;
+      reject(new Error('Proof storage is busy in another tab. Close it and try again.'));
+    };
   });
   return dbPromise;
 }

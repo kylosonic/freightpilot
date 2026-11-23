@@ -574,7 +574,7 @@ export function DispatchPage() {
                     {expandedRunId === run.id ? 'Hide stops' : 'View stops'}
                   </button>
                   {run.driver_id ? <button type="button" onClick={() => void onDriverLink(run.id)} className="fp-action-quiet !min-h-8 !text-[#17679b]">Create driver link</button> : null}
-                  {run.status !== 'closed' && user?.role === 'admin' ? <button type="button" onClick={() => openCashClose(run)} className="fp-action-quiet !min-h-8 !text-[#14745f]">Close cash</button> : null}
+                  {run.status !== 'closed' && (user?.role === 'admin' || user?.role === 'owner') ? <button type="button" onClick={() => openCashClose(run)} className="fp-action-quiet !min-h-8 !text-[#14745f]">Close cash</button> : null}
                 </div>
               </div>
               {expandedRunId === run.id ? (

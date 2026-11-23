@@ -19,6 +19,7 @@ from app.api.security import (
     require_writable_workspace,
     resolve_scoped_organization,
     scoped_to_organization,
+    validate_uuid,
 )
 from app.db.session import get_db
 from app.models.cash_collection import CashCollection
@@ -104,9 +105,12 @@ def list_cash_collections(
     if status is not None:
         stmt = stmt.where(CashCollection.status == status)
     if driver_id is not None:
-        stmt = stmt.where(CashCollection.driver_id == driver_id)
+        stmt = stmt.where(
+            CashCollection.driver_id
+            == validate_uuid(driver_id, detail='Invalid driver identifier')
+        )
     stmt = stmt.order_by(CashCollection.created_at.desc()).limit(limit)
-    return [cash_ledger.serialize(db, r) for r in db.execute(stmt).scalars().all()]
+    return cash_ledger.serialize_many(db, list(db.execute(stmt).scalars().all()))
 
 
 @router.get('/{record_id}', response_model=CashCollectionRead)

@@ -60,6 +60,21 @@ jobs:
         # tracked separately so it cannot mask a runtime failure.
         run: .venv/bin/ruff check app tests --select E9,F63,F7,F82
 
+      - name: Type-check reliability modules
+        run: >-
+          .venv/bin/mypy
+          --follow-imports=skip
+          app/db/custom_types.py
+          app/services/security.py
+          app/services/activation/ingest.py
+          app/services/activation/state.py
+          app/services/activation/freecap.py
+          app/services/billing/receipts/queue.py
+          app/services/cash_ledger.py
+          app/services/forecasting.py
+          app/services/metering.py
+          app/services/rerouting.py
+
       - name: Compile Cloudflare Worker sources
         run: python -m py_compile ../../infra/cloudflare/freightpilot-api/src/entry.py ../../infra/cloudflare/freightpilot-api/src/worker_app.py
 
@@ -80,7 +95,7 @@ jobs:
 
       - name: Audit locked Python dependencies
         run: |
-          python -m pip install --upgrade pip pip-audit
+          python -m pip install --upgrade pip pip-audit==2.9.0
           pip-audit -r requirements.lock --strict --progress-spinner off
 
   backend-postgres:
@@ -136,6 +151,9 @@ jobs:
           print('postgres schema smoke passed:', revision)
           PY
 
+      - name: Run PostgreSQL-backed regression tests
+        run: .venv/bin/pytest -q tests/test_postgres_live_integration.py tests/test_custom_types.py tests/test_migration_chain_integrity.py tests/test_migration_readiness.py
+
   worker-dependency-audit:
     name: worker-dependency-audit
     runs-on: ubuntu-24.04
@@ -150,7 +168,7 @@ jobs:
 
       - name: Audit locked Worker dependency versions
         run: |
-          python -m pip install --upgrade pip pip-audit
+          python -m pip install --upgrade pip pip-audit==2.9.0
           python - <<'PY'
           import tomllib
           from pathlib import Path
@@ -218,6 +236,9 @@ jobs:
       - name: Run product web tests
         run: npm --prefix apps/product-web run test
 
+      - name: Typecheck product web
+        run: npx --prefix apps/product-web tsc --noEmit -p apps/product-web/tsconfig.json
+
       - name: Build product web
         run: npm --prefix apps/product-web run build
 
@@ -255,3 +276,21 @@ jobs:
 
       - name: Audit desktop dependencies
         run: npm --prefix apps/desktop audit --audit-level=high
+
+  docker:
+    name: docker
+    runs-on: ubuntu-24.04
+    env:
+      POSTGRES_PASSWORD: ci-postgres-password
+      JWT_SECRET_KEY: ci-jwt-secret-that-is-long-enough-for-configuration-validation
+      PROVIDER_KEY_ENCRYPTION_SECRET: ci-provider-key-encryption-secret-for-tests
+      APP_ENV: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build deployable images
+        run: docker compose build backend frontend product-web

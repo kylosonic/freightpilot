@@ -8,6 +8,7 @@ read from the deployment environment; credentials never enter audit payloads.
 from __future__ import annotations
 
 import html
+import logging
 import smtplib
 import ssl
 from dataclasses import dataclass
@@ -15,7 +16,8 @@ from email.message import EmailMessage
 
 from app.core.config import settings
 
-_ERROR_MAX_CHARS = 200
+logger = logging.getLogger(__name__)
+_CLIENT_ERROR = 'Email delivery failed. Check the server logs for details.'
 
 
 @dataclass(frozen=True)
@@ -77,8 +79,6 @@ def send_invitation_email(
                 smtp.login(settings.smtp_username, settings.smtp_password)
             smtp.send_message(message)
     except Exception as exc:  # noqa: BLE001 - invite creation must still succeed
-        return EmailDeliveryResult(
-            False,
-            f'Email delivery failed: {str(exc)[:_ERROR_MAX_CHARS]}',
-        )
+        logger.exception('SMTP invitation delivery failed for %s', to_email)
+        return EmailDeliveryResult(False, _CLIENT_ERROR)
     return EmailDeliveryResult(True)

@@ -72,7 +72,7 @@ def test_worker_crypto_rejects_tampered_tokens(monkeypatch):
     token = security.encrypt_provider_key('sk-tamper-test')
     tampered = token[:-2] + ('AA' if token[-2:] != 'AA' else 'BB')
 
-    with pytest.raises(WorkerFernetError):
+    with pytest.raises(security.ProviderKeyDecryptError):
         security.decrypt_provider_key(tampered)
 
 
@@ -85,7 +85,7 @@ def test_worker_crypto_rejects_wrong_key(monkeypatch):
         security.settings.model_copy(update={'provider_key_encryption_secret': 'x' * 40}),
     )
 
-    with pytest.raises(WorkerFernetError):
+    with pytest.raises(security.ProviderKeyDecryptError):
         security.decrypt_provider_key(token)
 
     with pytest.raises(InvalidToken):

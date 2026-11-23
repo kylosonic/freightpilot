@@ -1,9 +1,8 @@
 from datetime import date, timedelta
 
-from app.services import forecasting
 from app.services.forecasting import (
-    _MODEL_CACHE_LIMIT,
-    _remember_model,
+    _index_training_rows,
+    _number,
     _training_frame_hash,
     build_training_frame,
     forecast_weekly_demand,
@@ -165,14 +164,30 @@ def test_zero_actual_holdout_does_not_claim_an_error_widened_range():
     assert out.predictions[0]['planning_high'] == 0
 
 
-def test_trained_model_cache_never_exceeds_the_documented_limit():
-    forecasting._trained_model_cache.clear()
-    try:
-        for index in range(_MODEL_CACHE_LIMIT + 1):
-            _remember_model(f'frame-{index}', object())  # type: ignore[arg-type]
+def test_training_rows_are_indexed_once_by_warehouse_and_sku():
+    rows = [
+        {
+            'week_start': date(2026, 1, 5),
+            'warehouse_code': 'WH-001',
+            'sku': 'SKU-1',
+            'quantity': 10,
+        },
+        {
+            'week_start': date(2026, 1, 12),
+            'warehouse_code': 'WH-001',
+            'sku': 'SKU-1',
+            'quantity': 12,
+        },
+    ]
 
-        assert len(forecasting._trained_model_cache) == _MODEL_CACHE_LIMIT
-        assert 'frame-0' not in forecasting._trained_model_cache
-        assert f'frame-{_MODEL_CACHE_LIMIT}' in forecasting._trained_model_cache
-    finally:
-        forecasting._trained_model_cache.clear()
+    series_by_pair, all_weeks = _index_training_rows(rows)
+
+    assert [row['quantity'] for row in series_by_pair[('WH-001', 'SKU-1')]] == [10, 12]
+    assert all_weeks == [date(2026, 1, 5), date(2026, 1, 12)]
+
+
+def test_number_rejects_non_finite_values():
+    assert _number('12.5', 0.0) == 12.5
+    assert _number('nan', 7.0) == 7.0
+    assert _number('inf', 7.0) == 7.0
+    assert _number(object(), 7.0) == 7.0

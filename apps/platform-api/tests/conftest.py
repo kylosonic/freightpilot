@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
+from app.db import session as db_session_module
 from app.db.session import get_db
 from app.core.config import settings
 from app.main import app
@@ -150,13 +151,19 @@ def seed_collection_accounts(db_session: Session) -> Generator[None, None, None]
 
 @pytest.fixture()
 def client(db_session: Session) -> Generator[TestClient, None, None]:
+    previous_engine = db_session_module._local_engine
+    db_session_module._local_engine = db_session.get_bind()
+
     def override_get_db() -> Generator[Session, None, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        app.dependency_overrides.clear()
+        db_session_module._local_engine = previous_engine
 
 
 @pytest.fixture()

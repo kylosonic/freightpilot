@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, select, text
@@ -38,6 +38,12 @@ from app.schemas.ops_insights import (
 )
 
 router = APIRouter()
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 @router.get('/ready')
@@ -228,7 +234,7 @@ def update_live_eta(
     else:
         appointment.expected_time = payload.expected_time
         
-        time_slip = payload.expected_time - appointment.scheduled_time
+        time_slip = _as_utc(payload.expected_time) - _as_utc(appointment.scheduled_time)
         if time_slip > timedelta(minutes=45):
             appointment.scheduled_time = payload.expected_time
             appointment.status = 'rescheduled'

@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /launch
 Disallow: /api/
 
 Sitemap: https://freightpilot.pages.dev/sitemap.xml

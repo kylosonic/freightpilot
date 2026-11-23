@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.endpoints.auth import _user_read
-from app.api.security import require_org_roles, require_roles
+from app.api.security import require_org_roles, require_roles, validate_uuid
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.membership import OrganizationMembership
@@ -228,7 +228,10 @@ def revoke_invitation(
     membership: OrganizationMembership = Depends(_require_owner_or_admin),
     actor: User = Depends(require_roles(UserRole.ADMIN)),
 ):
-    invitation = db.get(OrganizationInvitation, invitation_id)
+    invitation = db.get(
+        OrganizationInvitation,
+        validate_uuid(invitation_id, detail='Invitation not found'),
+    )
     if invitation is None or invitation.organization_id != membership.organization_id:
         raise HTTPException(status_code=404, detail='Invitation not found')
     if invitation.status != 'pending':
@@ -348,7 +351,10 @@ def update_member_role(
     membership: OrganizationMembership = Depends(_require_owner_or_admin),
     actor: User = Depends(require_roles(UserRole.ADMIN)),
 ):
-    target = db.get(OrganizationMembership, membership_id)
+    target = db.get(
+        OrganizationMembership,
+        validate_uuid(membership_id, detail='Member not found'),
+    )
     if target is None or target.organization_id != membership.organization_id:
         raise HTTPException(status_code=404, detail='Member not found')
     if target.user_id == actor.id:
@@ -384,7 +390,10 @@ def deactivate_member(
     membership: OrganizationMembership = Depends(_require_owner_or_admin),
     actor: User = Depends(require_roles(UserRole.ADMIN)),
 ):
-    target = db.get(OrganizationMembership, membership_id)
+    target = db.get(
+        OrganizationMembership,
+        validate_uuid(membership_id, detail='Member not found'),
+    )
     if target is None or target.organization_id != membership.organization_id:
         raise HTTPException(status_code=404, detail='Member not found')
     if target.user_id == actor.id:

@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.security import require_platform_admin
+from app.api.security import require_platform_admin, validate_uuid
 from app.db.session import get_db
 from app.models.audit_event import AuditEvent
 from app.models.organization import Organization
@@ -127,8 +127,9 @@ def receipt_audit_events(
     Reverse affordance is anchored ON the ``receipts.verified`` event
     (NB-19.1/NB-20.1): ``available_actions`` is computed server-side for
     that event only, while ``reversal_status IS NULL``."""
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
     receipt = db.execute(
-        select(PaymentReceipt).where(PaymentReceipt.id == receipt_id)
+        select(PaymentReceipt).where(PaymentReceipt.id == receipt_uuid)
     ).scalar_one_or_none()
     if receipt is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
@@ -168,14 +169,15 @@ def undo_receipt_endpoint(
 ):
     """Silent Undo (NB-19) — all guards live in ``undo.undo_verification``;
     the server 409s past the 24h window (decision #7). Write-guard EXEMPT."""
-    target = db.get(PaymentReceipt, receipt_id)
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
+    target = db.get(PaymentReceipt, receipt_uuid)
     if target is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     try:
         receipt = undo_verification(
             db,
             user,
-            receipt_id,
+            str(receipt_uuid),
             note=payload.note,
             organization_id=target.organization_id,
         )
@@ -194,14 +196,15 @@ def reverse_receipt_endpoint(
 ):
     """Explicit Reverse (NB-20) — mandatory reason, exact NB-20.3 customer
     notification, NO refund. Write-guard EXEMPT."""
-    target = db.get(PaymentReceipt, receipt_id)
+    receipt_uuid = validate_uuid(receipt_id, detail='Receipt not found')
+    target = db.get(PaymentReceipt, receipt_uuid)
     if target is None:
         raise HTTPException(status_code=404, detail='Receipt not found')
     try:
         receipt = reverse_verification(
             db,
             user,
-            receipt_id,
+            str(receipt_uuid),
             payload.reason,
             organization_id=target.organization_id,
         )
@@ -222,7 +225,10 @@ def remove_trusted_payer_endpoint(
     query param — the admin queue is system-wide and the admin's membership
     org must NOT be used (blueprint risk #7). Missing row -> 404. The fraud
     flag is NOT cleared (decision #6). Write-guard EXEMPT."""
-    org = db.get(Organization, organization_id)
+    org = db.get(
+        Organization,
+        validate_uuid(organization_id, detail='Organization not found'),
+    )
     if org is None:
         raise HTTPException(status_code=404, detail='Organization not found')
     removed = remove_trusted_payer(db, org, sender_name, user)

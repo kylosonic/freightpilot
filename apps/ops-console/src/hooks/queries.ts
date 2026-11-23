@@ -221,20 +221,19 @@ export function useInvalidateDashboard() {
 export function useLiveDataInvalidator() {
   const queryClient = useQueryClient();
   const invalidatorRef = useRef<ReturnType<typeof createCoalescedInvalidator> | null>(null);
-  if (invalidatorRef.current === null) {
-    invalidatorRef.current = createCoalescedInvalidator(LIVE_INVALIDATION_WINDOW_MS, (payload) => {
+
+  useEffect(() => {
+    const invalidator = createCoalescedInvalidator(LIVE_INVALIDATION_WINDOW_MS, (payload) => {
       for (const queryKey of livePayloadQueryKeys(payload)) {
         queryClient.invalidateQueries({ queryKey });
       }
     });
-  }
-
-  useEffect(() => {
+    invalidatorRef.current = invalidator;
     return () => {
-      invalidatorRef.current?.dispose();
+      invalidator.dispose();
       invalidatorRef.current = null;
     };
-  }, []);
+  }, [queryClient]);
 
   return useCallback((payload: LiveUpdatePayload) => {
     invalidatorRef.current?.push(payload);

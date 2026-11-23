@@ -17,6 +17,7 @@ const FIELD = 'fp-input min-h-9';
 
 export function TeamPanel() {
   const { user } = useAuth();
+  const canManageTeam = user?.role === 'admin' || user?.role === 'owner';
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [invitations, setInvitations] = useState<OrganizationInvitation[]>([]);
   const [email, setEmail] = useState('');
@@ -43,10 +44,10 @@ export function TeamPanel() {
   }
 
   useEffect(() => {
-    if (user?.role === 'admin') void refresh();
-  }, [user?.role]);
+    if (canManageTeam) void refresh();
+  }, [canManageTeam]);
 
-  if (user?.role !== 'admin') {
+  if (!canManageTeam) {
     return (
       <section className="border-t border-[#e5e4e0] pt-4">
         <p className="text-xs text-[#63766f]">

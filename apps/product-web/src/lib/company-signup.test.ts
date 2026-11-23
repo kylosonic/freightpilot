@@ -5,6 +5,7 @@ import {
   missingPlatformApiMessage,
   resolvePlatformApiBase,
 } from './company-signup';
+import { networkFailureMessage } from './site-content';
 
 describe('resolvePlatformApiBase', () => {
   it('uses the configured API URL and trims a trailing slash', () => {
@@ -55,6 +56,8 @@ describe('resolvePlatformApiBase', () => {
       'https://api.example.com/api/v1/auth/company-signup',
       expect.objectContaining({
         method: 'POST',
+        credentials: 'include',
+        signal: expect.any(AbortSignal),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }),
@@ -64,6 +67,32 @@ describe('resolvePlatformApiBase', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('aborts a signup request that takes too long', async () => {
+    vi.useFakeTimers();
+    vi.stubEnv('NEXT_PUBLIC_PLATFORM_API_URL', 'https://api.example.com/api/v1');
+    vi.stubEnv('NODE_ENV', 'production');
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = companySignup({
+      company_name: 'Acme Logistics',
+      company_email: 'owner@acme.com',
+      password: 'VeryStrongPass9',
+    });
+    const rejection = expect(request).rejects.toThrow(networkFailureMessage);
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    await rejection;
   });
 });

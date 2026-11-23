@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.security import get_current_membership, require_roles, require_writable_workspace
+from app.api.security import (
+    get_current_membership,
+    require_roles,
+    require_writable_workspace,
+    validate_uuid,
+)
 from app.db.session import get_db
 from app.models.item import Item
 from app.models.membership import OrganizationMembership
@@ -15,14 +21,18 @@ router = APIRouter()
 
 @router.get('', response_model=list[ItemRead])
 def list_items(
-    skip: int = 0,
-    limit: int = Query(default=100, le=500),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     membership: OrganizationMembership = Depends(get_current_membership),
     _: User = Depends(require_roles(UserRole.VIEWER, UserRole.OPERATOR, UserRole.ADMIN)),
 ):
     query = select(Item).where(Item.organization_id == membership.organization_id)
-    rows = db.execute(query.offset(skip).limit(limit)).scalars().all()
+    rows = (
+        db.execute(query.order_by(Item.sku, Item.id).offset(skip).limit(limit))
+        .scalars()
+        .all()
+    )
     return rows
 
 
@@ -47,7 +57,11 @@ def create_item(
         organization_id=writable.organization_id,
     )
     db.add(item)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail='SKU already exists') from None
     db.refresh(item)
     return item
 
@@ -59,9 +73,10 @@ def get_item(
     membership: OrganizationMembership = Depends(get_current_membership),
     _: User = Depends(require_roles(UserRole.VIEWER, UserRole.OPERATOR, UserRole.ADMIN)),
 ):
+    item_uuid = validate_uuid(item_id, detail='Item not found')
     row = db.execute(
         select(Item).where(
-            Item.id == item_id,
+            Item.id == item_uuid,
             Item.organization_id == membership.organization_id,
         )
     ).scalar_one_or_none()
@@ -79,9 +94,10 @@ def update_item(
     writable: OrganizationMembership = Depends(require_writable_workspace),
 ):
 
+    item_uuid = validate_uuid(item_id, detail='Item not found')
     row = db.execute(
         select(Item).where(
-            Item.id == item_id,
+            Item.id == item_uuid,
             Item.organization_id == writable.organization_id,
         )
     ).scalar_one_or_none()
@@ -90,6 +106,7 @@ def update_item(
 
     for key, value in payload.model_dump(exclude_none=True).items():
         setattr(row, key, value)
+    row.data_origin = 'real'
 
     db.add(row)
     db.commit()

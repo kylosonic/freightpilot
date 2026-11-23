@@ -45,7 +45,7 @@ export default function PlatformPage() {
         />
         <div className="mt-8 grid grid-cols-1 divide-y divide-[#e5e4e0] border-y border-[#e5e4e0] md:grid-cols-2 md:divide-y-0">
           {platformStacks.map((feature) => (
-            <article key={feature.title} className="min-w-0 py-6 md:px-6 md:first:pl-0">
+            <article key={feature.title} id={feature.id} className="min-w-0 scroll-mt-24 py-6 md:px-6 md:first:pl-0">
               <feature.icon className="h-5 w-5 text-[#087f72]" />
               <h3 className="mt-3 text-base font-medium text-[#252522]">{feature.title}</h3>
               <p className="mt-2 text-sm leading-6 text-[#73736e]">{feature.description}</p>
@@ -87,7 +87,7 @@ export default function PlatformPage() {
                 ))}
               </div>
             </div>
-            <div className="rounded-lg bg-[#f7f7f5] p-5 sm:p-6">
+            <div id="revenue-guard" className="scroll-mt-24 rounded-lg bg-[#f7f7f5] p-5 sm:p-6">
               <Gauge className="h-5 w-5 text-[#087f72]" />
               <h3 className="mt-3 text-base font-medium text-[#252522]">Plan and usage</h3>
               <p className="mt-2 text-sm leading-6 text-[#73736e]">See how much of your plan you have used and when your team needs to upgrade.</p>

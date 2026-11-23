@@ -46,14 +46,14 @@ export default function App() {
             }
           >
             <Route index element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/routes" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><RoutesPage /></ProtectedRoute>} />
-            <Route path="/upload" element={<ProtectedRoute allowedRoles={['admin', 'operator']}><UploadPage /></ProtectedRoute>} />
-            <Route path="/shipments" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><ShipmentsPage /></ProtectedRoute>} />
-            <Route path="/drivers" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><DriversPage /></ProtectedRoute>} />
-            <Route path="/alerts" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><AlertsPage /></ProtectedRoute>} />
-            <Route path="/planning" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><PlanningPage /></ProtectedRoute>} />
-            <Route path="/dispatch" element={<ProtectedRoute allowedRoles={['admin', 'operator']}><DispatchPage /></ProtectedRoute>} />
-            <Route path="/account" element={<ProtectedRoute allowedRoles={['admin', 'operator', 'viewer']}><AccountPage /></ProtectedRoute>} />
+            <Route path="/routes" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><RoutesPage /></ProtectedRoute>} />
+            <Route path="/upload" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator']}><UploadPage /></ProtectedRoute>} />
+            <Route path="/shipments" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><ShipmentsPage /></ProtectedRoute>} />
+            <Route path="/drivers" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><DriversPage /></ProtectedRoute>} />
+            <Route path="/alerts" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><AlertsPage /></ProtectedRoute>} />
+            <Route path="/planning" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><PlanningPage /></ProtectedRoute>} />
+            <Route path="/dispatch" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator']}><DispatchPage /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><AccountPage /></ProtectedRoute>} />
             <Route path="/providers" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator']}><ProvidersPage /></ProtectedRoute>} />
             <Route path="/receipts" element={<ProtectedRoute allowedRoles={['admin', 'owner', 'operator', 'viewer']}><ReceiptsPage /></ProtectedRoute>} />
             <Route path="/admin/receipts" element={<ProtectedRoute requirePlatformAdmin><AdminReceiptsPage /></ProtectedRoute>} />
