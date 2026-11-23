@@ -18,6 +18,18 @@ DEFAULT_CORS_ORIGINS = [
     'https://freightpilot-ops.freightpilot.workers.dev',
 ]
 
+
+def filter_effective_cors_origins(origins: list[str], app_env: str) -> list[str]:
+    if app_env in ('development', 'test'):
+        return list(origins)
+    from urllib.parse import urlparse
+
+    return [
+        origin
+        for origin in origins
+        if urlparse(origin).hostname not in ('localhost', '127.0.0.1', '::1')
+    ]
+
 # every committed placeholder value that is long enough
 # to pass the length-only guards. Exact-match rejection only — a secret that
 # differs by a single character is a real secret decision
@@ -149,17 +161,7 @@ class Settings(BaseSettings):
 
     @property
     def effective_cors_origins(self) -> list[str]:
-        if self.app_env in ('development', 'test'):
-            return list(self.cors_origins)
-        from urllib.parse import urlparse
-
-        filtered: list[str] = []
-        for origin in self.cors_origins:
-            parsed = urlparse(origin)
-            if parsed.hostname in ('localhost', '127.0.0.1', '::1'):
-                continue
-            filtered.append(origin)
-        return filtered
+        return filter_effective_cors_origins(self.cors_origins, self.app_env)
 
     @property
     def effective_cbe_account_holder(self) -> str:

@@ -74,7 +74,10 @@ def test_rate_windows_evict_expired_period_windows(monkeypatch):
 def test_rate_limit_429_includes_default_cors_headers(monkeypatch):
     entry = _load_entry(monkeypatch)
     monkeypatch.setattr(entry.time, 'time', lambda: 10_000.0)
-    instance = entry._GroupDurableObject(None, types.SimpleNamespace(CORS_ORIGINS=''))
+    instance = entry._GroupDurableObject(
+        None,
+        types.SimpleNamespace(CORS_ORIGINS='', APP_ENV='production'),
+    )
     request = _FakeRequest(
         'https://freightpilot-api.example/api/v1/auth/login',
         'POST',
@@ -92,3 +95,28 @@ def test_rate_limit_429_includes_default_cors_headers(monkeypatch):
     assert response.status == 429
     assert response.headers['Access-Control-Allow-Origin'] == 'https://freightpilot.pages.dev'
     assert response.headers['Access-Control-Allow-Credentials'] == 'true'
+
+
+def test_rate_limit_429_default_cors_excludes_localhost_in_production(monkeypatch):
+    entry = _load_entry(monkeypatch)
+    monkeypatch.setattr(entry.time, 'time', lambda: 10_000.0)
+    instance = entry._GroupDurableObject(
+        None,
+        types.SimpleNamespace(CORS_ORIGINS='', APP_ENV='production'),
+    )
+    request = _FakeRequest(
+        'https://freightpilot-api.example/api/v1/auth/login',
+        'POST',
+        {
+            'CF-Connecting-IP': '203.0.113.11',
+            'Origin': 'http://localhost:5173',
+        },
+    )
+
+    response = None
+    for _ in range(21):
+        response = instance._rate_limited(request)
+
+    assert isinstance(response, _FakeResponse)
+    assert response.status == 429
+    assert 'Access-Control-Allow-Origin' not in response.headers

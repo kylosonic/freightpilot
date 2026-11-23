@@ -159,7 +159,7 @@ jobs:
           Path('.worker-requirements.txt').write_text('\n'.join(rows) + '\n')
           print(f'wrote {len(rows)} Worker packages for audit')
           PY
-          pip-audit -r .worker-requirements.txt --strict --progress-spinner off
+          pip-audit -r .worker-requirements.txt --strict --no-deps --progress-spinner off
 
   ops-console:
     name: ops-console

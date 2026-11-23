@@ -37,6 +37,37 @@ function Ok([string]$text) { Write-Host "  [ok] $text" -ForegroundColor Green }
 function Warn2([string]$text) { Write-Host "  [!!] $text" -ForegroundColor Yellow }
 function Die([string]$text) { Write-Host "  [xx] $text" -ForegroundColor Red; exit 1 }
 
+function ConvertTo-CommandLineArgument([string]$Value) {
+    if ($Value.Length -eq 0) { return '""' }
+    if ($Value -notmatch '[\s"]') { return $Value }
+
+    $escaped = [System.Text.StringBuilder]::new()
+    [void]$escaped.Append('"')
+    $backslashes = 0
+    foreach ($character in $Value.ToCharArray()) {
+        if ($character -eq [char]'\') {
+            $backslashes++
+            continue
+        }
+        if ($character -eq [char]'"') {
+            [void]$escaped.Append((('\' * (($backslashes * 2) + 1)) -join ''))
+            [void]$escaped.Append('"')
+            $backslashes = 0
+            continue
+        }
+        if ($backslashes -gt 0) {
+            [void]$escaped.Append((('\' * $backslashes) -join ''))
+            $backslashes = 0
+        }
+        [void]$escaped.Append($character)
+    }
+    if ($backslashes -gt 0) {
+        [void]$escaped.Append((('\' * ($backslashes * 2)) -join ''))
+    }
+    [void]$escaped.Append('"')
+    return $escaped.ToString()
+}
+
 if (-not (Test-Path $configPath)) { Die "Wrangler config not found: $configPath" }
 if (-not $PythonExe) {
     foreach ($candidate in @(
@@ -53,23 +84,24 @@ if (-not $PythonExe) {
 function Set-WorkerSecret([string]$name, [string]$value) {
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $isWindowsHost = $IsWindows -or $env:OS -eq 'Windows_NT'
+    $arguments = @()
     if ($isWindowsHost) {
         $psi.FileName = if ($env:ComSpec) { $env:ComSpec } else { 'cmd.exe' }
-        $psi.ArgumentList.Add('/d')
-        $psi.ArgumentList.Add('/s')
-        $psi.ArgumentList.Add('/c')
-        $psi.ArgumentList.Add('npx.cmd')
+        $arguments += @('/d', '/s', '/c', 'npx.cmd')
     } else {
         $psi.FileName = 'npx'
     }
-    $psi.ArgumentList.Add('wrangler')
-    $psi.ArgumentList.Add('secret')
-    $psi.ArgumentList.Add('put')
-    $psi.ArgumentList.Add($name)
-    $psi.ArgumentList.Add('--name')
-    $psi.ArgumentList.Add($WorkerName)
-    $psi.ArgumentList.Add('--config')
-    $psi.ArgumentList.Add($configPath)
+    $arguments += @(
+        'wrangler',
+        'secret',
+        'put',
+        $name,
+        '--name',
+        $WorkerName,
+        '--config',
+        $configPath
+    )
+    $psi.Arguments = ($arguments | ForEach-Object { ConvertTo-CommandLineArgument $_ }) -join ' '
     $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true

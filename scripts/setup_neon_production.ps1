@@ -35,12 +35,13 @@ $neonDir = Join-Path $env:TEMP 'neon-cli'
 function Step([string]$text) { Write-Host "`n=== $text ===" -ForegroundColor Cyan }
 function Ok([string]$text) { Write-Host "  [ok] $text" -ForegroundColor Green }
 function Warn2([string]$text) { Write-Host "  [!!] $text" -ForegroundColor Yellow }
-function Die([string]$text) { Write-Host "  [xx] $text" -ForegroundColor Red; exit 1 }
+function Die([string]$text) { Write-Host "  [xx] $text" -ForegroundColor Red; throw $text }
 
 if (-not $NeonApiKey) {
     Die 'Set $env:NEON_API_KEY or pass -NeonApiKey. The key is passed to neonctl through the environment, never on the command line.'
 }
 $env:NEON_API_KEY = $NeonApiKey
+try {
 
 if (-not $PythonExe) {
     foreach ($candidate in @(
@@ -88,8 +89,7 @@ if ($DryRun) {
     }
     Write-Host '  Would verify connectivity and run alembic upgrade head.'
     Write-Host '  Would NOT rotate secrets or deploy any frontend/API.'
-    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
-    exit 0
+    return
 }
 
 if ($project) {
@@ -102,7 +102,7 @@ if ($project) {
     Ok "created project $($project.id)"
 }
 
-$rawUrl = (& $neon connection-string --project-id $project.id --pooled 2>&1 | Out-String)
+$rawUrl = (& $neon connection-string --project-id $project.id --org-id $OrgId --pooled 2>&1 | Out-String)
 $pgUrl = ($rawUrl -split "`n" | Where-Object { $_ -match '^postgres' } | Select-Object -First 1)
 if (-not $pgUrl) { Die 'Could not read a pooled PostgreSQL URL from neonctl.' }
 $databaseUrl = $pgUrl.Trim() -replace '^postgres(ql)?://', 'postgresql+psycopg://'
@@ -117,8 +117,6 @@ try {
     Ok "revision: $revision"
 } finally {
     Pop-Location
-    Remove-Item Env:\DATABASE_URL -ErrorAction SilentlyContinue
-    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
 }
 
 Step 'Next steps'
@@ -126,3 +124,7 @@ Write-Host '  Set Cloudflare Worker secrets separately with wrangler secret put.
 Write-Host '  Do not rotate PROVIDER_KEY_ENCRYPTION_SECRET without first re-encrypting stored keys.'
 Write-Host '  Deploy only after /health reports schema=current and the expected revision.'
 Write-Host "`nNeon database is ready: $($project.id)" -ForegroundColor Green
+} finally {
+    Remove-Item Env:\DATABASE_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
+}

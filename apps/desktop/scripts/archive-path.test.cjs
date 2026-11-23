@@ -4,7 +4,11 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
-const { assertSymlinkTargetInside, safeArchivePath } = require('./archive-path.cjs');
+const {
+  assertSymlinkTargetInside,
+  resolveSymlinkTargetInside,
+  safeArchivePath,
+} = require('./archive-path.cjs');
 
 const root = path.resolve('extract-root');
 
@@ -35,6 +39,31 @@ test('rejects symlink targets that resolve outside the extraction root', () => {
   try {
     assert.throws(
       () => assertSymlinkTargetInside(destination, escapingLink, 'resources/escape'),
+      /escapes the destination/,
+    );
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('resolves chained symlinks before applying parent traversal', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'freightpilot-chained-symlink-'));
+  const destination = path.join(tempRoot, 'destination');
+  const outside = path.join(tempRoot, 'outside');
+  fs.mkdirSync(destination);
+  fs.mkdirSync(outside);
+  fs.mkdirSync(path.join(destination, 'a'));
+  fs.symlinkSync('..', path.join(destination, 'a', 'b'), 'dir');
+
+  try {
+    assert.throws(
+      () =>
+        resolveSymlinkTargetInside(
+          destination,
+          path.join(destination, 'pwn'),
+          'a/b/../outside',
+          'pwn',
+        ),
       /escapes the destination/,
     );
   } finally {

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.api.endpoints.auth import _user_read
 from app.api.security import require_org_roles, require_roles
 from app.core.config import settings
 from app.db.session import get_db
@@ -16,7 +17,7 @@ from app.models.membership import OrganizationMembership
 from app.models.organization import Organization
 from app.models.organization_invitation import OrganizationInvitation
 from app.models.user import User
-from app.schemas.auth import OrganizationRead, OrganizationRole, UserRead, UserRole
+from app.schemas.auth import OrganizationRead, OrganizationRole, UserRole
 from app.schemas.team import (
     InvitationAccept,
     InvitationAcceptResponse,
@@ -333,7 +334,7 @@ def accept_invitation(
     return InvitationAcceptResponse(
         access_token=token,
         expires_in_seconds=settings.jwt_access_token_expire_minutes * 60,
-        user=UserRead.model_validate(user),
+        user=_user_read(user),
         organization=OrganizationRead.model_validate(organization),
         organization_role=membership.role,
     )

@@ -11,7 +11,7 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Creating PostgreSQL backup to $OutputFile ..."
-$resolvedOutput = [System.IO.Path]::GetFullPath($OutputFile)
+$resolvedOutput = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputFile)
 $tempOutput = "$resolvedOutput.partial.$PID"
 $process = Start-Process -FilePath docker `
   -ArgumentList @('compose','exec','-T','postgres','pg_dump','-U',$pgUser,'-d',$pgDb,'--no-owner','--no-privileges') `

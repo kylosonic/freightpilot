@@ -52,4 +52,49 @@ function assertSymlinkTargetInside(root, target, entryName) {
   }
 }
 
-module.exports = { assertSymlinkTargetInside, safeArchivePath };
+function resolveSymlinkTargetInside(root, linkPath, linkTarget, entryName) {
+  if (path.isAbsolute(linkTarget) || /^[A-Za-z]:/.test(linkTarget)) {
+    throw new Error(`[desktop] Unsafe symlink target in Electron archive: ${entryName}`);
+  }
+
+  const rootReal = fs.realpathSync(root);
+  let resolved = fs.realpathSync(path.dirname(linkPath));
+
+  const assertInside = () => {
+    const relative = path.relative(rootReal, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error(`[desktop] Symlink target escapes the destination: ${entryName}`);
+    }
+  };
+
+  // Resolve existing components before applying `..`. Lexically collapsing the
+  // target first lets an earlier directory symlink change what `..` means.
+  for (const segment of linkTarget.replaceAll('\\', '/').split('/')) {
+    if (!segment || segment === '.') continue;
+    if (segment === '..') {
+      resolved = path.dirname(resolved);
+      assertInside();
+      continue;
+    }
+
+    const candidate = path.join(resolved, segment);
+    try {
+      resolved = fs.realpathSync(candidate);
+    } catch (error) {
+      if (!error || error.code !== 'ENOENT') throw error;
+      try {
+        if (fs.lstatSync(candidate).isSymbolicLink()) {
+          throw new Error(`[desktop] Broken symlink target in Electron archive: ${entryName}`);
+        }
+      } catch (lstatError) {
+        if (!lstatError || lstatError.code !== 'ENOENT') throw lstatError;
+      }
+      resolved = candidate;
+    }
+    assertInside();
+  }
+
+  return resolved;
+}
+
+module.exports = { assertSymlinkTargetInside, resolveSymlinkTargetInside, safeArchivePath };

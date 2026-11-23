@@ -49,7 +49,7 @@ $neon = Join-Path $env:TEMP 'neon-cli\node_modules\.bin\neonctl.cmd'
 
 function Step([string]$t) { Write-Host "`n=== $t ===" -ForegroundColor Cyan }
 function Ok([string]$t) { Write-Host "  [ok] $t" -ForegroundColor Green }
-function Die([string]$t) { Write-Host "  [xx] $t" -ForegroundColor Red; exit 1 }
+function Die([string]$t) { Write-Host "  [xx] $t" -ForegroundColor Red; throw $t }
 
 if (-not $NeonApiKey) { Die 'No Neon API key. Set $env:NEON_API_KEY or pass -NeonApiKey.' }
 $env:NEON_API_KEY = $NeonApiKey
@@ -148,25 +148,40 @@ try {
     # 4. Isolation: a write on the branch must not reach production
     Step 'Proving isolation'
     $env:FP_URL = (Get-Conn $DrillBranch)
-    & $PythonExe -c @'
+    try {
+        $writeOutput = (& $PythonExe -c @'
 import os, psycopg
 with psycopg.connect(os.environ["FP_URL"], connect_timeout=25) as c:
     with c.cursor() as cur:
         cur.execute("create table if not exists restore_drill_probe (id int)")
         cur.execute("insert into restore_drill_probe values (1)")
     c.commit()
-'@ 2>&1 | Out-Null
-    Remove-Item Env:\FP_URL -ErrorAction SilentlyContinue
+print("WRITE_OK")
+'@ 2>&1 | Out-String)
+        $writeExit = $LASTEXITCODE
+    } finally {
+        Remove-Item Env:\FP_URL -ErrorAction SilentlyContinue
+    }
+    if ($writeExit -ne 0 -or $writeOutput -notmatch '(?m)^WRITE_OK\s*$') {
+        Die "could not write the isolation probe to the restore branch:`n$writeOutput"
+    }
+    Ok 'isolation probe written to the restore branch'
 
     $env:FP_URL = (Get-Conn '')
-    $leaked = (& $PythonExe -c @'
+    try {
+        $leakOutput = (& $PythonExe -c @'
 import os, psycopg
 with psycopg.connect(os.environ["FP_URL"], connect_timeout=25) as c:
     with c.cursor() as cur:
         cur.execute("select to_regclass('public.restore_drill_probe')")
         print("PRESENT" if cur.fetchone()[0] else "ABSENT")
-'@ 2>&1 | Select-Object -Last 1).Trim()
-    Remove-Item Env:\FP_URL -ErrorAction SilentlyContinue
+'@ 2>&1 | Out-String)
+        $leakExit = $LASTEXITCODE
+    } finally {
+        Remove-Item Env:\FP_URL -ErrorAction SilentlyContinue
+    }
+    if ($leakExit -ne 0) { Die "could not verify production isolation:`n$leakOutput" }
+    $leaked = ($leakOutput.Trim() -split "`n" | Select-Object -Last 1).Trim()
     if ($leaked -ne 'ABSENT') { Die "a write on the restore branch reached production — isolation is broken" }
     Ok 'branch writes do not reach production'
 
@@ -182,13 +197,21 @@ with psycopg.connect(os.environ["FP_URL"], connect_timeout=25) as c:
 }
 finally {
     Step 'Cleaning up'
-    & $neon branches delete $branchId --project-id $ProjectId 2>&1 | Out-Null
-    Start-Sleep -Seconds 5
-    $remaining = ((& $neon branches list --project-id $ProjectId --output json 2>&1) -join "`n") | ConvertFrom-Json
-    $names = (@($remaining) | ForEach-Object { $_.name }) -join ', '
-    if ($names -notmatch [regex]::Escape($DrillBranch)) { Ok "drill branch deleted (remaining: $names)" }
-    else { Write-Host "  [!!] drill branch may still exist — check the Neon dashboard" -ForegroundColor Yellow }
-    Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
+    try {
+        & $neon branches delete $branchId --project-id $ProjectId 2>&1 | Out-Null
+        Start-Sleep -Seconds 5
+        $remainingRaw = (& $neon branches list --project-id $ProjectId --output json 2>&1) -join "`n"
+        $remainingExit = $LASTEXITCODE
+        if ($remainingExit -ne 0) { Die "could not verify restore-branch cleanup:`n$remainingRaw" }
+        try { $remaining = $remainingRaw | ConvertFrom-Json } catch { Die "cleanup returned unparseable output: $remainingRaw" }
+        $names = (@($remaining) | ForEach-Object { $_.name }) -join ', '
+        if ($names -match ('(^|, )' + [regex]::Escape($DrillBranch) + '(,|$)')) {
+            Die "drill branch still exists after cleanup (remaining: $names)"
+        }
+        Ok "drill branch deleted (remaining: $names)"
+    } finally {
+        Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
+    }
 }
 
 $recordDir = Join-Path $repoRoot '.artifacts'

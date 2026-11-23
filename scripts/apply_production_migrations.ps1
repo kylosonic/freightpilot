@@ -47,7 +47,7 @@ $neonDir = Join-Path $env:TEMP 'neon-cli'
 function Step([string]$t) { Write-Host "`n=== $t ===" -ForegroundColor Cyan }
 function Ok([string]$t) { Write-Host "  [ok] $t" -ForegroundColor Green }
 function Warn2([string]$t) { Write-Host "  [!!] $t" -ForegroundColor Yellow }
-function Die([string]$t) { Write-Host "  [xx] $t" -ForegroundColor Red; exit 1 }
+function Die([string]$t) { Write-Host "  [xx] $t" -ForegroundColor Red; throw $t }
 
 # neonctl writes spinners and ANSI colour codes around its output, so the raw
 # stream is not valid JSON even with --output json. Strip the escapes and the
@@ -77,13 +77,14 @@ The key is used only by neonctl and is never written to disk.
 '@
 }
 $env:NEON_API_KEY = $NeonApiKey
+try {
 Ok "Neon API key present ($($NeonApiKey.Substring(0, [Math]::Min(4, $NeonApiKey.Length)))..., $($NeonApiKey.Length) chars)"
 
 if (-not $PythonExe) {
     foreach ($candidate in @(
         (Join-Path $repoRoot '.venv/Scripts/python.exe'),
         (Join-Path $apiDir '.venv-lockcheck/Scripts/python.exe'),
-        (Join-Path $apiDir '.venv/Scripts/python.exe'),
+        (Join-Path $apiDir '.venv/Scripts/python.exe')
     )) {
         if (Test-Path $candidate) { $PythonExe = $candidate; break }
     }
@@ -196,7 +197,7 @@ try {
 
     if ($DryRun) {
         Warn2 'DryRun: no migration applied.'
-        exit 0
+        return
     }
 
     # 4. Apply
@@ -211,7 +212,9 @@ try {
     Write-Host ''
     Ok 'Migration applied. Code that depends on it may now be deployed.'
 } finally {
+    Pop-Location
+}
+} finally {
     Remove-Item Env:\DATABASE_URL -ErrorAction SilentlyContinue
     Remove-Item Env:\NEON_API_KEY -ErrorAction SilentlyContinue
-    Pop-Location
 }

@@ -16,9 +16,10 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Restoring PostgreSQL backup from $InputFile ..."
+$resolvedInput = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($InputFile)
 $process = Start-Process -FilePath docker `
   -ArgumentList @('compose','exec','-T','postgres','psql','-v','ON_ERROR_STOP=1','--single-transaction','-U',$pgUser,'-d',$pgDb) `
-  -RedirectStandardInput ([System.IO.Path]::GetFullPath($InputFile)) `
+  -RedirectStandardInput $resolvedInput `
   -NoNewWindow -Wait -PassThru
 if ($process.ExitCode -ne 0) {
   throw "psql restore failed with exit code $($process.ExitCode)."

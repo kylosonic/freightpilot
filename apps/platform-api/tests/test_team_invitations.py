@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.membership import OrganizationMembership
 from app.models.user import User
 
@@ -53,6 +54,33 @@ def test_workspace_admin_can_invite_and_accept_teammate(
         )
     ).scalar_one()
     assert membership.role == 'operator'
+
+
+def test_invitation_accept_returns_allowlisted_platform_admin_privilege(
+    client: TestClient,
+    admin_token: str,
+    monkeypatch,
+):
+    allowed_email = 'allowlisted-invitee@platform-check.example'
+    monkeypatch.setattr(settings, 'platform_admin_emails', [allowed_email])
+    created = client.post(
+        '/api/v1/team/invitations',
+        headers=_headers(admin_token),
+        json={'email': allowed_email, 'role': 'operator'},
+    )
+    assert created.status_code == 201, created.text
+
+    accepted = client.post(
+        '/api/v1/team/invitations/accept',
+        json={
+            'token': created.json()['token'],
+            'username': 'allowlisted-invitee',
+            'password': 'VeryStrongPass9',
+        },
+    )
+
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()['user']['is_platform_admin'] is True
 
 
 def test_viewer_cannot_invite_or_change_members(client: TestClient, viewer_token: str):

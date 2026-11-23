@@ -156,9 +156,12 @@ class _GroupDurableObject(DurableObject):
         configured_origins = str(getattr(self.env, 'CORS_ORIGINS', '') or '').split(',')
         allowed_origins = {item.strip() for item in configured_origins if item.strip()}
         if not allowed_origins:
-            from app.core.config import DEFAULT_CORS_ORIGINS
+            from app.core.config import DEFAULT_CORS_ORIGINS, filter_effective_cors_origins
 
-            allowed_origins = set(DEFAULT_CORS_ORIGINS)
+            app_env = str(getattr(self.env, 'APP_ENV', '') or 'production')
+            allowed_origins = set(
+                filter_effective_cors_origins(DEFAULT_CORS_ORIGINS, app_env)
+            )
         if origin and origin in allowed_origins:
             headers_out['Access-Control-Allow-Origin'] = origin
             headers_out['Access-Control-Allow-Credentials'] = 'true'

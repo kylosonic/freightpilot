@@ -31,6 +31,7 @@ jobs:
           assert health['schema'] == 'current', health
           assert health['revision'] == health['expected_revision'], health
           assert health['revision'] == '20261122_0027', health
+          PY
 
       - name: API schema revision endpoint
         run: |
