@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const TOAST_COPY =
-  'First optimization complete. Free tier covers 2,500 delivery_tasks per month — when you outgrow that, Starter lifts the cap.';
+  'First optimization complete. Free tier covers 2,500 delivery tasks per month — when you outgrow that, Starter lifts the cap.';
 const AUTO_DISMISS_MS = 6000;
 
 /**
@@ -29,9 +29,9 @@ export function PostAhaToast({ visible, onDismiss }: { visible: boolean; onDismi
     <div
       role="status"
       data-testid="post-aha-toast"
-      className="fixed bottom-6 right-6 z-[60] max-w-[380px] border border-[#b9dcd1] border-l-4 border-l-[#16856b] bg-white px-4 py-3 shadow-lg"
+      className="fixed bottom-6 right-6 z-[60] max-w-[380px] rounded-md border border-[#b9dcd1] border-l-4 border-l-[#16856b] bg-white px-4 py-3 shadow-lg"
     >
-      <p className="text-xs font-medium leading-5 text-[#25483f]">{TOAST_COPY}</p>
+      <p className="text-xs font-medium leading-5 text-[#252522]">{TOAST_COPY}</p>
     </div>
   );
 }

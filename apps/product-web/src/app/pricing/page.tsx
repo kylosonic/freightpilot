@@ -100,7 +100,7 @@ export default function PricingPage() {
                 <ul className="mt-5 space-y-2 border-t border-[#efeeea] pt-4 text-[13px] leading-5 text-[#5f5f59]">
                   {bullets.map((bullet) => (
                     <li key={bullet} className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#087f72]" />
+                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#087f72]" aria-hidden="true" />
                       <span>{bullet}</span>
                     </li>
                   ))}

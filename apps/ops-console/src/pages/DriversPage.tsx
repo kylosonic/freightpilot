@@ -69,10 +69,12 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 function DeclareCashDialog({
   record,
+  busy = false,
   onConfirm,
   onCancel,
 }: {
   record: CashCollection;
+  busy?: boolean;
   onConfirm: (collected: number, note: string) => void;
   onCancel: () => void;
 }) {
@@ -88,10 +90,12 @@ function DeclareCashDialog({
       eyebrow="Cash on hand"
       title={`Record cash for ${record.shipment_no}`}
       description={`We expect ${etb(record.expected_etb)}. Enter the amount the driver actually has. If it is less, we record the difference.`}
+      onClose={() => { if (!busy) onCancel(); }}
       actions={
         <>
           <button
             type="button"
+            disabled={busy}
             onClick={onCancel}
             className="fp-action-secondary !min-h-8 text-xs"
           >
@@ -100,16 +104,16 @@ function DeclareCashDialog({
           <button
             type="button"
             onClick={() => onConfirm(entered, note)}
-            disabled={!Number.isFinite(entered) || entered < 0}
-            className="fp-action-primary !min-h-8"
+            disabled={busy || !Number.isFinite(entered) || entered < 0}
+            className="fp-action-primary !min-h-8 text-xs"
           >
-            Record cash
+            {busy ? 'Saving...' : 'Record cash'}
           </button>
         </>
       }
     >
       <div className="grid gap-4">
-        <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+        <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
           Cash collected (ETB)
           <input
             autoFocus
@@ -121,7 +125,7 @@ function DeclareCashDialog({
             onChange={(e) => setCollected(e.target.value)}
           />
         </label>
-        <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+        <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
           Note (optional)
           <textarea
             className="fp-input min-h-20 px-4 py-3"
@@ -130,7 +134,7 @@ function DeclareCashDialog({
             onChange={(e) => setNote(e.target.value)}
           />
         </label>
-        <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#63766f]'}`}>
+        <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#5f5f59]'}`}>
           {shortfall > 0
             ? `Shortfall of ${etb(shortfall)} will be recorded against this delivery.`
             : 'This clears the expected amount in full.'}
@@ -142,10 +146,12 @@ function DeclareCashDialog({
 
 function SettleCashDialog({
   record,
+  busy = false,
   onConfirm,
   onCancel,
 }: {
   record: CashCollection;
+  busy?: boolean;
   onConfirm: (note: string) => void;
   onCancel: () => void;
 }) {
@@ -156,10 +162,12 @@ function SettleCashDialog({
       eyebrow="Cash handover"
       title={`Settle cash for ${record.shipment_no}`}
       description="Use this after the office receives the cash. It closes the record and keeps any missing amount visible."
+      onClose={() => { if (!busy) onCancel(); }}
       actions={
         <>
           <button
             type="button"
+            disabled={busy}
             onClick={onCancel}
             className="fp-action-secondary !min-h-8 text-xs"
           >
@@ -167,15 +175,16 @@ function SettleCashDialog({
           </button>
           <button
             type="button"
+            disabled={busy}
             onClick={() => onConfirm(note)}
-            className="fp-action-primary !min-h-8"
+            className="fp-action-primary !min-h-8 text-xs"
           >
-            Settle
+            {busy ? 'Settling...' : 'Settle'}
           </button>
         </>
       }
     >
-      <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+      <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
         Settlement note (optional)
         <textarea
           autoFocus
@@ -203,6 +212,9 @@ export function DriversPage() {
   const [van, setVan] = useState<{ driverName: string; shipments: DriverShipment[] } | null>(null);
   const [declareTarget, setDeclareTarget] = useState<CashCollection | null>(null);
   const [settleTarget, setSettleTarget] = useState<CashCollection | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<Driver | null>(null);
+  const [cashBusy, setCashBusy] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   const [form, setForm] = useState({
     full_name: '',
@@ -256,12 +268,17 @@ export function DriversPage() {
   }
 
   async function onDeactivate(driver: Driver) {
+    setDeactivating(true);
     try {
       setError(null);
       await deactivateDriver(driver.id);
+      setDeactivateTarget(null);
       await loadAll();
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to deactivate the driver'));
+      setDeactivateTarget(null);
+    } finally {
+      setDeactivating(false);
     }
   }
 
@@ -277,6 +294,7 @@ export function DriversPage() {
 
   async function onDeclareConfirm(collected: number, note: string) {
     if (!declareTarget) return;
+    setCashBusy(true);
     try {
       setError(null);
       await declareCash(declareTarget.id, { collected_etb: collected, note: note || undefined });
@@ -284,12 +302,14 @@ export function DriversPage() {
     } catch (err) {
       setError(apiErrorMessage(err, 'Could not save the cash amount'));
     } finally {
+      setCashBusy(false);
       setDeclareTarget(null);
     }
   }
 
   async function onSettleConfirm(note: string) {
     if (!settleTarget) return;
+    setCashBusy(true);
     try {
       setError(null);
       await settleCash(settleTarget.id, { note: note || undefined });
@@ -297,6 +317,7 @@ export function DriversPage() {
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to settle this cash record'));
     } finally {
+      setCashBusy(false);
       setSettleTarget(null);
     }
   }
@@ -309,6 +330,7 @@ export function DriversPage() {
       {declareTarget ? (
         <DeclareCashDialog
           record={declareTarget}
+          busy={cashBusy}
           onConfirm={onDeclareConfirm}
           onCancel={() => setDeclareTarget(null)}
         />
@@ -317,8 +339,38 @@ export function DriversPage() {
       {settleTarget ? (
         <SettleCashDialog
           record={settleTarget}
+          busy={cashBusy}
           onConfirm={onSettleConfirm}
           onCancel={() => setSettleTarget(null)}
+        />
+      ) : null}
+
+      {deactivateTarget ? (
+        <Dialog
+          eyebrow="Driver status"
+          title={`Deactivate ${deactivateTarget.full_name}?`}
+          description="They will no longer appear for new dispatch assignments. Existing cash and shipment records stay intact."
+          onClose={() => { if (!deactivating) setDeactivateTarget(null); }}
+          actions={
+            <>
+              <button
+                type="button"
+                disabled={deactivating}
+                onClick={() => setDeactivateTarget(null)}
+                className="fp-action-secondary !min-h-8 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deactivating}
+                onClick={() => void onDeactivate(deactivateTarget)}
+                className="fp-action-danger !min-h-8 text-xs"
+              >
+                {deactivating ? 'Deactivating...' : 'Deactivate driver'}
+              </button>
+            </>
+          }
         />
       ) : null}
 
@@ -367,7 +419,7 @@ export function DriversPage() {
         description="The phone number is how you will recognise each driver, so please check it carefully."
       >
         <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreateDriver}>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Full name
             <input
               className="fp-input"
@@ -377,7 +429,7 @@ export function DriversPage() {
               required
             />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Phone
             <input
               className="fp-input"
@@ -387,8 +439,8 @@ export function DriversPage() {
               required
             />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
-            Licence no
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
+            License no
             <input
               className="fp-input"
               placeholder="ET-DRV-00000"
@@ -396,7 +448,7 @@ export function DriversPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, license_no: e.target.value }))}
             />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Vehicle plate
             <input
               className="fp-input"
@@ -405,7 +457,7 @@ export function DriversPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, vehicle_plate: e.target.value }))}
             />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Notes
             <input
               className="fp-input"
@@ -414,14 +466,14 @@ export function DriversPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
             />
           </label>
-          <div className="flex justify-end lg:col-span-5">
+          <div className="flex justify-end sm:col-span-2 lg:col-span-3 xl:col-span-5">
             <button
               type="submit"
               disabled={saving}
               className="fp-action-primary"
             >
               {saving ? (
-                <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" />
                 </svg>
               ) : null}
@@ -453,18 +505,18 @@ export function DriversPage() {
                     <StatusBadge label={driver.status} tone={driverTone(driver.status)} />
                     <span className="text-xs text-[#73736e]">{driver.phone}</span>
                   </div>
-                  <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">
+                  <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">
                     {driver.full_name}
                   </h3>
                 </div>
-                <div className="text-right font-mono text-xs text-[#63766f] tabular-nums">
+                <div className="text-right font-mono text-xs text-[#5f5f59] tabular-nums">
                   <p>{driver.vehicle_plate || 'No plate on file'}</p>
-                  <p>{driver.license_no || 'No licence on file'}</p>
+                  <p>{driver.license_no || 'No license on file'}</p>
                 </div>
               </div>
 
               {driver.notes ? (
-                <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{driver.notes}</p>
+                <p className="mt-1.5 text-xs leading-5 text-[#5f5f59]">{driver.notes}</p>
               ) : null}
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -478,7 +530,7 @@ export function DriversPage() {
                 {canManageFleet && driver.status === 'active' ? (
                   <button
                     type="button"
-                    onClick={() => onDeactivate(driver)}
+                    onClick={() => setDeactivateTarget(driver)}
                     className="fp-action-quiet !min-h-8 !text-[#a3342f]"
                   >
                     Deactivate
@@ -509,16 +561,27 @@ export function DriversPage() {
             {van.shipments.map((shipment) => (
               <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[#efeeea] py-2">
                 <div className="flex items-center gap-3">
-                  <StatusBadge label={shipment.status} tone={shipment.status === 'delivered' ? 'success' : 'info'} />
+                  <StatusBadge
+                    label={shipment.status}
+                    tone={
+                      shipment.status === 'delivered'
+                        ? 'success'
+                        : shipment.status === 'delayed' || shipment.status === 'cancelled'
+                          ? 'danger'
+                          : shipment.status === 'in_transit'
+                            ? 'info'
+                            : 'neutral'
+                    }
+                  />
                   <span className="text-xs text-[#252522]">{shipment.shipment_no}</span>
                 </div>
-                <span className="font-mono text-xs text-[#63766f] tabular-nums">
+                <span className="font-mono text-xs text-[#5f5f59] tabular-nums">
                   COD {etb(shipment.cod_amount_etb)}
                 </span>
               </div>
             ))}
             {van.shipments.length === 0 ? (
-              <p className="text-xs text-[#63766f]">Nothing assigned to this driver right now.</p>
+              <p className="text-xs text-[#73736e]">Nothing assigned to this driver right now.</p>
             ) : null}
             <div className="flex justify-end">
               <button
@@ -547,20 +610,20 @@ export function DriversPage() {
                     <StatusBadge label={record.status} tone={cashTone(record.status)} />
                     <span className="text-[11px] text-[#73736e]">{record.shipment_no}</span>
                   </div>
-                  <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">
+                  <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">
                     {record.driver_name || 'Unassigned driver'}
                   </h3>
                 </div>
-                <div className="text-right font-mono text-xs text-[#63766f] tabular-nums">
+                <div className="text-right font-mono text-xs text-[#5f5f59] tabular-nums">
                   <p>Expected {etb(record.expected_etb)}</p>
                   <p>Collected {etb(record.collected_etb)}</p>
-                  <p className={Number(record.shortfall_etb ?? 0) > 0 ? 'text-[#885100]' : 'text-[#6b7d76]'}>
+                  <p className={Number(record.shortfall_etb ?? 0) > 0 ? 'text-[#885100]' : 'text-[#73736e]'}>
                     Shortfall {etb(record.shortfall_etb)}
                   </p>
                 </div>
               </div>
 
-              {record.note ? <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{record.note}</p> : null}
+              {record.note ? <p className="mt-1.5 text-xs leading-5 text-[#5f5f59]">{record.note}</p> : null}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {record.status === 'outstanding' ? (
@@ -595,8 +658,8 @@ export function DriversPage() {
           ) : null}
         </div>
 
-        <p className="mt-3 text-xs text-[#63766f]">
-          Settled to date: <span className="font-mono text-[#40534c]">{etb(ledger.settled_etb)}</span> across{' '}
+        <p className="mt-3 text-xs text-[#5f5f59]">
+          Settled to date: <span className="font-mono text-[#252522]">{etb(ledger.settled_etb)}</span> across{' '}
           {ledger.settled_count} collections.
         </p>
       </Panel>

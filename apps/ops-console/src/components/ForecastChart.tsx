@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 
 import { Panel } from './ui/Panel';
+import { StatusBadge } from './ui/StatusBadge';
 import type { ForecastPoint, ForecastQuality } from '../types/api';
 
 type Props = {
@@ -51,12 +52,12 @@ export function ForecastChart({ points, quality, modelName }: Props) {
 
   const backtestLabel = quality?.wape_percent != null ? `${quality.wape_percent}% WAPE` : 'Not available';
   const hasHighError = quality?.wape_percent != null && quality.wape_percent > 35;
-  const qualityTone =
+  const qualityBadgeTone =
     hasHighError || quality?.status === 'limited'
-      ? 'border-[#e7d1a8] bg-[#fffaf0] text-[#704500]'
+      ? 'warning'
       : quality?.status === 'validated'
-        ? 'border-[#b9dcd1] bg-[#edf8f3] text-[#14745f]'
-        : 'border-[#d7dfdc] bg-[#f5f8f6] text-[#40534c]';
+        ? 'success'
+        : 'neutral';
   const evidenceLabel = quality
     ? `${quality.status.split('_').join(' ')}${hasHighError ? ' - high error' : ''}`
     : 'Unavailable';
@@ -85,7 +86,9 @@ export function ForecastChart({ points, quality, modelName }: Props) {
         </div>
         <div>
           <p className="text-[11px] text-[#73736e]">Forecast evidence</p>
-          <p className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${qualityTone}`}>{evidenceLabel}</p>
+          <div className="mt-1">
+            <StatusBadge label={evidenceLabel} tone={qualityBadgeTone} />
+          </div>
         </div>
       </div>
       <div className="h-80">
@@ -97,11 +100,11 @@ export function ForecastChart({ points, quality, modelName }: Props) {
                 <stop offset="100%" stopColor="#087f72" stopOpacity={0.01} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#e6ebe8" strokeDasharray="2 3" />
+            <CartesianGrid stroke="#efeeea" strokeDasharray="2 3" />
             <XAxis dataKey="week_start" tick={axisStyle} axisLine={false} tickLine={false} />
             <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#a9bbb4' }} />
-            <Legend wrapperStyle={{ color: '#40534c', fontSize: 11 }} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#a8a7a1' }} />
+            <Legend wrapperStyle={{ color: '#454540', fontSize: 11 }} />
             <Line
               type="monotone"
               dataKey="planning_low"
@@ -137,10 +140,10 @@ export function ForecastChart({ points, quality, modelName }: Props) {
         </ResponsiveContainer>
       </div>
       {quality ? (
-        <div className="mt-3 border-t border-[#e6ebe8] pt-2.5">
-          <p className="text-xs leading-5 text-[#40534c]">{quality.interpretation}</p>
-          <p className="mt-1 text-[11px] leading-5 text-[#63766f]">{quality.caveat}</p>
-          <p className="mt-1 text-[11px] leading-5 text-[#63766f]">
+        <div className="mt-3 border-t border-[#efeeea] pt-2.5">
+          <p className="text-xs leading-5 text-[#454540]">{quality.interpretation}</p>
+          <p className="mt-1 text-[11px] leading-5 text-[#5f5f59]">{quality.caveat}</p>
+          <p className="mt-1 text-[11px] leading-5 text-[#5f5f59]">
             {widensByBacktest
               ? 'Planning range widens the trend residual band by held-out error; it is not a guarantee.'
               : 'Planning range reflects the trend residual band only; no held-out error estimate was available.'}

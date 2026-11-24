@@ -25,7 +25,7 @@ import {
 } from '../services/dispatchApi';
 import type { Customer, DeliveryOrder, DispatchRun, Driver } from '../types/api';
 
-const FIELD = 'fp-input min-h-9';
+const FIELD = 'fp-input min-h-10';
 
 function isoOrUndefined(value: string): string | undefined {
   return value ? new Date(value).toISOString() : undefined;
@@ -52,6 +52,8 @@ export function DispatchPage() {
   const [fleetVehicleIds, setFleetVehicleIds] = useState<string[]>([]);
   const [fleetCapacities, setFleetCapacities] = useState<Record<string, string>>({});
   const [cashCloseTarget, setCashCloseTarget] = useState<DispatchRun | null>(null);
+  const [closeCashError, setCloseCashError] = useState<string | null>(null);
+  const [closingCash, setClosingCash] = useState(false);
   const [cashCloseForm, setCashCloseForm] = useState({
     handed_over_etb: '',
     deposit_bank: '' as '' | 'cbe' | 'dashen',
@@ -292,7 +294,7 @@ export function DispatchPage() {
       note: '',
     });
     setCashCloseTarget(run);
-    setError(null);
+    setCloseCashError(null);
   }
 
   async function onCloseCash(event: React.FormEvent) {
@@ -301,14 +303,15 @@ export function DispatchPage() {
     const handedOver = Number(cashCloseForm.handed_over_etb);
     const expected = Number(cashCloseTarget.expected_cash_etb);
     if (!Number.isFinite(handedOver) || handedOver < 0) {
-      setError('Enter the amount of cash actually handed over.');
+      setCloseCashError('Enter the amount of cash actually handed over.');
       return;
     }
     if (handedOver !== expected && !cashCloseForm.note.trim()) {
-      setError('Explain why the handed-over amount differs from the expected cash.');
+      setCloseCashError('Explain why the handed-over amount differs from the expected cash.');
       return;
     }
-    setError(null);
+    setCloseCashError(null);
+    setClosingCash(true);
     try {
       const result = await closeDispatchCash(cashCloseTarget.id, {
         handed_over_etb: handedOver.toFixed(2),
@@ -322,7 +325,9 @@ export function DispatchPage() {
       setCashCloseTarget(null);
       await refresh();
     } catch (err) {
-      setError(apiErrorMessage(err, 'Could not close cash for this run.'));
+      setCloseCashError(apiErrorMessage(err, 'Could not close cash for this run.'));
+    } finally {
+      setClosingCash(false);
     }
   }
 
@@ -376,13 +381,13 @@ export function DispatchPage() {
       {driverLink ? (
         <div className="rounded-md bg-[#f3f9fc] p-3">
           <p className="text-xs font-semibold text-[#17679b]">Driver link created</p>
-          <code className="mt-2 block break-all rounded border border-[#dde7ec] bg-white p-2 text-[11px] text-[#25483f]">{driverLink}</code>
+          <code className="mt-2 block break-all rounded-md border border-[#e5e4e0] bg-white p-2 text-[11px] text-[#252522]">{driverLink}</code>
         </div>
       ) : null}
       {customerTrackingLink ? (
         <div className="rounded-md bg-[#f3faf7] p-3">
           <p className="text-xs font-semibold text-[#14745f]">Customer tracking link created</p>
-          <code className="mt-2 block break-all rounded border border-[#dde7e2] bg-white p-2 text-[11px] text-[#25483f]">{customerTrackingLink}</code>
+          <code className="mt-2 block break-all rounded-md border border-[#e5e4e0] bg-white p-2 text-[11px] text-[#252522]">{customerTrackingLink}</code>
         </div>
       ) : null}
 
@@ -394,35 +399,53 @@ export function DispatchPage() {
             <input className={FIELD} placeholder="Phone (optional)" value={customerForm.phone} onChange={(event) => setCustomerForm({ ...customerForm, phone: event.target.value })} />
             <input className={FIELD} placeholder="Address" required value={customerForm.address} onChange={(event) => setCustomerForm({ ...customerForm, address: event.target.value })} />
             <div className="grid grid-cols-2 gap-2">
-              <input className={FIELD} aria-label="Latitude" value={customerForm.latitude} onChange={(event) => setCustomerForm({ ...customerForm, latitude: event.target.value })} />
-              <input className={FIELD} aria-label="Longitude" value={customerForm.longitude} onChange={(event) => setCustomerForm({ ...customerForm, longitude: event.target.value })} />
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Latitude</span>
+                <input className={FIELD} aria-label="Latitude" value={customerForm.latitude} onChange={(event) => setCustomerForm({ ...customerForm, latitude: event.target.value })} />
+              </label>
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Longitude</span>
+                <input className={FIELD} aria-label="Longitude" value={customerForm.longitude} onChange={(event) => setCustomerForm({ ...customerForm, longitude: event.target.value })} />
+              </label>
             </div>
-            <button className="fp-action-primary w-full">Add customer</button>
+            <button type="submit" className="fp-action-primary w-full">Add customer</button>
           </form>
         </Panel>
 
         <Panel eyebrow="Orders" title="Delivery order" description="Demand, cash to collect, and optional time window.">
           <form className="grid gap-3" onSubmit={onCreateOrder}>
             <input className={FIELD} placeholder="Order number" required value={orderForm.order_no} onChange={(event) => setOrderForm({ ...orderForm, order_no: event.target.value })} />
-            <select className={FIELD} required value={orderForm.customer_id} onChange={(event) => setOrderForm({ ...orderForm, customer_id: event.target.value })}>
+            <select className={FIELD} aria-label="Customer" required value={orderForm.customer_id} onChange={(event) => setOrderForm({ ...orderForm, customer_id: event.target.value })}>
               <option value="">Select customer</option>
               {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.code} · {customer.name}</option>)}
             </select>
             <div className="grid grid-cols-2 gap-2">
-              <input className={FIELD} aria-label="Quantity units" type="number" min="1" value={orderForm.quantity_units} onChange={(event) => setOrderForm({ ...orderForm, quantity_units: event.target.value })} />
-              <input className={FIELD} aria-label="Cash on delivery ETB" type="number" min="0" step="0.01" value={orderForm.cod_amount_etb} onChange={(event) => setOrderForm({ ...orderForm, cod_amount_etb: event.target.value })} />
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Quantity units</span>
+                <input className={FIELD} aria-label="Quantity units" type="number" min="1" value={orderForm.quantity_units} onChange={(event) => setOrderForm({ ...orderForm, quantity_units: event.target.value })} />
+              </label>
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Cash on delivery (ETB)</span>
+                <input className={FIELD} aria-label="Cash on delivery ETB" type="number" min="0" step="0.01" value={orderForm.cod_amount_etb} onChange={(event) => setOrderForm({ ...orderForm, cod_amount_etb: event.target.value })} />
+              </label>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <input className={FIELD} aria-label="Priority" type="number" min="1" max="5" value={orderForm.priority} onChange={(event) => setOrderForm({ ...orderForm, priority: event.target.value })} />
-              <input className={FIELD} aria-label="Service minutes" type="number" min="0" value={orderForm.service_minutes} onChange={(event) => setOrderForm({ ...orderForm, service_minutes: event.target.value })} />
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Priority (1–5)</span>
+                <input className={FIELD} aria-label="Priority" type="number" min="1" max="5" value={orderForm.priority} onChange={(event) => setOrderForm({ ...orderForm, priority: event.target.value })} />
+              </label>
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Service minutes</span>
+                <input className={FIELD} aria-label="Service minutes" type="number" min="0" value={orderForm.service_minutes} onChange={(event) => setOrderForm({ ...orderForm, service_minutes: event.target.value })} />
+              </label>
             </div>
             <div className="grid gap-2">
-              <label className="text-xs text-[#63766f]">Window starts</label>
-              <input className={FIELD} type="datetime-local" value={orderForm.window_start} onChange={(event) => setOrderForm({ ...orderForm, window_start: event.target.value })} />
-              <label className="text-xs text-[#63766f]">Window ends</label>
-              <input className={FIELD} type="datetime-local" value={orderForm.window_end} onChange={(event) => setOrderForm({ ...orderForm, window_end: event.target.value })} />
+              <label htmlFor="order-window-start" className="text-xs text-[#5f5f59]">Window starts</label>
+              <input id="order-window-start" className={FIELD} type="datetime-local" value={orderForm.window_start} onChange={(event) => setOrderForm({ ...orderForm, window_start: event.target.value })} />
+              <label htmlFor="order-window-end" className="text-xs text-[#5f5f59]">Window ends</label>
+              <input id="order-window-end" className={FIELD} type="datetime-local" value={orderForm.window_end} onChange={(event) => setOrderForm({ ...orderForm, window_end: event.target.value })} />
             </div>
-            <button className="fp-action-primary w-full">Add delivery order</button>
+            <button type="submit" className="fp-action-primary w-full">Add delivery order</button>
           </form>
         </Panel>
 
@@ -431,7 +454,7 @@ export function DispatchPage() {
             <input className={FIELD} placeholder="Driver full name" required value={driverForm.full_name} onChange={(event) => setDriverForm({ ...driverForm, full_name: event.target.value })} />
             <input className={FIELD} placeholder="Phone" required value={driverForm.phone} onChange={(event) => setDriverForm({ ...driverForm, phone: event.target.value })} />
             <input className={FIELD} placeholder="Vehicle plate (optional)" value={driverForm.vehicle_plate} onChange={(event) => setDriverForm({ ...driverForm, vehicle_plate: event.target.value })} />
-            <button className="fp-action-primary w-full">Add driver</button>
+            <button type="submit" className="fp-action-primary w-full">Add driver</button>
           </form>
         </Panel>
       </div>
@@ -461,34 +484,61 @@ export function DispatchPage() {
             </button>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
-            <input className={FIELD} aria-label="Route name" required value={planForm.route_name} onChange={(event) => setPlanForm({ ...planForm, route_name: event.target.value })} />
-            <input className={FIELD} aria-label="Plan date" type="date" required value={planForm.plan_date} onChange={(event) => setPlanForm({ ...planForm, plan_date: event.target.value })} />
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>Route name</span>
+              <input className={FIELD} aria-label="Route name" required value={planForm.route_name} onChange={(event) => setPlanForm({ ...planForm, route_name: event.target.value })} />
+            </label>
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>Plan date</span>
+              <input className={FIELD} aria-label="Plan date" type="date" required value={planForm.plan_date} onChange={(event) => setPlanForm({ ...planForm, plan_date: event.target.value })} />
+            </label>
             {planMode === 'single' ? (
-              <select className={FIELD} aria-label="Driver" value={planForm.driver_id} onChange={(event) => setPlanForm({ ...planForm, driver_id: event.target.value })}>
-                <option value="">No driver yet</option>
-                {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.full_name} · {driver.phone}</option>)}
-              </select>
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Driver</span>
+                <select className={FIELD} aria-label="Driver" value={planForm.driver_id} onChange={(event) => setPlanForm({ ...planForm, driver_id: event.target.value })}>
+                  <option value="">No driver yet</option>
+                  {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.full_name} · {driver.phone}</option>)}
+                </select>
+              </label>
             ) : null}
-            <input className={FIELD} aria-label="Start label" required value={planForm.start_label} onChange={(event) => setPlanForm({ ...planForm, start_label: event.target.value })} />
-            <input className={FIELD} aria-label="Start latitude" value={planForm.start_latitude} onChange={(event) => setPlanForm({ ...planForm, start_latitude: event.target.value })} />
-            <input className={FIELD} aria-label="Start longitude" value={planForm.start_longitude} onChange={(event) => setPlanForm({ ...planForm, start_longitude: event.target.value })} />
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>Start label</span>
+              <input className={FIELD} aria-label="Start label" required value={planForm.start_label} onChange={(event) => setPlanForm({ ...planForm, start_label: event.target.value })} />
+            </label>
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>Start latitude</span>
+              <input className={FIELD} aria-label="Start latitude" value={planForm.start_latitude} onChange={(event) => setPlanForm({ ...planForm, start_latitude: event.target.value })} />
+            </label>
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>Start longitude</span>
+              <input className={FIELD} aria-label="Start longitude" value={planForm.start_longitude} onChange={(event) => setPlanForm({ ...planForm, start_longitude: event.target.value })} />
+            </label>
             {planMode === 'single' ? (
-              <input className={FIELD} aria-label="Vehicle capacity" type="number" min="1" value={planForm.vehicle_capacity_units} onChange={(event) => setPlanForm({ ...planForm, vehicle_capacity_units: event.target.value })} />
+              <label className="grid gap-1 text-xs text-[#454540]">
+                <span>Vehicle capacity</span>
+                <input className={FIELD} aria-label="Vehicle capacity" type="number" min="1" value={planForm.vehicle_capacity_units} onChange={(event) => setPlanForm({ ...planForm, vehicle_capacity_units: event.target.value })} />
+              </label>
             ) : null}
-            <input className={FIELD} aria-label="Average speed" type="number" min="1" value={planForm.average_speed_kmh} onChange={(event) => setPlanForm({ ...planForm, average_speed_kmh: event.target.value })} />
-            <input className={FIELD} aria-label={planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'} type="number" min="1" max="100" value={planForm.max_stops} onChange={(event) => setPlanForm({ ...planForm, max_stops: event.target.value })} />
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>Average speed (km/h)</span>
+              <input className={FIELD} aria-label="Average speed" type="number" min="1" value={planForm.average_speed_kmh} onChange={(event) => setPlanForm({ ...planForm, average_speed_kmh: event.target.value })} />
+            </label>
+            <label className="grid gap-1 text-xs text-[#454540]">
+              <span>{planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'}</span>
+              <input className={FIELD} aria-label={planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'} type="number" min="1" max="100" value={planForm.max_stops} onChange={(event) => setPlanForm({ ...planForm, max_stops: event.target.value })} />
+            </label>
           </div>
           {planMode === 'fleet' ? (
             <div className="space-y-2 border-t border-[#e5e4e0] pt-3">
               <p className="text-xs font-semibold text-[#252522]">Drivers and vehicle capacity</p>
               {drivers.length === 0 ? (
-                <p className="text-xs text-[#63766f]">No active drivers available.</p>
+                <p className="text-xs text-[#73736e]">No active drivers available.</p>
               ) : null}
               {drivers.map((driver) => {
                 const selected = fleetVehicleIds.includes(driver.id);
                 return (
-                  <div key={driver.id} className="grid items-center gap-3 border-t border-[#e6ebe8] px-1 py-2 first:border-t-0 sm:grid-cols-[1fr_160px]">
-                    <label className="flex items-center gap-3 text-xs text-[#40534c]">
+                  <div key={driver.id} className="grid items-center gap-3 border-t border-[#efeeea] px-1 py-2 first:border-t-0 sm:grid-cols-[1fr_160px]">
+                    <label className="flex items-center gap-3 text-xs text-[#454540]">
                       <input
                         type="checkbox"
                         checked={selected}
@@ -523,10 +573,10 @@ export function DispatchPage() {
           ) : null}
           <div className="border-t border-[#e5e4e0] pt-3">
             <p className="text-xs font-semibold text-[#252522]">Planned orders</p>
-            {plannedOrders.length === 0 ? <p className="mt-2 text-xs text-[#63766f]">No planned orders yet.</p> : null}
+            {plannedOrders.length === 0 ? <p className="mt-2 text-xs text-[#73736e]">No planned orders yet.</p> : null}
             <div className="mt-2 grid gap-2">
               {plannedOrders.map((order) => (
-                <label key={order.id} className="flex items-center gap-3 border-t border-[#e6ebe8] px-1 py-2 text-xs text-[#40534c] first:border-t-0">
+                <label key={order.id} className="flex items-center gap-3 border-t border-[#efeeea] px-1 py-2 text-xs text-[#454540] first:border-t-0">
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(order.id)}
@@ -537,7 +587,7 @@ export function DispatchPage() {
               ))}
             </div>
           </div>
-          <button className="fp-action-primary w-fit">
+          <button type="submit" className="fp-action-primary w-fit">
             {planMode === 'fleet' ? 'Plan across selected vehicles' : 'Plan selected orders'}
           </button>
         </form>
@@ -546,26 +596,26 @@ export function DispatchPage() {
       <Panel eyebrow="Runs" title="Dispatch runs" description="Open a driver link, monitor stop status, or close the day’s cash.">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 text-xs" aria-live="polite">
-            <span className="flex items-center gap-2 text-[#63766f]">
-              <span className={`h-2 w-2 rounded-full ${liveUpdatedAt ? 'bg-[#16856b]' : 'bg-[#a9bbb4]'}`} />
+            <span className="flex items-center gap-2 text-[#5f5f59]">
+              <span className={`h-2 w-2 rounded-full ${liveUpdatedAt ? 'bg-[#16856b]' : 'bg-[#a8a7a1]'}`} />
               {liveUpdatedAt ? 'Live dispatch sync' : 'Waiting for live dispatch updates'}
             </span>
             {liveUpdatedAt ? (
-              <span className="text-[#63766f]">
+              <span className="text-[#73736e]">
                 {new Date(liveUpdatedAt).toLocaleTimeString()}
               </span>
             ) : null}
           </div>
-          {runs.length === 0 ? <p className="text-xs text-[#63766f]">No dispatch runs yet.</p> : null}
+          {runs.length === 0 ? <p className="text-xs text-[#73736e]">No dispatch runs yet.</p> : null}
           {runs.map((run) => (
             <article key={run.id} className="border-b border-[#e5e4e0] pb-3 last:border-b-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#20372f]">{run.route_name}</h3>
+                    <h3 className="text-sm font-semibold text-[#252522]">{run.route_name}</h3>
                     <StatusBadge label={run.status} tone={run.status === 'closed' ? 'success' : 'info'} />
                   </div>
-                  <p className="mt-0.5 text-[11px] text-[#63766f]">
+                  <p className="mt-0.5 text-[11px] text-[#5f5f59]">
                     {run.plan_date} · {run.total_distance_km} km · {run.estimated_duration_min} min · {run.expected_cash_etb} ETB expected
                   </p>
                 </div>
@@ -578,14 +628,14 @@ export function DispatchPage() {
                 </div>
               </div>
               {expandedRunId === run.id ? (
-                <div className="mt-3 space-y-2 border-t border-[#e6ebe8] pt-3">
-                  {expandedLoading ? <p className="text-xs text-[#63766f]">Loading stops…</p> : null}
+                <div className="mt-3 space-y-2 border-t border-[#efeeea] pt-3">
+                  {expandedLoading ? <p className="text-xs text-[#73736e]">Loading stops…</p> : null}
                   {expandedRun?.stops?.map((stop) => (
-                    <div key={stop.order_id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e6ebe8] px-1 py-2 first:border-t-0">
+                    <div key={stop.order_id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[#efeeea] px-1 py-2 first:border-t-0">
                       <div>
-                        <p className="text-xs text-[#20372f]">#{stop.sequence} · {stop.order_no} · {stop.customer_name}</p>
-                        <p className="text-[11px] text-[#63766f]">
-                          {stop.status} · {stop.collected_cash_etb} ETB collected · window{' '}
+                        <p className="text-xs text-[#252522]">#{stop.sequence} · {stop.order_no} · {stop.customer_name}</p>
+                        <p className="text-[11px] text-[#5f5f59]">
+                          {stop.status.replace(/_/g, ' ')} · {stop.collected_cash_etb} ETB collected · window{' '}
                           {stop.window_start ? new Date(stop.window_start).toLocaleTimeString() : '—'}
                           {' – '}
                           {stop.window_end ? new Date(stop.window_end).toLocaleTimeString() : '—'}
@@ -599,11 +649,11 @@ export function DispatchPage() {
                           <button type="button" onClick={() => void onViewProof(stop.order_id, stop.proof_id!)} className="fp-action-quiet !min-h-8 !text-[#17679b]">
                             View proof
                           </button>
-                        ) : <span className="text-[10px] text-[#6b7d76]">No proof</span>}
+                        ) : <span className="text-[10px] text-[#73736e]">No proof</span>}
                       </div>
                     </div>
                   ))}
-                  {expandedRun && expandedRun.stops?.length === 0 ? <p className="text-xs text-[#63766f]">No stops recorded.</p> : null}
+                  {expandedRun && expandedRun.stops?.length === 0 ? <p className="text-xs text-[#73736e]">No stops recorded.</p> : null}
                   {expandedRun?.unassigned && expandedRun.unassigned.length > 0 ? (
                     <div className="rounded-md bg-[#fffaf0] p-3">
                       <p className="text-xs font-semibold text-[#885100]">
@@ -628,15 +678,21 @@ export function DispatchPage() {
           eyebrow="Cash handover"
           title="Close driver cash"
           description="Record what the office actually received and attach the bank deposit reference when available."
+          onClose={() => { if (!closingCash) setCashCloseTarget(null); }}
         >
           <form className="grid gap-3" onSubmit={onCloseCash}>
+            {closeCashError ? (
+              <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-xs text-[#8f302a]">
+                {closeCashError}
+              </p>
+            ) : null}
             <div className="rounded-md bg-[#f7f7f5] px-3 py-2 text-xs text-[#454540]">
-              Expected: <span className="font-semibold text-[#20372f]">{cashCloseTarget.expected_cash_etb} ETB</span>
+              Expected: <span className="font-semibold text-[#252522]">{cashCloseTarget.expected_cash_etb} ETB</span>
               {cashCloseTarget.cash_declared_etb ? (
-                <span className="ml-3 text-[#63766f]">Declared: {cashCloseTarget.cash_declared_etb} ETB</span>
+                <span className="ml-3 text-[#5f5f59]">Declared: {cashCloseTarget.cash_declared_etb} ETB</span>
               ) : null}
             </div>
-            <label className="text-xs text-[#63766f]">
+            <label className="grid gap-1 text-xs text-[#454540]">
               Cash handed over
               <input
                 className={FIELD}
@@ -654,7 +710,7 @@ export function DispatchPage() {
               />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-xs text-[#63766f]">
+              <label className="grid gap-1 text-xs text-[#454540]">
                 Deposit bank
                 <select
                   className={FIELD}
@@ -671,7 +727,7 @@ export function DispatchPage() {
                   <option value="dashen">Dashen</option>
                 </select>
               </label>
-              <label className="text-xs text-[#63766f]">
+              <label className="grid gap-1 text-xs text-[#454540]">
                 Deposit reference
                 <input
                   className={FIELD}
@@ -687,7 +743,7 @@ export function DispatchPage() {
                 />
               </label>
             </div>
-            <label className="text-xs text-[#63766f]">
+            <label className="grid gap-1 text-xs text-[#454540]">
               Close note
               <textarea
                 className={`${FIELD} min-h-24 py-3`}
@@ -704,16 +760,18 @@ export function DispatchPage() {
             <div className="flex flex-wrap justify-end gap-2">
               <button
                 type="button"
+                disabled={closingCash}
                 onClick={() => setCashCloseTarget(null)}
-                className="min-h-8 border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c]"
+                className="fp-action-secondary !min-h-8 text-xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="min-h-9 bg-[#087f72] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#06675d]"
+                disabled={closingCash}
+                className="fp-action-primary !min-h-8 text-xs"
               >
-                Close cash
+                {closingCash ? 'Closing...' : 'Close cash'}
               </button>
             </div>
           </form>

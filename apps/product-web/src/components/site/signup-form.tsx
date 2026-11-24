@@ -40,7 +40,7 @@ const launchOptions: Array<{ value: SignupTier; label: string }> = [
 ];
 
 const fieldClassName =
-  'peer min-h-12 w-full rounded-md border border-[#dfdeda] bg-white px-3 pb-2.5 pt-6 text-base text-[#252522] outline-none transition placeholder:text-transparent focus:border-[#176b5c] focus:ring-2 focus:ring-[#176b5c]/15 sm:text-sm';
+  'peer min-h-12 w-full rounded-md border border-[#e5e4e0] bg-white px-3 pb-2.5 pt-6 text-base text-[#252522] outline-none transition placeholder:text-transparent focus:border-[#176b5c] focus:ring-2 focus:ring-[#176b5c]/15 sm:text-sm';
 
 export function safeConsoleRedirect(value: string, nodeEnv = process.env.NODE_ENV): string {
   try {
@@ -116,60 +116,94 @@ export function SignupForm() {
     <div className="rounded-lg border border-[#e5e4e0] bg-white px-5 py-6 sm:px-7 sm:py-7">
       <div>
         <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[#252522]">Start free</h2>
-        <p className="mt-2 text-sm leading-6 text-[#73736e]">{signupFormSubline}</p>
-        <p className="mt-1 text-xs text-[#85857e]">{signupFormNote}</p>
+        <p className="mt-2 text-sm leading-6 text-[#5f5f59]">{signupFormSubline}</p>
+        <p className="mt-1 text-xs text-[#73736e]">{signupFormNote}</p>
       </div>
 
       {/* noValidate: the zod schema is the single validation source
           (native constraint validation would block jsdom submissions). */}
       <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Company name" error={errors.company_name?.message}>
-            <input className={fieldClassName} placeholder="Company name" {...register('company_name')} />
+          <Field id="signup-company-name" label="Company name" error={errors.company_name?.message}>
+            <input
+              id="signup-company-name"
+              className={fieldClassName}
+              placeholder="Company name"
+              autoComplete="organization"
+              aria-invalid={Boolean(errors.company_name)}
+              aria-describedby={errors.company_name ? 'signup-company-name-error' : undefined}
+              {...register('company_name')}
+            />
           </Field>
-          <Field label="Full name (optional)" error={errors.full_name?.message}>
-            <input className={fieldClassName} placeholder="Full name (optional)" {...register('full_name')} />
+          <Field id="signup-full-name" label="Full name (optional)" error={errors.full_name?.message}>
+            <input
+              id="signup-full-name"
+              className={fieldClassName}
+              placeholder="Full name (optional)"
+              autoComplete="name"
+              aria-invalid={Boolean(errors.full_name)}
+              aria-describedby={errors.full_name ? 'signup-full-name-error' : undefined}
+              {...register('full_name')}
+            />
           </Field>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Company email" error={errors.company_email?.message}>
-            <input className={fieldClassName} placeholder="Company email" type="email" {...register('company_email')} />
+          <Field id="signup-company-email" label="Company email" error={errors.company_email?.message}>
+            <input
+              id="signup-company-email"
+              className={fieldClassName}
+              placeholder="Company email"
+              type="email"
+              autoComplete="email"
+              aria-invalid={Boolean(errors.company_email)}
+              aria-describedby={errors.company_email ? 'signup-company-email-error' : undefined}
+              {...register('company_email')}
+            />
           </Field>
-          <Field label="Password" error={errors.password?.message}>
-            <input className={fieldClassName} placeholder="Password" type="password" {...register('password')} />
+          <Field id="signup-password" label="Password" error={errors.password?.message}>
+            <input
+              id="signup-password"
+              className={fieldClassName}
+              placeholder="Password"
+              type="password"
+              autoComplete="new-password"
+              aria-invalid={Boolean(errors.password)}
+              aria-describedby={errors.password ? 'signup-password-error' : undefined}
+              {...register('password')}
+            />
           </Field>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-[13px] font-medium text-[#454540]">
-            Tier <span className="font-normal text-[#85857e]">— Optional — choose a tier later inside your workspace.</span>
-          </p>
+        <fieldset className="space-y-3 border-0 p-0">
+          <legend className="text-[13px] font-medium text-[#454540]">
+            Tier <span className="font-normal text-[#73736e]">— Optional — choose a tier later inside your workspace.</span>
+          </legend>
           <div className="grid gap-3 lg:grid-cols-3">
             {launchOptions.map((option) => (
               <label
                 key={option.value}
-                className="cursor-pointer rounded-md border border-[#e5e4e0] bg-white px-3 py-3 text-xs text-[#5f5f59] transition hover:bg-[#f9f9f7] has-[:checked]:border-[#7fae9f] has-[:checked]:bg-[#f3f8f5] has-[:checked]:text-[#252522]"
+                className="cursor-pointer rounded-md border border-[#e5e4e0] bg-white px-3 py-3 text-xs text-[#5f5f59] transition hover:bg-[#f7f7f5] has-[:checked]:border-[#7fae9f] has-[:checked]:bg-[#f3f8f5] has-[:checked]:text-[#252522] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#176b5c]"
               >
                 <input type="radio" value={option.value} className="sr-only" {...register('subscription_tier')} />
                 <span className="block">{option.label}</span>
               </label>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         <button
           type="submit"
           disabled={isSubmitting}
           className="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#087f72] px-5 text-sm font-medium text-white transition-colors hover:bg-[#176b5c] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+          {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
           {isSubmitting ? 'Creating workspace...' : 'Start free'}
         </button>
 
         {statusMessage ? (
           <div
-            role="status"
+            role={statusTone === 'error' ? 'alert' : 'status'}
             className={cn(
               'rounded-md border px-3 py-3 text-sm leading-6',
               statusTone === 'success'
@@ -186,21 +220,27 @@ export function SignupForm() {
 }
 
 function Field({
+  id,
   children,
   label,
   error,
 }: {
+  id: string;
   children: React.ReactNode;
   label: string;
   error?: string;
 }) {
   return (
-    <label className="relative block">
+    <label htmlFor={id} className="relative block">
       {children}
       <span className="pointer-events-none absolute left-3 top-2 text-[11px] font-medium text-[#73736e] transition peer-focus:text-[#176b5c]">
         {label}
       </span>
-      {error ? <span className="mt-1.5 block text-xs text-[#8f302a]">{error}</span> : null}
+      {error ? (
+        <span id={`${id}-error`} role="alert" className="mt-1.5 block text-xs text-[#8f302a]">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

@@ -70,11 +70,13 @@ export function RoutesPage() {
         description="Enter delivery stops, compare options, and save the route your team will use."
         actions={
           <button
+            type="button"
+            disabled={isRefreshing}
             onClick={handleRefresh}
             className="fp-action-secondary"
           >
             {isRefreshing ? (
-              <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
+              <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
             ) : null}
             {isRefreshing ? 'Refreshing...' : 'Refresh schedules'}
           </button>
@@ -83,7 +85,7 @@ export function RoutesPage() {
 
       {error ? (
         <Panel className="border-[#e7c2be] bg-[#fff8f7]">
-          <p className="text-sm text-[#8f302a]">{error}</p>
+          <p role="alert" className="text-sm text-[#8f302a]">{error}</p>
         </Panel>
       ) : null}
 

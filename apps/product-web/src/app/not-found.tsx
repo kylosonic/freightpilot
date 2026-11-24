@@ -1,5 +1,12 @@
+import type { Metadata } from 'next';
+
 import { MagneticLink } from '@/components/site/magnetic-link';
 import { PageHero } from '@/components/site/page-hero';
+
+export const metadata: Metadata = {
+  title: 'Page not found',
+  description: 'The requested FreightPilot page could not be found.',
+};
 
 export default function NotFound() {
   return (

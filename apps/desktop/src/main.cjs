@@ -7,8 +7,8 @@ const DEFAULT_CONFIG = {
   opsConsoleUrl:
     process.env.OPS_CONSOLE_URL || 'https://freightpilot-ops.pages.dev/login',
   productSignupUrl:
-    process.env.PRODUCT_SIGNUP_URL || 'https://freightpilot.pages.dev#signup',
-  docsUrl: process.env.DOCS_URL || 'https://freightpilot.pages.dev',
+    process.env.PRODUCT_SIGNUP_URL || 'https://freightpilot.pages.dev/launch/',
+  docsUrl: process.env.DOCS_URL || 'https://freightpilot.pages.dev/docs/',
   onboarding: {
     createdAccount: false,
     connectedConsole: false,
@@ -392,7 +392,7 @@ function createSetupWindow() {
     minHeight: 760,
     autoHideMenuBar: false,
     title: 'FreightPilot Desktop Setup',
-    backgroundColor: '#040c12',
+    backgroundColor: '#f7f7f5',
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 16 } } : {}),
     webPreferences: {
       nodeIntegration: false,
@@ -435,8 +435,8 @@ function createConsoleWindow(url) {
     minWidth: 1100,
     minHeight: 720,
     autoHideMenuBar: false,
-    title: 'FreightPilot Control Tower',
-    backgroundColor: '#050b12',
+    title: 'FreightPilot Operations Console',
+    backgroundColor: '#ffffff',
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 16 } } : {}),
     webPreferences: {
       nodeIntegration: false,

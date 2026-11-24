@@ -24,27 +24,36 @@ export function FeedbackForm() {
       <h2 id="pilot-feedback-heading" className="text-[15px] font-semibold text-[#252522]">Pilot feedback</h2>
       <p className="mt-1 text-xs leading-5 text-[#73736e]">Share what works well or what the team should improve.</p>
       {status === 'success' ? (
-        <div className="mt-4 rounded-md bg-[#f2f7f4] p-3 text-sm text-[#14745f]">
-          Thank you for your feedback! It helps us improve the platform.
+        <div role="status" className="mt-4 rounded-md border border-[#cfe5db] bg-[#f2f7f4] p-3 text-sm text-[#14745f]">
+          <p>Thank you for your feedback! It helps us improve the platform.</p>
+          <button
+            type="button"
+            onClick={() => setStatus('idle')}
+            className="mt-2 text-xs font-semibold text-[#176b5c] underline-offset-4 hover:underline"
+          >
+            Send another note
+          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#454540]">Category</label>
+            <label htmlFor="feedback-category" className="mb-1.5 block text-xs font-medium text-[#454540]">Category</label>
             <select
+              id="feedback-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="fp-input"
             >
               <option value="freight_invoice_reconciliation">Carrier invoice check</option>
-              <option value="dock_management">Dock Management</option>
-              <option value="route_optimization">Route Optimization</option>
+              <option value="dock_management">Dock management</option>
+              <option value="route_optimization">Route optimization</option>
               <option value="other">Other</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#454540]">Feedback message</label>
+            <label htmlFor="feedback-message" className="mb-1.5 block text-xs font-medium text-[#454540]">Feedback message</label>
             <textarea
+              id="feedback-message"
               required
               rows={3}
               value={message}
@@ -54,16 +63,17 @@ export function FeedbackForm() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#454540]">Email (optional)</label>
+            <label htmlFor="feedback-email" className="mb-1.5 block text-xs font-medium text-[#454540]">Email (optional)</label>
             <input
+              id="feedback-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="operator@logistics.co"
+              placeholder="operator@freightpilot.app"
               className="fp-input"
             />
           </div>
-          {status === 'error' && <p className="text-xs text-[#a3342f]">Failed to submit feedback. Try again.</p>}
+          {status === 'error' && <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-xs text-[#a3342f]">Failed to submit feedback. Try again.</p>}
           <button
             type="submit"
             disabled={status === 'submitting'}

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { PageHero } from '@/components/site/page-hero';
 import { SpotlightCard } from '@/components/site/spotlight-card';
@@ -17,11 +18,11 @@ export default function PrivacyPage() {
         description="This page explains what FreightPilot stores, what it is used for, and what workspace owners can control. Your signed data-processing agreement still applies where one exists."
       />
 
-      <section className="section-shell py-10 sm:py-14">
+      <section className="section-shell pt-10 sm:pt-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">What we keep</h2>
-            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
+            <h2 className="text-lg font-semibold text-[#252522]">What we keep</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5f5f59]">
               <li>Account and workspace details: company name, business email, user name, role, and contact phone.</li>
               <li>Records you upload or create: warehouses, items, stock, orders, shipments, routes, drivers, customers, and stops.</li>
               <li>Delivery records: whether a delivery went through, the last known location, delivery photos, receiver confirmation, and cash collected.</li>
@@ -30,8 +31,8 @@ export default function PrivacyPage() {
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Why we use it</h2>
-            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
+            <h2 className="text-lg font-semibold text-[#252522]">Why we use it</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5f5f59]">
               <li>To run the workspace and the features you use.</li>
               <li>To sign people in and make sure they only see their own workspace.</li>
               <li>To create route plans, demand estimates, issue alerts, and cash handover records.</li>
@@ -42,10 +43,10 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      <section className="section-shell pb-12 sm:pb-16">
+      <section className="section-shell pt-10 sm:pt-14">
         <SpotlightCard>
-          <h2 className="text-lg font-semibold text-[#172a24]">Where we keep it and how long</h2>
-          <div className="mt-3 grid gap-5 text-sm leading-7 text-[#5b6d66] lg:grid-cols-2">
+          <h2 className="text-lg font-semibold text-[#252522]">Where we keep it and how long</h2>
+          <div className="mt-3 grid gap-5 text-sm leading-7 text-[#5f5f59] lg:grid-cols-2">
             <div className="space-y-3">
               <p>
                 FreightPilot uses hosted services for the website, app, database, and logs.
@@ -66,22 +67,29 @@ export default function PrivacyPage() {
               </p>
               <p>
                 To request access, correction, export, or deletion, contact the workspace owner or
-                use the contact page. We may need to verify the request before acting.
+                use the{' '}
+                <Link href="/contact" className="font-medium text-[#176b5c] underline underline-offset-4">
+                  contact page
+                </Link>
+                . We may need to verify the request before acting.
               </p>
             </div>
           </div>
         </SpotlightCard>
       </section>
 
-      <section className="section-shell pb-16">
+      <section className="section-shell pt-10 sm:pt-14">
         <SpotlightCard>
-          <h2 className="text-lg font-semibold text-[#172a24]">Your choices and rights</h2>
-          <p className="mt-3 max-w-[60rem] text-sm leading-7 text-[#5b6d66]">
+          <h2 className="text-lg font-semibold text-[#252522]">Your choices and rights</h2>
+          <p className="mt-3 max-w-[60rem] text-sm leading-7 text-[#5f5f59]">
             Workspace owners control membership and provider configuration. Users should contact
             their workspace administrator for access or correction requests. We do not use
             third-party advertising trackers on the operator console. Privacy questions can be sent
-            through the contact page; we will route them to the appropriate workspace or service
-            owner.
+            through the{' '}
+            <Link href="/contact" className="font-medium text-[#176b5c] underline underline-offset-4">
+              contact page
+            </Link>
+            ; we will route them to the appropriate workspace or service owner.
           </p>
         </SpotlightCard>
       </section>

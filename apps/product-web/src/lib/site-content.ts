@@ -1,7 +1,4 @@
 import {
-  ArrowUpRight,
-  BadgeCheck,
-  Boxes,
   Cable,
   Cpu,
   type LucideIcon,
@@ -173,7 +170,6 @@ export const externalLinks = {
   console:
     process.env.NEXT_PUBLIC_APP_CONSOLE_URL || 'https://freightpilot-ops.pages.dev',
   docs: '/docs',
-  desktop: process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL || 'https://example.com/download',
 };
 
 export const navigation: NavItem[] = [
@@ -185,17 +181,12 @@ export const navigation: NavItem[] = [
   { label: 'Contact', href: '/contact', description: 'Get in touch' },
 ];
 
-/**
- * Footer link data — dead links removed for v1 (blueprint §1.12): no
- * `/privacy`, `/terms`, `/security` routes exist, and About/Blog/Careers/
- * Community pointed at `#`.
- */
 export const footerNavigation = {
   platform: [
     { label: 'Control Tower', href: '/platform#control-tower' },
-    { label: 'Decision Studio', href: '/platform#decision-studio' },
-    { label: 'Launch Workstation', href: '/platform#launch-workstation' },
-    { label: 'Revenue Guard', href: '/platform#revenue-guard' },
+    { label: 'Route planning', href: '/platform#decision-studio' },
+    { label: 'Guided setup', href: '/platform#launch-workstation' },
+    { label: 'Plan and usage', href: '/platform#revenue-guard' },
   ],
   resources: [
     { label: 'Documentation', href: externalLinks.docs },
@@ -301,21 +292,5 @@ X-Organization-Id: <workspace-id>
 
 // Response includes route stops, cost units,
 // unassigned demand, and a decision explanation.`;
-
-/** Honest trust signals — each one maps to a verifiable product behavior. */
-export const trustSignals = [
-  'Bank transfer to CBE or Dashen',
-  'No card required',
-  'Sample data on signup',
-  'Partial payments welcome',
-  'Audit timelines',
-  'Usage metering',
-];
-
-export const iconLinks = [
-  { label: 'Open console', href: externalLinks.console, icon: ArrowUpRight },
-  { label: 'Download desktop', href: externalLinks.desktop, icon: Boxes },
-  { label: 'Read docs', href: externalLinks.docs, icon: BadgeCheck },
-];
 
 export const trustRibbon = ['See key changes', 'Control AI access', 'Add your team in stages'];

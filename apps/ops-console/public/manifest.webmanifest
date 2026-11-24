@@ -3,8 +3,8 @@
   "short_name": "FP Driver",
   "start_url": "/driver",
   "display": "standalone",
-  "background_color": "#071018",
-  "theme_color": "#0ea5e9",
+  "background_color": "#ffffff",
+  "theme_color": "#176b5c",
   "icons": [
     {
       "src": "/driver-icon.svg",

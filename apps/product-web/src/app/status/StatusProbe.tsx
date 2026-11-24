@@ -58,29 +58,29 @@ export function StatusProbe() {
   }[probe.state];
 
   return (
-    <div className="border border-[#d7dfdc] bg-white p-5 sm:p-6">
+    <div className="rounded-lg border border-[#e5e4e0] bg-white p-5 sm:p-6" aria-live="polite">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="kicker">Platform API</p>
-          <p className="mt-1.5 text-lg font-semibold text-[#172a24]">{label}</p>
+          <p className="mt-1.5 text-lg font-semibold text-[#252522]">{label}</p>
         </div>
         <span
-          className={`inline-flex border px-2 py-1 text-[10px] font-semibold ${
+          className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
             probe.state === 'ok'
-              ? 'border-[#b9dcd1] bg-[#edf8f3] text-[#14745f]'
+              ? 'border-[#b9dcd1] bg-[#edf7f1] text-[#14745f]'
               : probe.state === 'checking'
-                ? 'border-[#d7dfdc] bg-[#f5f8f6] text-[#52665e]'
-                : 'border-[#e7d1a8] bg-[#fffaf0] text-[#885100]'
+                ? 'border-[#e5e4e0] bg-[#f7f7f5] text-[#5f5f59]'
+                : 'border-[#e7d1a8] bg-[#fcf5e7] text-[#885100]'
           }`}
         >
           {probe.state.toUpperCase()}
         </span>
       </div>
-      <p className="mt-3 text-sm leading-6 text-[#52665e]">
+      <p className="mt-3 text-sm leading-6 text-[#5f5f59]">
         Database: {probe.db ?? 'not reported'} · Last checked:{' '}
         {probe.checkedAt ? new Date(probe.checkedAt).toLocaleString() : 'pending'}
       </p>
-      <p className="mt-2 text-xs leading-5 text-[#63766f]">
+      <p className="mt-2 text-xs leading-5 text-[#73736e]">
         This probe is intentionally limited to the public health endpoint. It is not a substitute
         for an incident notification or a contractual support channel.
       </p>

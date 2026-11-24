@@ -23,7 +23,7 @@ export function HowItWorks() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="section-shell pt-16 sm:pt-20" data-section="how-it-works" id="how-it-works">
+    <section className="section-shell scroll-mt-24 pt-16 sm:pt-20" data-section="how-it-works" id="how-it-works">
       <div className="mx-auto max-w-[980px]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="site-heading max-w-[24ch]">

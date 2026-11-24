@@ -31,3 +31,17 @@ test('desktop onboarding step is clamped to the five defined steps', () => {
   assert.equal((main.match(/Math\.min\(4,/g) || []).length, 2);
   assert.doesNotMatch(main, /Math\.min\(8,/);
 });
+
+test('desktop onboarding uses canonical FreightPilot URLs, light surfaces, and accessible step controls', () => {
+  assert.match(main, /'https:\/\/freightpilot\.pages\.dev\/launch\/'/);
+  assert.match(main, /'https:\/\/freightpilot\.pages\.dev\/docs\/'/);
+  assert.match(main, /backgroundColor:\s*'#f7f7f5'/);
+  assert.match(main, /backgroundColor:\s*'#ffffff'/);
+  assert.match(css, /#2e4f47/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(html, /role="status"/);
+  assert.match(html, /0 \/ 5 complete/);
+  assert.match(script, /const blocked = !done && isStepBlocked\(index\)/);
+  assert.match(script, /aria-current', 'step'/);
+});

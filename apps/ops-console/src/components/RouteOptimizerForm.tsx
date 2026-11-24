@@ -85,15 +85,15 @@ export function RouteOptimizerForm({
       <form onSubmit={onSubmit} className="space-y-7">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <p className="col-span-full text-xs font-semibold text-[#73736e]">Route details</p>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Route name
             <input className={fieldClassName} value={payload.route_name} onChange={(e) => setPayload({ ...payload, route_name: e.target.value })} />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Schedule date
             <input className={fieldClassName} type="date" value={payload.schedule_date} onChange={(e) => setPayload({ ...payload, schedule_date: e.target.value })} />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Start warehouse code
             <input className={fieldClassName} value={payload.start_warehouse_code} onChange={(e) => setPayload({ ...payload, start_warehouse_code: e.target.value })} />
           </label>
@@ -101,16 +101,16 @@ export function RouteOptimizerForm({
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <p className="col-span-full text-xs font-semibold text-[#73736e]">Stops and vehicles</p>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Deliveries
             <input className={fieldClassName} value={payload.deliveries} onChange={(e) => setPayload({ ...payload, deliveries: e.target.value })} placeholder="WH-002:80,WH-003:60" />
-            <span className="text-[11px] font-normal text-[#63766f]">Up to 200 comma-separated warehouse demand entries.</span>
+            <span className="text-[11px] font-normal text-[#5f5f59]">Up to 200 comma-separated warehouse demand entries.</span>
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Vehicle capacity
             <input className={fieldClassName} type="number" min={1} value={payload.vehicle_capacity_units} onChange={(e) => setPayload({ ...payload, vehicle_capacity_units: Number(e.target.value) })} />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Max stops
             <input className={fieldClassName} type="number" min={1} max={100} value={payload.max_stops} onChange={(e) => setPayload({ ...payload, max_stops: Number(e.target.value) })} />
           </label>
@@ -118,11 +118,11 @@ export function RouteOptimizerForm({
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <p className="col-span-full text-xs font-semibold text-[#73736e]">Plan settings</p>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Speed km/h
             <input className={fieldClassName} type="number" step="0.1" value={payload.speed_kmh} onChange={(e) => setPayload({ ...payload, speed_kmh: Number(e.target.value) })} />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Cost per km
             <input className={fieldClassName} type="number" step="0.1" value={payload.cost_per_km} onChange={(e) => setPayload({ ...payload, cost_per_km: Number(e.target.value) })} />
           </label>
@@ -141,20 +141,21 @@ export function RouteOptimizerForm({
         </div>
 
         <button
+          type="submit"
           disabled={isSubmitting}
           className="fp-action-primary w-full"
         >
           {isSubmitting ? (
-            <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
+            <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
           ) : null}
           {isSubmitting ? 'Planning route...' : 'Plan route'}
         </button>
       </form>
 
-      {error ? <p role="alert" className="mt-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
+      {error ? <p role="alert" className="mt-3 rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
 
       {result ? (
-        <div className="animate-slide-up mt-5 space-y-4 border-t border-[#d7dfdc] pt-4">
+        <div className="animate-slide-up mt-5 space-y-4 border-t border-[#e5e4e0] pt-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge label={result.objective} tone="info" />
             <StatusBadge label={result.unassigned_deliveries.length === 0 ? 'Fully assigned' : 'Review unassigned'} tone={result.unassigned_deliveries.length === 0 ? 'success' : 'warning'} />
@@ -180,12 +181,12 @@ export function RouteOptimizerForm({
           {previousResult ? (
             <div className="rounded-md bg-[#f7f7f5] px-3 py-2.5 text-xs text-[#5f5f59]">
               Compared with your last plan:{' '}
-              <span className={`font-mono font-semibold tabular-nums ${previousDistanceDelta != null && previousDistanceDelta < 0 ? 'text-[#14745f]' : 'text-[#20372f]'}`}>
+              <span className={`font-mono font-semibold tabular-nums ${previousDistanceDelta != null && previousDistanceDelta < 0 ? 'text-[#14745f]' : 'text-[#252522]'}`}>
                 {previousDistanceDelta == null ? 'N/A' : `${previousDistanceDelta >= 0 ? '+' : ''}${previousDistanceDelta.toFixed(1)} km`}
               </span>
               {' | '}
-              <span className={`font-mono font-semibold tabular-nums ${previousCostDelta != null && previousCostDelta < 0 ? 'text-[#14745f]' : 'text-[#20372f]'}`}>
-                {previousCostDelta == null ? 'N/A' : `${previousCostDelta >= 0 ? '+' : ''}${previousCostDelta.toFixed(2)} ETB`}
+              <span className={`font-mono font-semibold tabular-nums ${previousCostDelta != null && previousCostDelta < 0 ? 'text-[#14745f]' : 'text-[#252522]'}`}>
+                {previousCostDelta == null ? 'N/A' : `${previousCostDelta >= 0 ? '+' : ''}${previousCostDelta.toFixed(2)} route units`}
               </span>
             </div>
           ) : null}
@@ -194,10 +195,10 @@ export function RouteOptimizerForm({
 
           <div>
             <p className="text-xs font-semibold text-[#73736e]">Stop sequence</p>
-            <ul className="mt-2 grid gap-1 text-xs text-[#40534c]">
+            <ul className="mt-2 grid gap-1 text-xs text-[#454540]">
               {result.stops.map((stop) => (
-                <li key={stop.sequence} className="border-b border-[#e6ebe8] px-2 py-1.5 last:border-b-0">
-                  <span className="font-mono font-semibold text-[#20372f]">#{stop.sequence}</span> {stop.warehouse_code} · {stop.demand_units} units · {stop.leg_distance_km} km leg
+                <li key={stop.sequence} className="border-b border-[#efeeea] px-2 py-1.5 last:border-b-0">
+                  <span className="font-mono font-semibold text-[#252522]">#{stop.sequence}</span> {stop.warehouse_code} · {stop.demand_units} units · {stop.leg_distance_km} km leg
                 </li>
               ))}
             </ul>

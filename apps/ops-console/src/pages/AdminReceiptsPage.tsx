@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { Dialog } from '../components/ui/Dialog';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -41,7 +42,7 @@ const VERDICT_LABELS: Record<Verdict, string> = {
   verify: 'Verify payment',
   reject_wrong_bank: 'Wrong bank',
   reject_duplicate: 'Duplicate payment',
-  reject_illegible: 'Can not read receipt',
+  reject_illegible: 'Cannot read receipt',
   escalate: 'Ask the customer',
 };
 
@@ -60,13 +61,14 @@ function verdictTone(status: ReceiptQueueItem['status']) {
 
 type ReversalActionButtonsProps = {
   row: VerifiedReceiptAudit;
-  onUndo: (row: VerifiedReceiptAudit, note: string) => void;
-  onReverse: (row: VerifiedReceiptAudit, reason: string) => void;
+  onUndo: (row: VerifiedReceiptAudit, note: string) => Promise<boolean>;
+  onReverse: (row: VerifiedReceiptAudit, reason: string) => Promise<boolean>;
 };
 
 function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtonsProps) {
   const [mode, setMode] = useState<'idle' | 'undo' | 'reverse'>('idle');
   const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (row.reversal_status) {
     return (
@@ -102,21 +104,24 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
   }
 
   const isReverse = mode === 'reverse';
-  const canSubmit = isReverse ? text.trim().length > 0 : true;
+  const canSubmit = (isReverse ? text.trim().length > 0 : true) && !submitting;
 
-  function onSubmit() {
-    if (isReverse) {
-      onReverse(row, text.trim());
-    } else {
-      onUndo(row, text.trim());
+  async function onSubmit() {
+    setSubmitting(true);
+    const ok = isReverse
+      ? await onReverse(row, text.trim())
+      : await onUndo(row, text.trim());
+    setSubmitting(false);
+    if (ok) {
+      setMode('idle');
+      setText('');
     }
-    setMode('idle');
-    setText('');
   }
 
   return (
     <div className="w-full space-y-2">
       <textarea
+        aria-label={isReverse ? 'Reason for reversal' : 'Note for undo'}
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder={isReverse ? 'Reason (required — shown to the customer)' : 'Note (optional)'}
@@ -127,13 +132,14 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
         <button
           type="button"
           disabled={!canSubmit}
-          onClick={onSubmit}
+          onClick={() => void onSubmit()}
           className="fp-action-primary !min-h-8 !bg-[#a15b00] text-xs hover:!bg-[#885100]"
         >
-          {isReverse ? 'Reverse payment' : 'Undo payment'}
+          {submitting ? 'Saving...' : isReverse ? 'Reverse payment' : 'Undo payment'}
         </button>
         <button
           type="button"
+          disabled={submitting}
           onClick={() => {
             setMode('idle');
             setText('');
@@ -150,7 +156,7 @@ function ReversalActionButtons({ row, onUndo, onReverse }: ReversalActionButtons
 function AuditEventsDrawer({ receiptId }: { receiptId: string }) {
   const { data: events = [] } = useReceiptAuditEvents(receiptId);
   if (events.length === 0) {
-    return <p className="text-xs text-[#63766f]">No history yet.</p>;
+    return <p className="text-xs text-[#73736e]">No history yet.</p>;
   }
   return (
     <div className="max-h-56 divide-y divide-[#efeeea] overflow-y-auto border-t border-[#efeeea]">
@@ -165,7 +171,7 @@ function AuditEventsDrawer({ receiptId }: { receiptId: string }) {
               {new Date(event.created_at).toLocaleString()}
             </span>
           </div>
-          <p className="mt-1 text-[#40534c]">{event.description}</p>
+          <p className="mt-1 text-[#454540]">{event.description}</p>
           {event.available_actions.length > 0 ? (
             <p className="mt-1 text-[11px] text-[#73736e]">
               Allowed: {event.available_actions.join(', ')}
@@ -182,8 +188,8 @@ function ReversalsPanel({
   onReverse,
   onError,
 }: {
-  onUndo: (row: VerifiedReceiptAudit, note: string) => void;
-  onReverse: (row: VerifiedReceiptAudit, reason: string) => void;
+  onUndo: (row: VerifiedReceiptAudit, note: string) => Promise<boolean>;
+  onReverse: (row: VerifiedReceiptAudit, reason: string) => Promise<boolean>;
   onError: (message: string) => void;
 }) {
   const { data: rows = [], refetch } = useVerifiedAudit();
@@ -202,20 +208,20 @@ function ReversalsPanel({
           {rows.map((row) => (
             <div
               key={row.id}
-              className="border-t border-[#e6ebe8] py-2.5 first:border-t-0 first:pt-0"
+              className="border-t border-[#efeeea] py-2.5 first:border-t-0 first:pt-0"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-[#20372f]">
+                  <p className="truncate text-xs font-semibold text-[#252522]">
                     {row.organization_name} · {row.reference_number ?? 'no ref'} ·{' '}
                     <span className="font-mono font-medium tabular-nums">{row.amount_etb ?? '—'}</span> ETB
                   </p>
-                  <p className="mt-0.5 text-[11px] text-[#63766f]">
+                  <p className="mt-0.5 text-[11px] text-[#5f5f59]">
                     Invoice {row.invoice_number ?? '—'} · decided{' '}
                     {row.decided_at ? new Date(row.decided_at).toLocaleString() : '—'}
                   </p>
                   {row.undo_available_until && row.undo_available ? (
-                    <p className="mt-0.5 text-[10px] text-[#6b7d76]">
+                    <p className="mt-0.5 text-[10px] text-[#73736e]">
                       You can undo this until {new Date(row.undo_available_until).toLocaleString()}
                     </p>
                   ) : null}
@@ -225,14 +231,14 @@ function ReversalsPanel({
                   <button
                     type="button"
                     onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
-                    className="min-h-7 border border-[#cfd9d5] bg-white px-2 text-[10px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
+                    className="fp-action-secondary !min-h-7 !px-2 text-[10px]"
                   >
                     {expandedId === row.id ? 'Hide history' : 'View history'}
                   </button>
                 </div>
               </div>
               {expandedId === row.id ? (
-                <div className="mt-2 border-t border-[#e6ebe8] pt-2">
+                <div className="mt-2 border-t border-[#efeeea] pt-2">
                   <AuditEventsDrawer receiptId={row.id} />
                 </div>
               ) : null}
@@ -246,7 +252,7 @@ function ReversalsPanel({
           refetch();
           onError('');
         }}
-        className="mt-3 min-h-7 border border-[#cfd9d5] bg-white px-2.5 text-[10px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+        className="fp-action-secondary mt-3 !min-h-7 !px-2.5 text-[10px]"
       >
         Refresh history
       </button>
@@ -276,6 +282,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [confirmRemoveSender, setConfirmRemoveSender] = useState<string | null>(null);
   const removeMutation = useRemoveTrustedPayer();
   const needsVerifiedAmount = !item.extracted_fields['transfer_amount'];
   const enteredAmount = Number(verifiedAmount);
@@ -343,17 +350,15 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
     }
   }
 
-  async function onRemoveTrustedPayer() {
-    const sender = item.extracted_fields['sender_name'] ?? '';
-    if (!sender || !window.confirm(`Remove "${sender}" from this workspace's trusted-payer list?`)) {
-      return;
-    }
+  async function onRemoveTrustedPayer(sender: string) {
     setRemoving(true);
     try {
       await removeMutation.mutateAsync({ senderName: sender, organizationId: item.organization_id });
+      setConfirmRemoveSender(null);
       onError('');
     } catch (error: unknown) {
       onError(apiErrorMessage(error, 'Failed to remove trusted payer.'));
+      setConfirmRemoveSender(null);
     } finally {
       setRemoving(false);
     }
@@ -361,6 +366,35 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {confirmRemoveSender ? (
+        <Dialog
+          eyebrow="Trusted payers"
+          title={`Remove "${confirmRemoveSender}" from trusted payers?`}
+          description="Receipts from this sender will no longer fast-track in this workspace."
+          onClose={() => { if (!removing) setConfirmRemoveSender(null); }}
+          actions={
+            <>
+              <button
+                type="button"
+                disabled={removing}
+                onClick={() => setConfirmRemoveSender(null)}
+                className="fp-action-secondary !min-h-8 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={removing}
+                onClick={() => void onRemoveTrustedPayer(confirmRemoveSender)}
+                className="fp-action-danger !min-h-8 text-xs"
+              >
+                {removing ? 'Removing…' : 'Remove sender'}
+              </button>
+            </>
+          }
+        />
+      ) : null}
+
       {/* Segment 1 — flags: flag chips plus the informational fraud-badge
           admin controls (display-only, never blocks — NB-21.4/21.6) */}
       <div className="space-y-3">
@@ -371,22 +405,20 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
           </span>
         ) : null}
         {item.is_new_sender ? (
-          <span className="inline-flex items-center rounded-full border border-[#e7c2be] bg-[#fff8f7] px-2.5 py-1 text-xs font-medium text-[#a3342f]">
-            New sender
-          </span>
+          <StatusBadge label="New sender" tone="danger" />
         ) : null}
         {item.is_cash_sender ? (
-          <span className="inline-flex items-center border border-[#e7d1a8] bg-[#fffaf0] px-2 py-1 text-[10px] font-semibold text-[#885100]">
+          <span className="inline-flex items-center rounded-md border border-[#e7d1a8] bg-[#fffaf0] px-2.5 py-1 text-[11px] font-medium text-[#885100]">
             {CASH_FLAG}
           </span>
         ) : null}
         {item.is_wrong_bank_within_portfolio ? (
-          <span className="inline-flex items-center border border-[#bfd8e5] bg-[#f3f9fc] px-2 py-1 text-[10px] font-semibold text-[#17679b]">
+          <span className="inline-flex items-center rounded-md border border-[#bfd8e5] bg-[#f3f9fc] px-2.5 py-1 text-[11px] font-medium text-[#17679b]">
             Paid into a different bank in your group. Verify is already selected.
           </span>
         ) : null}
         {item.is_large_surplus ? (
-          <span className="inline-flex items-center border border-[#e7d1a8] bg-[#fffaf0] px-2 py-1 text-[10px] font-semibold text-[#885100]">
+          <span className="inline-flex items-center rounded-md border border-[#e7d1a8] bg-[#fffaf0] px-2.5 py-1 text-[11px] font-medium text-[#885100]">
             {LARGE_SURPLUS_FLAG} (<span className="font-mono tabular-nums">{item.surplus_etb ?? '0'}</span> ETB)
           </span>
         ) : null}
@@ -397,11 +429,11 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         ) : null}
         {item.low_confidence_fields.map((field) => (
           <span key={field} className="fp-pill">
-            {field} {LOW_CONFIDENCE_HINT}
+            {FIELD_LABELS[field] ?? field} {LOW_CONFIDENCE_HINT}
           </span>
         ))}
         {item.dispute_text ? (
-          <span className="inline-flex items-center border border-[#e7d1a8] bg-[#fffaf0] px-2 py-1 text-[10px] font-semibold text-[#885100]">
+          <span className="inline-flex items-center rounded-md border border-[#e7d1a8] bg-[#fffaf0] px-2.5 py-1 text-[11px] font-medium text-[#885100]">
             Customer disputes rejection: {item.dispute_text}
           </span>
         ) : null}
@@ -412,7 +444,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
             <p className="text-xs font-semibold text-[#6b4688]">
               {REVERSED_CREDIT_CHIP}
             </p>
-            <p className="mt-1 text-[11px] text-[#63766f]">
+            <p className="mt-1 text-[11px] text-[#5f5f59]">
               This is a warning, not a block. You can still verify the payment or ask the customer.
               {item.fraud_risk_since
                 ? ` Flagged since ${new Date(item.fraud_risk_since).toLocaleString()}.`
@@ -420,8 +452,11 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
             </p>
             <button
               type="button"
-              disabled={removing}
-              onClick={onRemoveTrustedPayer}
+              disabled={removing || !item.extracted_fields['sender_name']}
+              onClick={() => {
+                const sender = item.extracted_fields['sender_name'] ?? '';
+                if (sender) setConfirmRemoveSender(sender);
+              }}
               className="fp-action-quiet mt-2 !text-[#a3342f]"
             >
               {removing ? 'Removing…' : 'Remove sender from trusted-payer list'}
@@ -431,17 +466,17 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
       </div>
 
       {/* Segment 2 — extracted fields with confidence bars */}
-      <div className="grid grid-cols-1 gap-2 border-t border-[#e6ebe8] pt-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 border-t border-[#efeeea] pt-3 md:grid-cols-2">
         {fieldRows.map(([label, value, confidence]) => (
           <div key={label} className="border-b border-[#efeeea] py-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-[#73736e]">{FIELD_LABELS[label] ?? label}</span>
               <span className="text-[11px] tabular-nums text-[#73736e]">{Math.round(confidence * 100)}%</span>
             </div>
-            <p className="mt-1 break-all font-mono text-xs text-[#20372f]">{value ?? '—'}</p>
-            <div className="mt-2 h-1 overflow-hidden bg-[#dce8e3]">
+            <p className="mt-1 break-all font-mono text-xs text-[#252522]">{value ?? '—'}</p>
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#efeeea]">
               <div
-                className={`h-full ${confidence < 0.6 ? 'bg-[#a15b00]' : 'bg-[#16856b]'}`}
+                className={`h-full rounded-full ${confidence < 0.6 ? 'bg-[#a15b00]' : 'bg-[#16856b]'}`}
                 style={{ width: `${Math.round(confidence * 100)}%` }}
               />
             </div>
@@ -461,16 +496,16 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         {fileUrl ? (
           <div className="mt-3">
             {item.content_type === 'application/pdf' ? (
-              <iframe title="receipt-preview" src={fileUrl} className="h-72 w-full border border-[#d7dfdc] bg-white" />
+              <iframe title="receipt-preview" src={fileUrl} className="h-72 w-full rounded-md border border-[#e5e4e0] bg-white" />
             ) : (
-              <img src={fileUrl} alt="receipt preview" className="max-h-72 border border-[#d7dfdc] bg-white" />
+              <img src={fileUrl} alt="receipt preview" className="max-h-72 rounded-md border border-[#e5e4e0] bg-white" />
             )}
           </div>
         ) : null}
       </div>
 
       {/* Choose the outcome for this receipt. */}
-      <div className="grid gap-3 border-t border-[#e6ebe8] pt-3">
+      <div className="grid gap-3 border-t border-[#efeeea] pt-3">
         <p className="text-xs font-semibold text-[#73736e]">What should happen?</p>
         <div className="flex flex-wrap gap-2">
           {(['verify', 'reject_wrong_bank', 'reject_duplicate', 'reject_illegible', 'escalate'] as Verdict[]).map((v) => {
@@ -479,7 +514,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
             const active = verdict === v;
             const tierClass = isVerify
               ? active
-                ? 'border-[#087f72] bg-[#087f72] text-white'
+                ? 'border-[#176b5c] bg-[#176b5c] text-white'
                 : 'border-[#bfd8e5] bg-white text-[#17679b] hover:bg-[#f3f9fc]'
               : isEscalate
                 ? active
@@ -493,7 +528,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
                 key={v}
                 type="button"
                 onClick={() => setVerdict(v)}
-                className={`min-h-8 border px-2.5 text-[11px] font-semibold transition ${tierClass}`}
+                className={`min-h-8 rounded-md border px-2.5 text-[11px] font-semibold transition ${tierClass}`}
               >
                 {VERDICT_LABELS[v]}
               </button>
@@ -502,7 +537,7 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
         </div>
 
         {verdict === 'verify' && requiresSurplusDecision ? (
-          <div className="border border-[#e7d1a8] bg-[#fffaf0] p-3">
+          <div className="rounded-md border border-[#e7d1a8] bg-[#fffaf0] p-3">
             <p className="text-xs font-semibold text-[#885100]">{LARGE_SURPLUS_FLAG}</p>
             <div className="mt-2 grid gap-3 md:grid-cols-3">
               {(['credit_forward', 'credit_backward', 'partial_ignore'] as LargeSurplusDecision[]).map((d) => (
@@ -510,10 +545,10 @@ function AdminDetail({ item, onRendered, onError }: DetailProps) {
                   key={d}
                   type="button"
                   onClick={() => setSurplusDecision(d)}
-                  className={`min-h-8 border px-2.5 text-[11px] font-semibold transition ${
+                  className={`min-h-8 rounded-md border px-2.5 text-[11px] font-semibold transition ${
                     surplusDecision === d
                       ? 'border-[#a15b00] bg-white text-[#885100]'
-                      : 'border-[#d7dfdc] bg-white text-[#63766f] hover:border-[#a9bbb4]'
+                      : 'border-[#e5e4e0] bg-white text-[#5f5f59] hover:border-[#c9c8c2]'
                   }`}
                 >
                   {SURPLUS_LABELS[d]}
@@ -618,25 +653,29 @@ export function AdminReceiptsPage() {
     await Promise.all([refetch(), refetchAudit()]);
   }
 
-  async function onUndo(row: VerifiedReceiptAudit, note: string) {
+  async function onUndo(row: VerifiedReceiptAudit, note: string): Promise<boolean> {
     setError(null);
     try {
       await undoMutation.mutateAsync({ id: row.id, note: note || null });
       setMessage(`Undo applied to ${row.reference_number ?? row.id} — balance restored, no customer notice.`);
+      return true;
     } catch (err: unknown) {
       setError(apiErrorMessage(err, 'Undo failed.'));
+      return false;
     }
   }
 
-  async function onReverse(row: VerifiedReceiptAudit, reason: string) {
+  async function onReverse(row: VerifiedReceiptAudit, reason: string): Promise<boolean> {
     setError(null);
     try {
       const result = await reverseMutation.mutateAsync({ id: row.id, reason });
       setMessage(
         result.message ?? `Reversal applied to ${row.reference_number ?? row.id} — customer notified.`,
       );
+      return true;
     } catch (err: unknown) {
       setError(apiErrorMessage(err, 'Reverse failed.'));
+      return false;
     }
   }
 
@@ -650,12 +689,12 @@ export function AdminReceiptsPage() {
 
       {message ? (
         <Panel className="border-[#bfd8e5] bg-[#f3f9fc]">
-          <p className="text-sm text-[#17679b]">{message}</p>
+          <p role="status" className="text-sm text-[#17679b]">{message}</p>
         </Panel>
       ) : null}
       {error ? (
         <Panel className="border-[#e7c2be] bg-[#fff8f7]">
-          <p className="text-sm text-[#8f302a]">{error}</p>
+          <p role="alert" className="text-sm text-[#8f302a]">{error}</p>
         </Panel>
       ) : null}
 
@@ -676,29 +715,25 @@ export function AdminReceiptsPage() {
                     setError(null);
                     setMessage(null);
                   }}
-                  className={`block w-full py-3 text-left transition ${
+                  className={`block w-full rounded-md px-3 py-3 text-left transition ${
                     selectedId === item.id
-                      ? 'bg-[#f2f7f4]'
+                      ? 'bg-[#f7f7f5]'
                       : 'bg-white hover:bg-[#fafaf9]'
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge label={item.status === 'escalated' ? 'Waiting for customer' : 'Waiting for review'} tone={verdictTone(item.status)} />
-        {item.sender_has_reversed_credit ? (
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#6b4688]">
+                      {item.sender_has_reversed_credit ? (
+                        <span className="inline-flex items-center rounded-full border border-[#e2d4eb] bg-[#faf5fd] px-2.5 py-0.5 text-[11px] font-medium text-[#6b4688]">
                           {REVERSED_CREDIT_CHIP}
                         </span>
                       ) : null}
                       {item.is_new_sender ? (
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#a3342f]">
-                          New sender
-                        </span>
+                        <StatusBadge label="New sender" tone="danger" />
                       ) : null}
                       {item.is_cash_sender ? (
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-medium text-[#885100]">
-                          Cash
-                        </span>
+                        <StatusBadge label="Cash" tone="warning" />
                       ) : null}
                     </div>
                     <span className="text-[11px] text-[#73736e]">{new Date(item.created_at).toLocaleString()}</span>
@@ -706,8 +741,8 @@ export function AdminReceiptsPage() {
                   <p className="mt-1.5 text-sm font-medium text-[#252522]">
                     {item.organization_name} · {item.extracted_fields['reference_number'] ?? 'no ref'}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-[#63766f]">
-                    <span className="font-mono font-medium tabular-nums text-[#40534c]">
+                  <p className="mt-0.5 text-[11px] text-[#5f5f59]">
+                    <span className="font-mono font-medium tabular-nums text-[#454540]">
                       {item.extracted_fields['transfer_amount'] ?? '—'} ETB
                     </span>{' '}
                     · invoice {item.invoice_number ?? '—'} · {item.extracted_fields['sender_name'] ?? 'no sender'}
@@ -731,7 +766,7 @@ export function AdminReceiptsPage() {
           </Panel>
         ) : (
           <Panel eyebrow="Receipt details" title="Choose a receipt" description="Select a receipt to check its details and choose a decision.">
-            <p className="text-xs text-[#63766f]">No receipt selected.</p>
+            <p className="text-xs text-[#73736e]">No receipt selected.</p>
           </Panel>
         )}
       </div>

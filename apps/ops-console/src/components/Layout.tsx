@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
@@ -41,6 +41,17 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [railCompact, setRailCompact] = useState(false);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [sidebarOpen]);
+
   return (
     <div className="min-h-screen bg-white text-[#252522]">
       <SessionLiveUpdates />
@@ -60,8 +71,8 @@ export function Layout() {
 
         {sidebarOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <button type="button" className="absolute inset-0 bg-[#20372f]/35" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
-            <aside className="absolute inset-y-0 left-0 w-[290px] overflow-y-auto bg-[#f7f7f5] shadow-xl">
+            <button type="button" className="absolute inset-0 bg-[#252522]/30" onClick={() => setSidebarOpen(false)} aria-label="Close navigation" />
+            <aside role="dialog" aria-modal="true" aria-label="Workspace navigation" className="absolute inset-y-0 left-0 w-[290px] max-w-[85vw] overflow-y-auto bg-[#f7f7f5] shadow-xl">
               <ShellSidebar user={user} onLogout={logout} onNavigate={() => setSidebarOpen(false)} />
             </aside>
           </div>

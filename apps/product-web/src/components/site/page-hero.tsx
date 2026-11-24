@@ -1,3 +1,4 @@
+import { cn } from '@/lib/cn';
 import type { ReactNode } from 'react';
 
 type PageHeroProps = {
@@ -11,7 +12,12 @@ type PageHeroProps = {
 export function PageHero({ eyebrow, title, description, actions, aside }: PageHeroProps) {
   return (
     <section className="section-shell pt-12 sm:pt-16">
-      <div className="grid grid-cols-1 gap-8 pb-8 sm:gap-12 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:items-start lg:pb-10">
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-8 pb-8 sm:gap-12 lg:items-start lg:pb-10',
+          aside ? 'lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]' : '',
+        )}
+      >
         <div className="space-y-4">
           <p className="kicker">{eyebrow}</p>
           <h1 className="balanced-headline max-w-[19ch] font-display text-[clamp(2.4rem,4.7vw,4.4rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-[#252522]">{title}</h1>

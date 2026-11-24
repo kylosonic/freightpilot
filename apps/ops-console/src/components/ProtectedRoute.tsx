@@ -19,10 +19,10 @@ export function ProtectedRoute({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center" role="status">
         <div className="space-y-4 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#cbd8d3] border-t-[#087f72]" />
-          <p className="text-sm text-[#63766f]">Verifying workspace access...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#e5e4e0] border-t-[#176b5c]" aria-hidden="true" />
+          <p className="text-sm text-[#73736e]">Verifying workspace access...</p>
         </div>
       </div>
     );

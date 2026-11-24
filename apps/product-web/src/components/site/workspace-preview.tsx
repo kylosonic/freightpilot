@@ -26,7 +26,7 @@ export function WorkspacePreview() {
     <div className="min-w-0 overflow-hidden rounded-xl bg-[#f7f7f5] p-[3px] sm:p-1" aria-label="freightpilot / control-tower workspace preview">
       <div className="overflow-hidden rounded-[10px] bg-white shadow-[0_8px_28px_rgba(35,35,30,0.07)]">
       <div className="grid grid-cols-[92px_minmax(0,1fr)] sm:grid-cols-[176px_minmax(0,1fr)]">
-        <aside className="border-r border-[#f1f0ed] bg-[#fbfbfa] p-2 sm:p-3">
+        <div className="border-r border-[#f1f0ed] bg-[#fbfbfa] p-2 sm:p-3">
           <div className="flex items-center gap-2 px-1 pb-3">
             <span className="grid h-5 w-5 place-items-center rounded bg-[#2e4f47] text-[8px] font-semibold text-white">FP</span>
             <span className="hidden text-[10px] font-medium text-[#353530] sm:block">FreightPilot</span>
@@ -41,7 +41,7 @@ export function WorkspacePreview() {
               { Icon: CalendarClock, label: 'Shipments' },
               { Icon: Truck, label: 'Dispatch' },
               { Icon: BellRing, label: 'Exceptions' },
-              { Icon: PackageCheck, label: 'Fleet & cash' },
+              { Icon: PackageCheck, label: 'Fleet and cash' },
             ].map(({ Icon, label }) => (
               <div key={label} className="flex items-center gap-2 rounded px-2 py-1.5 text-[9px] text-[#73736e]">
                 <Icon className="h-3 w-3" aria-hidden="true" />
@@ -49,15 +49,15 @@ export function WorkspacePreview() {
               </div>
             ))}
           </div>
-        </aside>
+        </div>
 
         <div className="min-w-0">
           <div className="flex items-center justify-between bg-white px-3 py-3 sm:px-5">
             <div>
-              <p className="text-[8px] text-[#85857e]">Overview</p>
+              <p className="text-[8px] text-[#73736e]">Overview</p>
               <p className="mt-0.5 text-[11px] font-medium text-[#252522]">Good morning</p>
             </div>
-            <span className="flex items-center gap-1.5 text-[8px] text-[#85857e]">
+            <span className="flex items-center gap-1.5 text-[8px] text-[#73736e]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#4d9a83]" aria-hidden="true" />
               Updated 09:42
             </span>
@@ -71,15 +71,15 @@ export function WorkspacePreview() {
                 { label: 'Delivered', value: '24', tone: 'text-[#252522]' },
               ].map((metric) => (
                 <div key={metric.label} className="min-w-0 px-1.5 py-2 sm:px-3">
-                  <p className="truncate text-[7px] text-[#85857e]">{metric.label}</p>
+                  <p className="truncate text-[7px] text-[#5f5f59]">{metric.label}</p>
                   <p className={`mt-0.5 text-base font-semibold leading-5 tracking-[-0.02em] ${metric.tone}`}>{metric.value}</p>
                 </div>
               ))}
             </div>
 
             <div className="mt-2 grid gap-2 min-[440px]:grid-cols-[0.9fr_1.1fr]">
-              <div className="relative min-h-[152px] overflow-hidden rounded-md bg-[#edf1ee]">
-                <div className="absolute inset-0 opacity-55 [background-image:linear-gradient(#d7dfda_1px,transparent_1px),linear-gradient(90deg,#d7dfda_1px,transparent_1px)] [background-size:24px_24px]" />
+              <div className="relative min-h-[152px] overflow-hidden rounded-md bg-[#f1f1ef]">
+                <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(#e5e4e0_1px,transparent_1px),linear-gradient(90deg,#e5e4e0_1px,transparent_1px)] [background-size:24px_24px]" />
                 <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 160" fill="none" aria-hidden="true">
                   <path d="M18 129C46 113 57 95 82 99C103 103 104 70 126 67C154 63 162 39 199 35" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" />
                   <path d="M18 129C46 113 57 95 82 99C103 103 104 70 126 67C154 63 162 39 199 35" stroke="#087f72" strokeWidth="2.5" strokeLinecap="round" />
@@ -100,7 +100,7 @@ export function WorkspacePreview() {
                   </span>
                 ))}
                 <div className="absolute bottom-2 left-2 rounded bg-white/95 px-2 py-1 shadow-sm">
-                  <p className="text-[7px] text-[#85857e]">Route</p>
+                  <p className="text-[7px] text-[#73736e]">Route</p>
                   <p className="text-[9px] font-medium text-[#252522]">Addis · North loop</p>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export function WorkspacePreview() {
               <div className="rounded-md border border-[#efeeea] bg-white">
                 <div className="flex items-center justify-between border-b border-[#efeeea] px-2 py-1.5">
                   <p className="text-[9px] font-medium text-[#252522]">Next stops</p>
-                  <span className="text-[7px] text-[#85857e]">4</span>
+                  <span className="text-[7px] text-[#73736e]">4</span>
                 </div>
                 <div>
                   {stops.map((stop) => (
@@ -118,7 +118,7 @@ export function WorkspacePreview() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[8px] font-medium text-[#252522]">{stop.name}</p>
-                        <p className="text-[7px] text-[#85857e]">{stop.code} · {stop.time}</p>
+                        <p className="text-[7px] text-[#73736e]">{stop.code} · {stop.time}</p>
                       </div>
                       <span className={`whitespace-nowrap rounded-full px-1 py-0.5 text-[6px] font-medium ${stateStyles[stop.tone]}`}>
                         {stop.state}

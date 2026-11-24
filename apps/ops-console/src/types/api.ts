@@ -267,7 +267,7 @@ export type ReplenishmentPlan = {
   rejection_reason: string | null;
 };
 
-export type SubscriptionTier = 'starter' | 'scale' | 'enterprise';
+export type SubscriptionTier = 'free' | 'starter' | 'scale' | 'enterprise';
 
 export type SubscriptionPlan = {
   tier: SubscriptionTier;

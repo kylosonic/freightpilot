@@ -10,10 +10,9 @@ import type { Alert, AlertStatus, AlertSeverity } from '../types/api';
 import { apiErrorMessage } from '../services/authErrors';
 
 function severityTone(severity: AlertSeverity) {
-  if (severity === 'critical') return 'danger';
-  if (severity === 'high') return 'warning';
-  if (severity === 'medium') return 'info';
-  return 'neutral';
+  if (severity === 'critical' || severity === 'high') return 'danger';
+  if (severity === 'medium') return 'warning';
+  return 'info';
 }
 
 function statusTone(status: AlertStatus) {
@@ -26,10 +25,12 @@ function statusTone(status: AlertStatus) {
 
 function ResolveDialog({
   alertTitle,
+  busy,
   onConfirm,
   onCancel,
 }: {
   alertTitle: string;
+  busy: boolean;
   onConfirm: (note: string | undefined) => void;
   onCancel: () => void;
 }) {
@@ -40,21 +41,24 @@ function ResolveDialog({
       eyebrow="Resolution"
       title={`Resolve: ${alertTitle}`}
       description="Optionally provide a resolution note to document how this alert was handled."
+      onClose={onCancel}
       actions={
         <>
           <button
             type="button"
+            disabled={busy}
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+            className="fp-action-secondary !min-h-8 text-xs"
           >
             Cancel
           </button>
           <button
             type="button"
+            disabled={busy}
             onClick={() => onConfirm(note.trim() || undefined)}
-            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]"
+            className="fp-action-primary !min-h-8 text-xs"
           >
-            Resolve alert
+            {busy ? 'Saving...' : 'Resolve alert'}
           </button>
         </>
       }
@@ -76,6 +80,8 @@ export function AlertsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [busyAlertId, setBusyAlertId] = useState<string | null>(null);
   const [resolveDialog, setResolveDialog] = useState<{ alert: Alert } | null>(null);
   const [form, setForm] = useState({ title: '', message: '', severity: 'medium' as AlertSeverity });
 
@@ -99,12 +105,15 @@ export function AlertsPage() {
 
   async function onCreate(event: FormEvent) {
     event.preventDefault();
+    setIsCreating(true);
     try {
       await createAlert(form);
       setForm({ title: '', message: '', severity: 'medium' });
       await loadAlerts();
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to create alert'));
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -122,32 +131,40 @@ export function AlertsPage() {
   }
 
   async function onAcknowledge(alertId: string) {
+    setBusyAlertId(alertId);
     try {
       await acknowledgeAlert(alertId);
       await loadAlerts();
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to acknowledge alert'));
+    } finally {
+      setBusyAlertId(null);
     }
   }
 
   async function onResolveConfirm(note: string | undefined) {
     if (!resolveDialog) return;
+    setBusyAlertId(resolveDialog.alert.id);
     try {
       await resolveAlert(resolveDialog.alert.id, note);
       await loadAlerts();
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to resolve alert'));
     } finally {
+      setBusyAlertId(null);
       setResolveDialog(null);
     }
   }
 
   async function onAutoResolve(alertId: string) {
+    setBusyAlertId(alertId);
     try {
       await autoResolveAlert(alertId);
       await loadAlerts();
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to auto-resolve alert'));
+    } finally {
+      setBusyAlertId(null);
     }
   }
 
@@ -177,6 +194,7 @@ export function AlertsPage() {
       {resolveDialog ? (
         <ResolveDialog
           alertTitle={resolveDialog.alert.title}
+          busy={busyAlertId === resolveDialog.alert.id}
           onConfirm={onResolveConfirm}
           onCancel={() => setResolveDialog(null)}
         />
@@ -185,15 +203,16 @@ export function AlertsPage() {
       <PageHeader
         eyebrow="Exceptions"
         title="Resolve what needs attention"
-      description="See open issues first, take one when you can help, and add a note when it is fixed."
+        description="See open issues first, take one when you can help, and add a note when it is fixed."
         actions={
           <button
+            type="button"
             onClick={onScan}
             disabled={isScanning}
-            className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:opacity-60"
+            className="glow-ring fp-action-primary"
           >
             {isScanning ? (
-              <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
+              <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
             ) : null}
             {isScanning ? 'Scanning...' : 'Scan for exceptions'}
           </button>
@@ -204,7 +223,7 @@ export function AlertsPage() {
         <MetricTile title="Open" value={counts.open} detail="Not yet handled" tone={counts.open > 0 ? 'warning' : 'success'} />
         <MetricTile title="Acknowledged" value={counts.acknowledged} detail="Someone is handling it" tone="info" />
         <MetricTile title="Critical" value={counts.critical} detail="Needs help now" tone={counts.critical > 0 ? 'danger' : 'neutral'} />
-        <MetricTile title="High" value={counts.high} detail="Could affect service or cost" tone={counts.high > 0 ? 'warning' : 'neutral'} />
+        <MetricTile title="High" value={counts.high} detail="Could affect service or cost" tone={counts.high > 0 ? 'danger' : 'neutral'} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.85fr_1.15fr]">
@@ -215,32 +234,35 @@ export function AlertsPage() {
         >
           <form className="grid grid-cols-1 gap-3" onSubmit={onCreate}>
             <input
-              className="fp-input"
+              aria-label="Issue title"
+              className="fp-input min-h-10"
               placeholder="Title"
               value={form.title}
               onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
               required
             />
             <textarea
+              aria-label="Issue description"
               className="fp-input min-h-32 px-4 py-3"
               placeholder="Message"
               value={form.message}
               onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
               required
             />
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <select
-                className="fp-input w-auto"
+                aria-label="Severity"
+                className="fp-input min-h-10 w-auto"
                 value={form.severity}
                 onChange={(e) => setForm((prev) => ({ ...prev, severity: e.target.value as AlertSeverity }))}
               >
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-                <option value="critical">critical</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
               </select>
-              <button className="glow-ring inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d]">
-                Create alert
+              <button type="submit" disabled={isCreating} className="glow-ring fp-action-primary">
+                {isCreating ? 'Creating...' : 'Create alert'}
               </button>
             </div>
           </form>
@@ -252,22 +274,21 @@ export function AlertsPage() {
           description="Filter by status. The most urgent issues appear first."
           actions={
             <select
-              className="fp-input w-auto"
+              aria-label="Filter alerts by status"
+              className="fp-input min-h-9 w-auto"
               value={statusFilter}
               onChange={(e) => {
-                const next = e.target.value as AlertStatus | 'all';
-                setStatusFilter(next);
-                loadAlerts(next);
+                setStatusFilter(e.target.value as AlertStatus | 'all');
               }}
             >
-              <option value="open">open</option>
-              <option value="acknowledged">acknowledged</option>
-              <option value="resolved">resolved</option>
-              <option value="all">all</option>
+              <option value="open">Open</option>
+              <option value="acknowledged">Acknowledged</option>
+              <option value="resolved">Resolved</option>
+              <option value="all">All</option>
             </select>
           }
         >
-          {error ? <p role="alert" className="mb-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
+          {error ? <p role="alert" className="mb-3 rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
@@ -284,33 +305,36 @@ export function AlertsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge label={alert.severity} tone={severityTone(alert.severity)} />
                       <StatusBadge label={alert.status} tone={statusTone(alert.status)} />
-                      <span className="text-[10px] uppercase tracking-[0.08em] text-[#6b7d76]">{alert.alert_type}</span>
+                      <span className="text-[11px] font-medium capitalize text-[#73736e]">{alert.alert_type.replace(/_/g, ' ')}</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-[#20372f]">{alert.title}</h3>
+                    <h3 className="text-sm font-semibold text-[#252522]">{alert.title}</h3>
                   </div>
-                  <span className="text-[10px] text-[#63766f]">{new Date(alert.created_at).toLocaleString()}</span>
+                  <span className="text-[11px] text-[#73736e]">{new Date(alert.created_at).toLocaleString()}</span>
                 </div>
-                <p className="mt-1.5 text-xs leading-5 text-[#63766f]">{alert.message}</p>
+                <p className="mt-1.5 text-xs leading-5 text-[#5f5f59]">{alert.message}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
+                    type="button"
                     onClick={() => onAcknowledge(alert.id)}
-                    className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0] disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={alert.status === 'resolved' || alert.status === 'acknowledged'}
+                    className="fp-action-secondary !min-h-8 text-xs"
+                    disabled={busyAlertId === alert.id || alert.status === 'resolved' || alert.status === 'acknowledged'}
                   >
                     Acknowledge
                   </button>
                   <button
+                    type="button"
                     onClick={() => setResolveDialog({ alert })}
-                    className="glow-ring min-h-8 border border-[#b9dcd1] bg-white px-2.5 text-[11px] font-semibold text-[#14745f] transition hover:bg-[#edf8f3] disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={alert.status === 'resolved'}
+                    className="fp-action-secondary !min-h-8 text-xs !text-[#14745f]"
+                    disabled={busyAlertId === alert.id || alert.status === 'resolved'}
                   >
                     Resolve
                   </button>
                   {alert.payload?.rerouting_plan ? (
                     <button
+                      type="button"
                       onClick={() => onAutoResolve(alert.id)}
-                      className="glow-ring min-h-8 border border-[#bfd8e5] bg-white px-2.5 text-[11px] font-semibold text-[#17679b] transition hover:bg-[#edf6fa] disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={alert.status === 'resolved'}
+                      className="fp-action-secondary !min-h-8 text-xs !text-[#17679b]"
+                      disabled={busyAlertId === alert.id || alert.status === 'resolved'}
                     >
                       Auto-Resolve
                     </button>
@@ -320,9 +344,9 @@ export function AlertsPage() {
             ))}
 
             {!loading && alerts.length === 0 ? (
-              <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
-                <p className="text-sm font-semibold text-[#40534c]">No alerts</p>
-                <p className="mt-1 text-xs text-[#63766f]">No alerts for the selected filter.</p>
+              <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
+                <p className="text-sm font-semibold text-[#252522]">No alerts</p>
+                <p className="mt-1 text-xs text-[#5f5f59]">No alerts for the selected filter.</p>
               </div>
             ) : null}
           </div>

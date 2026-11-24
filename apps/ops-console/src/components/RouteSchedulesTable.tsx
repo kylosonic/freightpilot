@@ -8,7 +8,7 @@ type Props = {
 function scheduleTone(status: string) {
   if (status === 'completed' || status === 'delivered') return 'success';
   if (status === 'delayed' || status === 'failed') return 'danger';
-  if (status === 'active' || status === 'in_progress') return 'warning';
+  if (status === 'active' || status === 'in_progress') return 'info';
   return 'neutral';
 }
 
@@ -43,7 +43,7 @@ export function RouteSchedulesTable({ schedules }: Props) {
           ))}
           {schedules.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-7 text-center text-xs text-[#63766f]">
+              <td colSpan={6} className="px-4 py-7 text-center text-xs text-[#73736e]">
                 No route schedules saved yet.
               </td>
             </tr>

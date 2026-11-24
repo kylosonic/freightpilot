@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { PageHero } from '@/components/site/page-hero';
 import { SpotlightCard } from '@/components/site/spotlight-card';
@@ -17,11 +18,11 @@ export default function TermsPage() {
         description="These are the basic rules for using FreightPilot. A paid or business agreement can add an order form, data terms, or service commitments."
       />
 
-      <section className="section-shell py-10 sm:py-14">
+      <section className="section-shell pt-10 sm:pt-14">
         <div className="grid gap-4 lg:grid-cols-2">
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Your responsibilities</h2>
-            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
+            <h2 className="text-lg font-semibold text-[#252522]">Your responsibilities</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5f5f59]">
               <li>You need permission to create or manage the company workspace.</li>
               <li>You are responsible for the data you import and the changes you approve.</li>
               <li>Keep sign-in details and provider keys safe. Remove a teammate's access when they leave.</li>
@@ -30,8 +31,8 @@ export default function TermsPage() {
             </ul>
           </SpotlightCard>
           <SpotlightCard>
-            <h2 className="text-lg font-semibold text-[#172a24]">Plans and payments</h2>
-            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5b6d66]">
+            <h2 className="text-lg font-semibold text-[#252522]">Plans and payments</h2>
+            <ul className="mt-3 space-y-2.5 text-sm leading-7 text-[#5f5f59]">
               <li>The pricing page shows what each plan includes.</li>
               <li>A person reviews bank transfer receipts. Sending a receipt does not by itself mean the payment has cleared.</li>
               <li>We may lock a workspace for payment, security, or service problems. Where documented, you can still view your data.</li>
@@ -42,19 +43,27 @@ export default function TermsPage() {
         </div>
       </section>
 
-      <section className="section-shell pb-16">
+      <section className="section-shell pt-10 sm:pt-14">
         <SpotlightCard>
-          <h2 className="text-lg font-semibold text-[#172a24]">Service availability and ending use</h2>
-          <p className="mt-3 max-w-[62rem] text-sm leading-7 text-[#5b6d66]">
+          <h2 className="text-lg font-semibold text-[#252522]">Service availability and ending use</h2>
+          <p className="mt-3 max-w-[62rem] text-sm leading-7 text-[#5f5f59]">
             We work to keep FreightPilot available and to recover it quickly after a problem, but
             this public page does not promise an enterprise uptime target. To the extent the law
             allows, FreightPilot is not responsible for indirect losses, lost profit, or decisions
             made without a person reviewing them. A workspace owner can stop using FreightPilot at
             any time. We may suspend a workspace for abuse, non-payment, or a security risk. Export
-            any data you need before you stop. The privacy page explains deletion and backup copies.
+            any data you need before you stop. The{' '}
+            <Link href="/privacy" className="font-medium text-[#176b5c] underline underline-offset-4">
+              privacy page
+            </Link>{' '}
+            explains deletion and backup copies.
           </p>
-          <p className="mt-3 text-sm leading-7 text-[#5b6d66]">
-            Questions about these terms can be sent through the contact page.
+          <p className="mt-3 text-sm leading-7 text-[#5f5f59]">
+            Questions about these terms can be sent through the{' '}
+            <Link href="/contact" className="font-medium text-[#176b5c] underline underline-offset-4">
+              contact page
+            </Link>
+            .
           </p>
         </SpotlightCard>
       </section>

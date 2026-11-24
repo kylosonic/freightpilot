@@ -4,20 +4,18 @@ import { MagneticLink } from '@/components/site/magnetic-link';
 import { PricingSummary } from '@/components/site/pricing-summary';
 import { WorkspacePreview } from '@/components/site/workspace-preview';
 import {
-  heroHeadline,
   heroParagraph,
   startFreeCta,
   trustStripLine,
 } from '@/lib/site-content';
-import Link from 'next/link';
 
 export default function HomePage() {
   return (
     <>
       <section className="section-shell pb-10 pt-14 sm:pb-16 sm:pt-20" data-section="hero">
         <div className="flex min-w-0 flex-col items-center">
-          <div className="mb-6 flex items-center gap-2 rounded-full border border-[#e9e8e4] bg-[#fbfbfa] px-3 py-1.5 text-[12px] text-[#5f5f59]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#4e927f]" aria-hidden="true" />
+          <div className="mb-6 flex items-center gap-2 rounded-full border border-[#e5e4e0] bg-[#f7f7f5] px-3 py-1.5 text-[12px] text-[#5f5f59]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#16856b]" aria-hidden="true" />
             Freight operations workspace
           </div>
           <div className="w-full min-w-0 text-center">
@@ -28,15 +26,15 @@ export default function HomePage() {
             <MagneticLink href="/launch" variant="primary" className="min-h-11 px-5">
               {startFreeCta}
             </MagneticLink>
-            <Link href="/platform" className="site-action-secondary min-h-11 px-4">
+            <a href="#how-it-works" className="site-action-secondary min-h-11 px-4">
               See how it works
-            </Link>
+            </a>
           </div>
-          <p className="mt-3 text-center text-[12px] text-[#85857e]">Sample workspace included. No card required.</p>
+          <p className="mt-3 text-center text-[12px] text-[#73736e]">Sample workspace included. No card required.</p>
         </div>
         <div className="mx-auto mt-10 min-w-0 max-w-[1020px] sm:mt-12">
           <WorkspacePreview />
-          <p className="mt-2 text-right text-[11px] text-[#85857e]">
+          <p className="mt-2 text-right text-[11px] text-[#73736e]">
             Example workspace · sample data
           </p>
         </div>

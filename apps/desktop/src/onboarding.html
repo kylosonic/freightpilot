@@ -4,30 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none';" />
-    <title>FreightPilot Launch Cockpit</title>
+    <title>FreightPilot Desktop Setup</title>
     <link rel="stylesheet" href="./onboarding.css" />
     <script src="./onboarding.js" defer></script>
   </head>
   <body>
-    <div class="app-shell">
+    <main class="app-shell">
       <section class="panel command-panel" aria-labelledby="setup-heading">
         <div class="hero-banner">
           <div class="brand-row">
             <div class="brand-mark" aria-hidden="true">FP</div>
             <div>
-              <div class="brand-text">FreightPilot Launch Workstation</div>
+              <div class="brand-text">FreightPilot Desktop</div>
               <p class="subtle">Configure once, validate every dispatch desktop, and open live operations with less rollout drift.</p>
             </div>
           </div>
 
           <div class="hero-grid">
             <div>
-              <p class="eyebrow">Desktop launch cockpit</p>
-              <h1 id="setup-heading" class="hero-title">Prepare every operator machine for live control tower work.</h1>
-              <p class="subtle">This workstation is built for rollout leads who need connection health, role sign-off, readiness scoring, and launch sequencing in one place.</p>
+              <p class="eyebrow">Desktop setup</p>
+              <h1 id="setup-heading" class="hero-title">Prepare every operator machine for live operations.</h1>
+              <p class="subtle">Set up connection health, role sign-off, readiness scoring, and launch sequencing in one workspace.</p>
             </div>
 
-            <div class="hero-metrics" aria-label="Workstation highlights">
+            <div class="hero-metrics" aria-label="Workspace highlights">
               <article class="mini-card">
                 <span>Connection</span>
                 <strong>Validate</strong>
@@ -46,7 +46,7 @@
               <article class="mini-card">
                 <span>Launch</span>
                 <strong>Sequence</strong>
-                <p>Move from signup to dry run to first live dispatch in one guided rhythm.</p>
+                <p>Move from signup to dry run to first live dispatch in one guided flow.</p>
               </article>
             </div>
           </div>
@@ -65,25 +65,25 @@
           <div class="field-grid">
             <label>
               Ops console URL
-              <input id="opsUrl" type="url" autocomplete="off" placeholder="https://your-console.example.com/login" />
+              <input id="opsUrl" type="url" autocomplete="off" placeholder="https://freightpilot-ops.pages.dev/login" />
             </label>
             <label>
               Company signup URL
-              <input id="signupUrl" type="url" autocomplete="off" placeholder="https://your-product-site.example.com#signup" />
+              <input id="signupUrl" type="url" autocomplete="off" placeholder="https://freightpilot.pages.dev/launch/" />
             </label>
             <label>
               Documentation URL
-              <input id="docsUrl" type="url" autocomplete="off" placeholder="https://docs.example.com" />
+              <input id="docsUrl" type="url" autocomplete="off" placeholder="https://freightpilot.pages.dev/docs/" />
             </label>
           </div>
 
           <div class="btn-row">
             <button id="saveBtn" class="btn-primary" type="button" title="Save workspace configuration">Save setup</button>
             <button id="testBtn" class="btn-secondary" type="button" title="Verify console endpoint is reachable">Test console connection</button>
-            <button id="launchBtn" class="btn-accent" type="button" title="Open the ops console in a new window">Open control tower</button>
+            <button id="launchBtn" class="btn-accent" type="button" title="Open the operations console in a new window">Open operations console</button>
           </div>
 
-          <p id="status" class="status" aria-live="polite"></p>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
         </section>
 
         <div class="two-up">
@@ -93,7 +93,7 @@
               <span id="readinessScore" class="score-pill">0</span>
             </div>
             <p id="readinessLabel" class="subtle">Setup in progress.</p>
-            <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="readinessMeter">
+            <div class="meter" role="progressbar" aria-labelledby="readiness-heading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="readinessMeter">
               <div id="readinessBar" class="meter-fill"></div>
             </div>
             <ul id="readinessRisks" class="risk-list"></ul>
@@ -106,7 +106,7 @@
                 <h2 id="roles-heading">Role sign-off</h2>
               </div>
             </div>
-            <p class="subtle">Mark owners before rollout so responsibilities are clear from day one.</p>
+            <p class="subtle">Mark rollout owners so responsibilities match workspace admin and operator roles from day one.</p>
             <div class="check-grid">
               <label class="check-row">
                 <input id="roleDispatcher" type="checkbox" />
@@ -124,15 +124,15 @@
           </section>
         </div>
 
-        <section class="surface-panel notes-panel" aria-label="Launch doctrine">
+        <section class="surface-panel notes-panel" aria-labelledby="doctrine-heading">
           <div class="section-head compact-head">
             <div>
-              <p class="eyebrow">Launch doctrine</p>
-              <h2 class="section-title">What a clean rollout looks like</h2>
+              <p class="eyebrow">Launch checklist</p>
+              <h2 id="doctrine-heading" class="section-title">What a clean rollout looks like</h2>
             </div>
           </div>
           <ul class="doctrine-list">
-            <li>Verify the control tower URL from every dispatch workstation before shift start.</li>
+            <li>Verify the operations console URL from every dispatch workstation before shift start.</li>
             <li>Confirm role ownership before the first dry run so approvals do not stall.</li>
             <li>Load warehouses, items, fleet, inventory, and orders in the correct sequence.</li>
             <li>Use the same saved workspace profile as the default for every operator machine.</li>
@@ -143,19 +143,19 @@
       <aside class="panel workflow-panel" aria-labelledby="onboarding-heading">
         <section class="surface-panel progress-wrap">
           <div class="progress-head">
-            <span id="onboarding-heading">Onboarding progress</span>
-            <span id="progressLabel">0 / 4 complete</span>
+            <h2 id="onboarding-heading" class="progress-title">Onboarding progress</h2>
+            <span id="progressLabel">0 / 5 complete</span>
           </div>
-          <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack">
+          <div class="progress-track" role="progressbar" aria-labelledby="onboarding-heading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack">
             <div id="progressBar" class="progress-bar"></div>
           </div>
         </section>
 
-        <section class="surface-panel briefing-panel" aria-label="Launch overview">
+        <section class="surface-panel briefing-panel" aria-labelledby="rollout-heading">
           <div class="section-head compact-head">
             <div>
-              <p class="eyebrow">Launch cockpit</p>
-              <h2 class="section-title">Rollout view</h2>
+              <p class="eyebrow">Guided launch</p>
+              <h2 id="rollout-heading" class="section-title">Rollout view</h2>
             </div>
             <span class="panel-pill">Operator flow</span>
           </div>
@@ -165,7 +165,7 @@
         <ol id="wizardSteps" class="wizard-steps" aria-label="Onboarding steps"></ol>
 
         <section class="surface-panel wizard-detail" aria-labelledby="stepTitle">
-          <p class="eyebrow" id="stepStage">Setup 1 of 3</p>
+          <p class="eyebrow" id="stepStage">Setup 1 of 5</p>
           <h2 id="stepTitle">Loading step...</h2>
           <p id="stepDescription" class="subtle"></p>
           <p id="stepOutcome" class="outcome"></p>
@@ -177,31 +177,30 @@
           <button id="nextStepBtn" class="btn-primary" type="button">Next step</button>
         </div>
 
-        <section class="surface-panel milestone-panel" aria-label="Milestones">
-          <h3>Milestones</h3>
+        <section class="surface-panel milestone-panel" aria-labelledby="milestones-heading">
+          <h2 id="milestones-heading">Milestones</h2>
           <ul id="milestoneList"></ul>
         </section>
 
         <div class="link-grid">
-          <a href="#" id="openSignup" class="quick-link">Open company signup →</a>
-          <a href="#" id="openDocs" class="quick-link">Open implementation docs →</a>
+          <button type="button" id="openSignup" class="quick-link">Open company signup →</button>
+          <button type="button" id="openDocs" class="quick-link">Open implementation docs →</button>
         </div>
 
-        <div id="celebrationBanner" class="celebration-banner hidden" aria-label="Launch complete">
-          <h3>Launch-ready</h3>
+        <div id="celebrationBanner" class="celebration-banner hidden" role="status" aria-live="polite" aria-label="Launch complete">
+          <h2>Launch-ready</h2>
           <p>All onboarding steps are complete. Your workspace is ready for live operations.</p>
         </div>
 
-        <section class="surface-panel tip-panel" aria-label="Rollout note">
-          <h3>Rollout note</h3>
+        <section class="surface-panel tip-panel" aria-labelledby="note-heading">
+          <h2 id="note-heading">Rollout note</h2>
           <div class="tip">
-            Pro tip: complete this flow on one machine, then distribute the same URLs and role checklist as your standard rollout template.
+            Tip: complete this flow on one machine, then distribute the same URLs and role checklist as your standard rollout template.
           </div>
         </section>
       </aside>
-    </div>
+    </main>
 
-    <div class="version-footer" aria-label="Version">FreightPilot Desktop v0.1.0</div>
-
+    <footer class="version-footer" aria-label="Version">FreightPilot Desktop v0.1.0</footer>
   </body>
 </html>

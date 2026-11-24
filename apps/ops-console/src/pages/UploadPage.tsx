@@ -21,14 +21,20 @@ export function UploadPage() {
         <ol className="flex flex-wrap items-center gap-2">
           {['Warehouses', 'Items', 'Fleet', 'Inventory', 'Orders'].map((step, index) => (
             <li key={step} className="inline-flex items-center gap-2 rounded-md bg-[#f7f7f5] px-2.5 py-1.5">
-              <span className="text-[11px] text-[#85857e]">0{index + 1}</span>
-              <span className="text-xs font-medium text-[#353530]">{step}</span>
+              <span className="text-[11px] font-mono text-[#73736e]">0{index + 1}</span>
+              <span className="text-xs font-medium text-[#252522]">{step}</span>
             </li>
           ))}
         </ol>
       </Panel>
 
-      <CsvUploadPanel />
+      <Panel
+        eyebrow="Upload CSVs"
+        title="Import business files"
+        description="Select a CSV file for each step to import your records."
+      >
+        <CsvUploadPanel />
+      </Panel>
     </div>
   );
 }

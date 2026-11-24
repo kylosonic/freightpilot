@@ -101,7 +101,7 @@ export function CsvUploadPanel() {
   }
 
     const fieldClassName =
-      'fp-input file:mr-3 file:border-0 file:bg-[#eef6f2] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#087f72] hover:file:bg-[#e0efea]';
+      'fp-input file:mr-3 file:rounded file:border-0 file:bg-[#edf6f4] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#176b5c] hover:file:bg-[#dceee9]';
 
   return (
       <div className="divide-y divide-[#e5e4e0] border-y border-[#e5e4e0]">
@@ -129,6 +129,7 @@ export function CsvUploadPanel() {
               />
               <div className="flex flex-wrap items-center gap-2">
                 <button
+                  type="button"
                   disabled={!files[spec.key] || activeKind !== null || freeCapLocked}
                   onClick={() => submit(spec.key)}
                   className="fp-action-secondary"

@@ -67,14 +67,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen bg-white lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.72fr)]">
+    <main className="grid min-h-screen bg-white lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.72fr)]">
       <section className="hidden min-h-screen flex-col bg-[#f7f7f5] px-10 py-8 lg:flex xl:px-16 xl:py-12">
         <a href="https://freightpilot.pages.dev/" className="inline-flex w-fit items-center gap-2.5 rounded-md no-underline">
           <span className="grid h-8 w-8 place-items-center rounded-md bg-[#2e4f47] text-[12px] font-semibold text-white">FP</span>
           <span className="text-[15px] font-semibold text-[#252522]">FreightPilot</span>
         </a>
         <div className="my-auto max-w-[650px] pb-16 pt-16">
-          <p className="text-sm text-[#73736e]">FreightPilot</p>
+          <p className="text-sm text-[#5f5f59]">FreightPilot</p>
           <h1 className="mt-3 text-[clamp(2.8rem,4.5vw,4.4rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-[#252522]">
             Your delivery day, in one place.
           </h1>
@@ -88,16 +88,16 @@ export function LoginPage() {
               ['Keep a clear record', 'Payment checks and past changes stay in one place.'],
             ].map(([title, detail], index) => (
               <div key={title} className="grid grid-cols-[24px_minmax(0,1fr)] gap-3 py-4">
-                <span className="text-[12px] text-[#85857e]">{String(index + 1).padStart(2, '0')}</span>
+                <span className="text-[12px] text-[#5f5f59]">{String(index + 1).padStart(2, '0')}</span>
                 <div>
-                  <p className="text-sm font-medium text-[#353530]">{title}</p>
-                  <p className="mt-0.5 text-sm leading-6 text-[#85857e]">{detail}</p>
+                  <p className="text-sm font-medium text-[#252522]">{title}</p>
+                  <p className="mt-0.5 text-sm leading-6 text-[#5f5f59]">{detail}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <p className="text-xs text-[#85857e]">Less searching. More getting done.</p>
+        <p className="text-xs text-[#5f5f59]">Less searching. More getting done.</p>
       </section>
 
       <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8 lg:border-l lg:border-[#e5e4e0] lg:px-12">
@@ -127,7 +127,7 @@ export function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-xs font-semibold text-[#40534c]">
+              <label htmlFor="password" className="block text-[13px] font-medium text-[#454540]">
                 Password
               </label>
               <input
@@ -167,6 +167,6 @@ export function LoginPage() {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

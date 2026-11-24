@@ -13,7 +13,7 @@ function FeedbackPanel({
     <div
       data-testid={testId}
       role="alert"
-      className="mt-4 border border-[#e7c2be] border-l-4 border-l-[#b93a36] bg-[#fff8f7] px-3.5 py-2.5 text-xs text-[#8f302a]"
+      className="mt-4 rounded-md border border-[#e7c2be] border-l-4 border-l-[#b93a36] bg-[#fff8f7] px-3.5 py-2.5 text-xs text-[#8f302a]"
     >
       {message}
     </div>

@@ -31,10 +31,14 @@ import {
 import { useLivePayload, useLivePayloadStream } from '../hooks/useLiveUpdates';
 
 function severityTone(severity: string) {
-  if (severity === 'critical' || severity === 'danger') return 'danger';
-  if (severity === 'high' || severity === 'warning') return 'warning';
-  if (severity === 'medium' || severity === 'info') return 'info';
+  if (severity === 'critical' || severity === 'high' || severity === 'danger') return 'danger';
+  if (severity === 'medium' || severity === 'warning') return 'warning';
+  if (severity === 'low' || severity === 'info') return 'info';
   return 'neutral';
+}
+
+function formatEventLabel(value: string): string {
+  return value.replace(/[._]/g, ' ');
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -61,12 +65,12 @@ export { PANEL_GATES };
 
 function GatePlaceholder({ milestone }: { milestone: number }) {
   return (
-    <div className="grid h-full min-h-[130px] place-items-center border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-5 text-center">
+    <div className="grid h-full min-h-[130px] place-items-center rounded-md border border-dashed border-[#e5e4e0] bg-[#f7f7f5] p-5 text-center">
       <div>
-        <p className="text-sm font-semibold text-[#40534c]">
+        <p className="text-sm font-semibold text-[#454540]">
           Available after setup step {milestone}
         </p>
-        <Link to="/upload" className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
+        <Link to="/upload" className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#176b5c] underline-offset-4 hover:underline">
           Continue onboarding
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
@@ -210,7 +214,7 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {livePayload ? (
-              <span className="inline-flex items-center gap-1.5 text-xs text-[#5b6d66]">
+              <span className="inline-flex items-center gap-1.5 text-xs text-[#5f5f59]">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#16856b]" aria-hidden="true" />
                 Live sync {new Date(livePayload.server_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -231,22 +235,28 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
 
       <ActivationBanner mode="compact" />
 
-      <section aria-label="Today at a glance" className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 lg:grid-cols-5 lg:divide-x lg:divide-[#efeeea]">
-        <div className="border-b border-[#efeeea] px-4 py-3.5 lg:border-b-0">
-          <p className="text-[12px] font-medium text-[#73736e]">Needs attention</p>
-          <p className="mt-1.5 text-[28px] font-semibold leading-8 tabular-nums tracking-[-0.02em] text-[#252522]">{feedSummary?.open_alerts ?? 0}</p>
-          <p className="mt-1 text-[12px] text-[#85857e]">Open exceptions</p>
-        </div>
-        <div className="border-b border-[#efeeea] px-4 py-3.5 lg:border-b-0">
-          <p className="text-[12px] font-medium text-[#73736e]">In transit</p>
-          <p className="mt-1.5 text-[28px] font-semibold leading-8 tabular-nums tracking-[-0.02em] text-[#252522]">{summary.inTransitShipments.length}</p>
-          <p className="mt-1 text-[12px] text-[#85857e]">Active shipments</p>
-        </div>
-        <div className="border-b border-[#efeeea] px-4 py-3.5 lg:border-b-0">
-          <p className="text-[12px] font-medium text-[#73736e]">Delayed</p>
-          <p className="mt-1.5 text-[28px] font-semibold leading-8 tabular-nums tracking-[-0.02em] text-[#252522]">{feedSummary?.delayed_shipments ?? summary.delayedShipments.length}</p>
-          <p className="mt-1 text-[12px] text-[#85857e]">Shipments past plan</p>
-        </div>
+      <section
+        aria-label="Today at a glance"
+        className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 [&>*]:border-b [&>*]:border-[#efeeea] sm:[&>*:nth-child(odd)]:border-r lg:[&>*:nth-child(odd)]:border-r-0 lg:[&>*:not(:nth-child(3n))]:border-r xl:[&>*]:border-b-0 xl:[&>*:not(:last-child)]:border-r sm:[&>*:nth-last-child(-n+2)]:border-b-0 lg:[&>*:nth-last-child(-n+2)]:border-b lg:[&>*:nth-last-child(-n+3)]:border-b-0"
+      >
+        <MetricTile
+          title="Needs attention"
+          value={feedSummary?.open_alerts ?? 0}
+          detail="Open exceptions"
+          tone={(feedSummary?.open_alerts ?? 0) > 0 ? 'warning' : 'neutral'}
+        />
+        <MetricTile
+          title="In transit"
+          value={summary.inTransitShipments.length}
+          detail="Active shipments"
+          tone={summary.inTransitShipments.length > 0 ? 'info' : 'neutral'}
+        />
+        <MetricTile
+          title="Delayed"
+          value={feedSummary?.delayed_shipments ?? summary.delayedShipments.length}
+          detail="Shipments past plan"
+          tone={(feedSummary?.delayed_shipments ?? summary.delayedShipments.length) > 0 ? 'danger' : 'neutral'}
+        />
         {milestone >= gateMilestone('forecast-demand') ? (
           <MetricTile
             title="Forecast demand"
@@ -284,13 +294,12 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
           value={summary.usagePercent == null ? 'N/A' : `${summary.usagePercent}%`}
           detail={summary.usagePercent == null ? 'Usage unavailable' : 'Monthly task volume'}
           tone={summary.usagePercent != null && summary.usagePercent >= 100 ? 'danger' : summary.usagePercent != null && summary.usagePercent >= 80 ? 'warning' : 'success'}
-          className="sm:col-span-2 lg:col-span-4 xl:col-span-1 xl:border-l xl:border-[#efeeea]"
         />
       </section>
 
       {firstError ? (
         <Panel className="border-[#e7c2be] bg-[#fff8f7]">
-          <p className="text-sm text-[#8f302a]">
+          <p role="alert" className="text-sm text-[#8f302a]">
             Some data surfaces could not load. {(firstError as Error)?.message || 'Try refreshing.'}
           </p>
         </Panel>
@@ -304,27 +313,27 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
           title="Needs attention"
           description="Open exceptions, approvals, and route issues."
         >
-          <div className="divide-y divide-[#e6ebe8]">
+          <div className="divide-y divide-[#efeeea]">
             {feedItems.slice(0, 6).map((item) => (
               <article
                 key={`${item.source_type}:${item.source_id}`}
-                className="py-3 transition-colors hover:bg-[#f8faf9]"
+                className="py-3 transition-colors hover:bg-[#fafaf9]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={item.severity} tone={severityTone(item.severity)} />
-                    <span className="text-[11px] font-medium text-[#85857e]">{item.source_type}</span>
-                    <h3 className="text-sm font-semibold text-[#20372f]">{item.title}</h3>
+                    <span className="text-[11px] font-medium capitalize text-[#73736e]">{formatEventLabel(item.source_type)}</span>
+                    <h3 className="text-sm font-semibold text-[#252522]">{item.title}</h3>
                   </div>
-                  <span className="text-xs text-[#6b7d76]">{new Date(item.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-[#73736e]">{new Date(item.created_at).toLocaleString()}</span>
                 </div>
-                <p className="mt-1 text-sm leading-6 text-[#5b6d66]">{item.message}</p>
+                <p className="mt-1 text-sm leading-6 text-[#5f5f59]">{item.message}</p>
               </article>
             ))}
             {feedItems.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-sm font-medium text-[#353530]">You're all caught up</p>
-                <p className="mt-1 text-xs text-[#4f6e63]">No open alerts requiring operator attention.</p>
+              <div className="rounded-md bg-[#f7f7f5] py-8 text-center">
+                <p className="text-sm font-medium text-[#252522]">You&apos;re all caught up</p>
+                <p className="mt-1 text-xs text-[#5f5f59]">No open alerts requiring operator attention.</p>
               </div>
             ) : null}
           </div>
@@ -336,19 +345,19 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
               <div className="border-t border-[#efeeea] pt-3">
                 <p className="text-[12px] text-[#73736e]">Inventory on hand</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{summary.stock.toLocaleString()}</p>
-                <p className="mt-0.5 text-[12px] text-[#85857e]">Safety stock: {summary.safety.toLocaleString()} units</p>
+                <p className="mt-0.5 text-[12px] text-[#73736e]">Safety stock: {summary.safety.toLocaleString()} units</p>
               </div>
               {milestone >= gateMilestone('utilization') ? (
                 <div className="border-t border-[#efeeea] pt-3">
                   <p className="text-[12px] text-[#73736e]">Warehouse space used</p>
                   <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{inventory.length ? `${summary.avgUtil}%` : 'No stock yet'}</p>
-                  <p className="mt-0.5 text-[12px] text-[#85857e]">Average across inventory.</p>
+                  <p className="mt-0.5 text-[12px] text-[#73736e]">Average across inventory.</p>
                 </div>
               ) : (
                 <div className="border-t border-[#efeeea] pt-3">
                   <p className="text-[12px] text-[#73736e]">Warehouse space used</p>
-                  <p className="mt-1 text-xs text-[#63766f]">Available after setup step 4.</p>
-                  <Link to="/upload" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#087f72] underline-offset-4 hover:underline">
+                  <p className="mt-1 text-xs text-[#5f5f59]">Available after setup step 4.</p>
+                  <Link to="/upload" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#176b5c] underline-offset-4 hover:underline">
                     Continue onboarding
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
@@ -357,12 +366,12 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
               <div className="border-t border-[#efeeea] pt-3">
                 <p className="text-[12px] text-[#73736e]">Pending approvals</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{summary.pendingPlans.length}</p>
-                <p className="mt-0.5 text-[12px] text-[#85857e]">Plans awaiting sign-off.</p>
+                <p className="mt-0.5 text-[12px] text-[#73736e]">Plans awaiting sign-off.</p>
               </div>
               <div className="border-t border-[#efeeea] pt-3">
                 <p className="text-[12px] text-[#73736e]">Route schedules</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-[#252522]">{schedules.length}</p>
-            <p className="mt-0.5 text-[12px] text-[#85857e]">Saved route plans.</p>
+                <p className="mt-0.5 text-[12px] text-[#73736e]">Saved route plans.</p>
               </div>
             </div>
           </Panel>
@@ -373,14 +382,14 @@ export function DashboardPage({ referenceNow = new Date() }: DashboardPageProps 
                 <article key={event.id} className="border-t border-[#efeeea] pt-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-xs font-semibold text-[#20372f]">{event.description}</h3>
-                      <p className="mt-0.5 text-[11px] text-[#85857e]">{event.event_type}</p>
+                      <h3 className="text-xs font-semibold text-[#252522]">{event.description}</h3>
+                      <p className="mt-0.5 text-[11px] text-[#73736e]">{formatEventLabel(event.event_type)}</p>
                     </div>
-                    <span className="text-[11px] text-[#6b7d76]">{new Date(event.created_at).toLocaleString()}</span>
+                    <span className="text-[11px] text-[#73736e]">{new Date(event.created_at).toLocaleString()}</span>
                   </div>
                 </article>
               ))}
-              {auditEvents.length === 0 ? <p className="text-xs text-[#63766f]">No recent changes.</p> : null}
+              {auditEvents.length === 0 ? <p className="text-xs text-[#73736e]">No recent changes.</p> : null}
             </div>
           </Panel>
         </div>

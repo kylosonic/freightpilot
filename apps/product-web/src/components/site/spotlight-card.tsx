@@ -10,11 +10,11 @@ export function SpotlightCard({ children, className }: PropsWithChildren<{ class
   return (
     <article
       className={cn(
-        'group relative min-w-0 rounded-lg border border-[#e6e5e1] bg-white p-5 transition-colors duration-200 hover:border-[#d7d6d1] sm:p-6',
+        'group relative min-w-0 rounded-lg border border-[#e5e4e0] bg-white p-5 transition-colors duration-200 hover:border-[#d7d6d1] sm:p-6',
         className,
       )}
     >
-      <div className="relative z-10">{children}</div>
+      {children}
     </article>
   );
 }

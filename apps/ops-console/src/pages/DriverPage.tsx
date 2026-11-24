@@ -37,6 +37,7 @@ const copy = {
     driver: 'አሽከርካሪ',
     start: 'መነሻ',
     stop: 'ጣቢያ',
+    planned: 'ታቅዷል',
     delivered: 'ደረሰ',
     inTransit: 'በመንገድ ላይ',
     failed: 'አልተሳካም',
@@ -49,6 +50,7 @@ const copy = {
     offline: 'ኦፍላይን — ለውጦች በኋላ ይላካሉ',
     online: 'ኦንላይን',
     sync: 'በመላክ ላይ…',
+    loading: 'መረጃ በመጫን ላይ…',
     noToken: 'ይህ የአሽከርካሪ ሊንክ አልተላከም። ከቢሮ አዲስ ሊንክ ይጠይቁ።',
     noStops: 'ዛሬ ምንም ጣቢያ የለም።',
     proofSaved: 'ፎቶው ተቀምጧል',
@@ -66,6 +68,7 @@ const copy = {
     driver: 'Driver',
     start: 'Start',
     stop: 'Stop',
+    planned: 'Planned',
     delivered: 'Delivered',
     inTransit: 'In transit',
     failed: 'Failed',
@@ -78,6 +81,7 @@ const copy = {
     offline: 'Offline — changes will sync later',
     online: 'Online',
     sync: 'Syncing…',
+    loading: 'Loading route…',
     noToken: 'This driver link did not work. Ask the office for a new link.',
     noStops: 'No stops scheduled today.',
     proofSaved: 'Photo saved',
@@ -175,6 +179,12 @@ function isTerminalManifestError(error: unknown): error is DriverRequestError {
   return isTerminalDriverError(error) || (error instanceof DriverRequestError && error.status === 404);
 }
 
+function formatEtbAmount(value: number | string | null | undefined): string {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric)) return `${value ?? '0.00'} ETB`;
+  return `${numeric.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`;
+}
+
 export function DriverPage() {
   const [token] = useState(() => {
     if (typeof window === 'undefined') return '';
@@ -184,6 +194,7 @@ export function DriverPage() {
   const [lang, setLang] = useState<'am' | 'en'>('am');
   const t = copy[lang];
   const [manifest, setManifest] = useState<DriverManifest | null>(null);
+  const [loadingManifest, setLoadingManifest] = useState(Boolean(token));
   const [online, setOnline] = useState(
     typeof navigator === 'undefined' ? true : navigator.onLine,
   );
@@ -197,6 +208,14 @@ export function DriverPage() {
   const [pendingCount, setPendingCount] = useState(0);
   const [queuedProofs, setQueuedProofs] = useState<QueuedProof[]>([]);
   const proofScope = tokenHash(token);
+
+  function localizeStopStatus(status: string): string {
+    if (status === 'in_transit') return t.inTransit;
+    if (status === 'delivered') return t.delivered;
+    if (status === 'failed') return t.failed;
+    if (status === 'planned') return t.planned;
+    return status.replace(/_/g, ' ');
+  }
 
   async function clearDriverSession(message: string) {
     writeQueue(token, []);
@@ -277,9 +296,11 @@ export function DriverPage() {
 
   async function loadManifest() {
     if (!token) {
+      setLoadingManifest(false);
       setError(t.noToken);
       return;
     }
+    setLoadingManifest(true);
     const manifestStorageKey = manifestKey(token);
     try {
       const next = await getDriverManifest(token);
@@ -312,6 +333,8 @@ export function DriverPage() {
         localStorage.removeItem(manifestStorageKey);
       }
       setError(err instanceof Error ? err.message : 'Could not load the manifest.');
+    } finally {
+      setLoadingManifest(false);
     }
   }
 
@@ -450,6 +473,7 @@ export function DriverPage() {
   }, [online]);
 
   async function queueOrRun(item: QueueItem) {
+    setError(null);
     setSyncError(null);
     if (!online) {
       setPendingCount(enqueue(token, item));
@@ -479,6 +503,7 @@ export function DriverPage() {
   }
 
   async function onProof(stop: DispatchStop) {
+    setError(null);
     const file = proofFiles[stop.order_id];
     if (!file) {
       setError(t.choosePhoto);
@@ -540,15 +565,26 @@ export function DriverPage() {
         <header className="rounded-lg border border-[#e5e4e0] bg-white p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-medium text-[#73736e]">FreightPilot</p>
-              <h1 className="mt-1 text-2xl font-semibold text-[#252522]">{t.title}</h1>
-              {manifest ? <p className="mt-1 text-xs text-[#63766f]">{manifest.driver_name} · {manifest.start_label}</p> : null}
+              <div className="inline-flex items-center gap-2">
+                <span className="grid h-6 w-6 place-items-center rounded-md bg-[#2e4f47] text-[10px] font-semibold text-white">FP</span>
+                <p className="text-xs font-medium text-[#73736e]">FreightPilot</p>
+              </div>
+              <h1 className="mt-2 text-2xl font-semibold text-[#252522]">{t.title}</h1>
+              {manifest ? (
+                <p className="mt-1 text-xs text-[#5f5f59]">
+                  {manifest.driver_name} · {manifest.start_label}
+                </p>
+              ) : null}
             </div>
-            <button type="button" onClick={() => setLang(lang === 'am' ? 'en' : 'am')} className="min-h-9 rounded-full border border-[#d7d7d2] bg-white px-3 text-xs font-medium text-[#454540]">
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
+              className="fp-action-secondary !min-h-8 !px-3 !text-xs"
+            >
               {lang === 'am' ? 'EN' : 'አማ'}
             </button>
           </div>
-          <div className="mt-4 flex items-center justify-between gap-2 text-xs">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className={online ? 'text-[#14745f]' : 'text-[#885100]'}>{online ? t.online : t.offline}</span>
             {pendingCount + queuedProofs.length > 0 ? <span className="text-[#885100]">{pendingCount + queuedProofs.length} {t.queued}</span> : null}
             {busy ? <span className="text-[#17679b]">{t.sync}</span> : null}
@@ -557,29 +593,36 @@ export function DriverPage() {
             type="button"
             disabled={busy}
             onClick={() => void clearDeviceData()}
-            className="mt-3 min-h-9 rounded-md border border-[#d7d7d2] bg-white px-3 text-xs font-medium text-[#6f3a35] disabled:opacity-40"
+            className="mt-3 inline-flex min-h-8 items-center justify-center rounded-md border border-[#e7c2be] bg-white px-3 text-xs font-medium text-[#8f302a] transition-colors hover:bg-[#fff8f7] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t.clearDevice}
           </button>
         </header>
 
-        {error ? <p role="alert" className="rounded-md bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{error}</p> : null}
-        {syncError ? <p role="alert" className="rounded-md bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{syncError}</p> : null}
-        {notice ? <p role="status" className="rounded-md bg-[#fffaf0] p-3 text-sm leading-6 text-[#704500]">{notice}</p> : null}
+        {error ? <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{error}</p> : null}
+        {syncError ? <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm leading-6 text-[#8f302a]">{syncError}</p> : null}
+        {notice ? <p role="status" className="rounded-md border border-[#e5d2ab] bg-[#fcf5e7] p-3 text-sm leading-6 text-[#885100]">{notice}</p> : null}
 
-        {manifest?.stops.length === 0 ? <p className="rounded-lg border border-[#e5e4e0] bg-white p-4 text-sm text-[#73736e]">{t.noStops}</p> : null}
+        {loadingManifest && !manifest ? (
+          <div role="status" className="space-y-3 rounded-lg border border-[#e5e4e0] bg-white p-4">
+            <p className="text-sm text-[#5f5f59]">{t.loading}</p>
+            <div className="skeleton h-24" />
+          </div>
+        ) : null}
+
+        {manifest?.stops.length === 0 ? <p className="rounded-lg border border-[#e5e4e0] bg-white p-4 text-sm text-[#5f5f59]">{t.noStops}</p> : null}
 
         <div className="space-y-3">
           {manifest?.stops.map((stop) => (
             <article key={stop.order_id} className="rounded-lg border border-[#e5e4e0] bg-white p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-[#73736e]">Stop {stop.sequence} · {stop.order_no}</p>
+                  <p className="text-xs text-[#73736e]">{t.stop} {stop.sequence} · {stop.order_no}</p>
                   <h2 className="mt-1 text-lg font-semibold text-[#252522]">{stop.customer_name}</h2>
                   <p className="mt-1 text-sm leading-6 text-[#5f5f59]">{stop.address}</p>
-                  {stop.phone ? <a href={`tel:${stop.phone}`} className="mt-1 block text-xs font-medium text-[#087f72] underline">{stop.phone}</a> : null}
+                  {stop.phone ? <a href={`tel:${stop.phone}`} className="mt-1 block text-xs font-medium text-[#176b5c] underline">{stop.phone}</a> : null}
                 </div>
-                <span className="shrink-0 text-right font-mono text-sm text-[#454540]">{stop.cod_amount_etb} ETB</span>
+                <span className="shrink-0 text-right font-mono text-sm tabular-nums text-[#454540]">{formatEtbAmount(stop.cod_amount_etb)}</span>
               </div>
               {stop.window_start || stop.window_end ? (
                 <p className="mt-3 text-xs text-[#885100]">
@@ -587,15 +630,48 @@ export function DriverPage() {
                 </p>
               ) : null}
               <div className="mt-4 grid grid-cols-3 gap-2">
-                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'in_transit' })} className="min-h-9 border border-[#bfd8e5] bg-white px-2 text-[11px] font-semibold text-[#17679b] disabled:opacity-40">{t.inTransit}</button>
-                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'delivered' })} className="min-h-9 border border-[#b9dcd1] bg-white px-2 text-[11px] font-semibold text-[#14745f] disabled:opacity-40">{t.delivered}</button>
-                <button type="button" disabled={busy || stop.status === 'delivered'} onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'failed' })} className="min-h-9 border border-[#e7c2be] bg-white px-2 text-[11px] font-semibold text-[#a3342f] disabled:opacity-40">{t.failed}</button>
+                <button
+                  type="button"
+                  disabled={busy || stop.status === 'delivered'}
+                  onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'in_transit' })}
+                  className={`min-h-9 rounded-md border px-2 text-xs font-semibold transition-colors disabled:opacity-40 ${
+                    stop.status === 'in_transit'
+                      ? 'border-[#17679b] bg-[#edf5fa] text-[#17679b]'
+                      : 'border-[#bfd8e5] bg-white text-[#17679b] hover:bg-[#edf5fa]'
+                  }`}
+                >
+                  {t.inTransit}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || stop.status === 'delivered'}
+                  onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'delivered' })}
+                  className={`min-h-9 rounded-md border px-2 text-xs font-semibold transition-colors disabled:opacity-40 ${
+                    stop.status === 'delivered'
+                      ? 'border-[#14745f] bg-[#edf7f1] text-[#14745f]'
+                      : 'border-[#b9dcd1] bg-white text-[#14745f] hover:bg-[#edf7f1]'
+                  }`}
+                >
+                  {t.delivered}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || stop.status === 'delivered'}
+                  onClick={() => queueOrRun({ kind: 'status', orderId: stop.order_id, status: 'failed' })}
+                  className={`min-h-9 rounded-md border px-2 text-xs font-semibold transition-colors disabled:opacity-40 ${
+                    stop.status === 'failed'
+                      ? 'border-[#a3342f] bg-[#fbf0ee] text-[#a3342f]'
+                      : 'border-[#e7c2be] bg-white text-[#a3342f] hover:bg-[#fbf0ee]'
+                  }`}
+                >
+                  {t.failed}
+                </button>
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-                <label className="text-xs text-[#63766f]">
+                <label className="text-xs font-medium text-[#5f5f59]">
                   {t.cash}
                   <input
-                    className="fp-input mt-1 min-h-9"
+                    className="fp-input mt-1 min-h-10"
                     type="number"
                     min="0"
                     step="0.01"
@@ -614,15 +690,15 @@ export function DriverPage() {
                       note: cashNotes[stop.order_id]?.trim() || undefined,
                     })
                   }
-                  className="fp-action-primary self-end !min-h-9 !text-xs"
+                  className="fp-action-primary self-end !text-xs"
                 >
                   {t.saveCash}
                 </button>
               </div>
-              <label className="mt-2 block text-xs text-[#63766f]">
+              <label className="mt-2 block text-xs font-medium text-[#5f5f59]">
                 {t.cashNote}
                 <input
-                  className="fp-input mt-1 min-h-9"
+                  className="fp-input mt-1 min-h-10"
                   value={cashNotes[stop.order_id] ?? ''}
                   onChange={(event) =>
                     setCashNotes((current) => ({
@@ -633,17 +709,22 @@ export function DriverPage() {
                 />
               </label>
               <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-                <label className="text-xs text-[#63766f]">
+                <label className="text-xs font-medium text-[#5f5f59]">
                   {t.proof}
                   <input
-                    className="mt-1 block w-full text-xs text-[#40534c]"
+                    className="mt-1 block w-full text-xs text-[#454540]"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     capture="environment"
                     onChange={(event) => setProofFiles((current) => ({ ...current, [stop.order_id]: event.target.files?.[0] ?? null }))}
                   />
                 </label>
-                <button type="button" disabled={busy || Boolean(stop.proof_id) || queuedProofs.some((proof) => proof.orderId === stop.order_id)} onClick={() => void onProof(stop)} className="min-h-9 self-end border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] disabled:opacity-40">
+                <button
+                  type="button"
+                  disabled={busy || Boolean(stop.proof_id) || queuedProofs.some((proof) => proof.orderId === stop.order_id)}
+                  onClick={() => void onProof(stop)}
+                  className="fp-action-secondary self-end !text-xs"
+                >
                   {stop.proof_id
                     ? t.proofSaved
                     : queuedProofs.some((proof) => proof.orderId === stop.order_id)
@@ -651,7 +732,9 @@ export function DriverPage() {
                       : t.upload}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-[#73736e]">{t.status}: {stop.status} · {t.collected}: {stop.collected_cash_etb} ETB</p>
+              <p className="mt-2 text-xs text-[#73736e]">
+                {t.status}: {localizeStopStatus(stop.status)} · {t.collected}: {formatEtbAmount(stop.collected_cash_etb)}
+              </p>
             </article>
           ))}
         </div>

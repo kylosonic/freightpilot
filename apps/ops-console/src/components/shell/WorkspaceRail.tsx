@@ -31,6 +31,7 @@ type RailItem = {
   to: string;
   label: string;
   Icon: LucideIcon;
+  restrictedForViewer?: boolean;
 };
 
 const navGroups: Array<{ label: string; items: RailItem[] }> = [
@@ -40,7 +41,7 @@ const navGroups: Array<{ label: string; items: RailItem[] }> = [
       { to: '/', label: 'Overview', Icon: House },
       { to: '/routes', label: 'Routes', Icon: Route },
       { to: '/shipments', label: 'Shipments', Icon: CalendarClock },
-      { to: '/dispatch', label: 'Dispatch', Icon: Truck },
+      { to: '/dispatch', label: 'Dispatch', Icon: Truck, restrictedForViewer: true },
       { to: '/alerts', label: 'Exceptions', Icon: BellRing },
       { to: '/planning', label: 'Planning', Icon: FileCheck2 },
       { to: '/drivers', label: 'Fleet and cash', Icon: UsersRound },
@@ -49,11 +50,11 @@ const navGroups: Array<{ label: string; items: RailItem[] }> = [
   {
     label: 'Workspace',
     items: [
-      { to: '/upload', label: 'Import data', Icon: Database },
+      { to: '/upload', label: 'Import data', Icon: Database, restrictedForViewer: true },
       { to: '/receipts', label: 'Payments', Icon: ReceiptText },
       { to: '/admin/receipts', label: 'Verify payments', Icon: CircleDollarSign },
       { to: '/account', label: 'Settings', Icon: Settings2 },
-      { to: '/providers', label: 'Integrations', Icon: PlugZap },
+      { to: '/providers', label: 'Integrations', Icon: PlugZap, restrictedForViewer: true },
     ],
   },
 ];
@@ -77,7 +78,7 @@ function RailLink({ item, onNavigate, compact = false }: { item: RailItem; onNav
     >
       {({ isActive }) => (
         <>
-          <Icon className={`h-[17px] w-[17px] shrink-0 ${isActive ? 'text-[#3d5e55]' : 'text-[#85857e]'}`} aria-hidden="true" />
+          <Icon className={`h-[17px] w-[17px] shrink-0 ${isActive ? 'text-[#176b5c]' : 'text-[#5f5f59]'}`} aria-hidden="true" />
           {!compact ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
         </>
       )}
@@ -89,10 +90,15 @@ export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onT
   const displayName = user?.full_name || user?.email || user?.username || 'Workspace member';
   const role = user?.role || 'viewer';
   const canVerifyPayments = Boolean(user?.is_platform_admin);
+  const isViewer = role === 'viewer';
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => item.to !== '/admin/receipts' || canVerifyPayments),
+      items: group.items.filter(
+        (item) =>
+          (item.to !== '/admin/receipts' || canVerifyPayments) &&
+          (!item.restrictedForViewer || !isViewer),
+      ),
     }))
     .filter((group) => group.items.length > 0);
   const initials = displayName
@@ -113,14 +119,14 @@ export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onT
           </span>
           <span className={`grid gap-0.5 ${compact ? 'sr-only' : ''}`}>
             <strong className="text-[14px] font-semibold leading-5 text-[#252522]">FreightPilot</strong>
-            <span className="text-[11px] leading-4 text-[#73736e]">Operations workspace</span>
+            <span className="text-[11px] leading-4 text-[#5f5f59]">Operations workspace</span>
           </span>
         </Link>
         {onToggleCompact ? (
           <button
             type="button"
             onClick={onToggleCompact}
-            className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#73736e] transition-colors hover:bg-[#efefec] hover:text-[#252522] lg:flex"
+            className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#5f5f59] transition-colors hover:bg-[#efefec] hover:text-[#252522] lg:flex"
             aria-label={compact ? 'Expand navigation' : 'Collapse navigation'}
             title={compact ? 'Expand navigation' : 'Collapse navigation'}
           >
@@ -134,7 +140,7 @@ export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onT
         <div className="space-y-5">
           {visibleGroups.map((group) => (
             <section key={group.label} aria-labelledby={`rail-${group.label.replace(/\s+/g, '-').toLowerCase()}`}>
-              <p id={`rail-${group.label.replace(/\s+/g, '-').toLowerCase()}`} className={`mb-1.5 px-2 text-[12px] font-medium text-[#85857e] ${compact ? 'sr-only' : ''}`}>
+              <p id={`rail-${group.label.replace(/\s+/g, '-').toLowerCase()}`} className={`mb-1.5 px-2 text-[12px] font-medium text-[#5f5f59] ${compact ? 'sr-only' : ''}`}>
                 {group.label}
               </p>
               <div className="grid">
@@ -153,8 +159,8 @@ export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onT
             {initials || 'FP'}
           </span>
           {!compact ? <div className="min-w-0">
-            <p className="truncate text-[12px] font-medium text-[#353530]">{displayName}</p>
-            <p className="truncate text-[11px] capitalize text-[#73736e]">
+            <p className="truncate text-[12px] font-medium text-[#252522]">{displayName}</p>
+            <p className="truncate text-[11px] capitalize text-[#5f5f59]">
               {role} · {user?.email || user?.username}
             </p>
           </div> : null}
@@ -162,7 +168,9 @@ export function WorkspaceRail({ user, onLogout, onNavigate, compact = false, onT
         <button
           type="button"
           onClick={onLogout}
-          className={`mt-2 w-full rounded-md py-1.5 text-xs font-medium text-[#73736e] transition-colors hover:bg-[#efefec] hover:text-[#a33a31] ${compact ? 'text-center' : 'px-2 text-left'}`}
+          aria-label="Log out"
+          title="Log out"
+          className={`mt-2 w-full rounded-md py-1.5 text-xs font-medium text-[#5f5f59] transition-colors hover:bg-[#efefec] hover:text-[#a3342f] ${compact ? 'text-center' : 'px-2 text-left'}`}
         >
           {compact ? 'Exit' : 'Log out'}
         </button>

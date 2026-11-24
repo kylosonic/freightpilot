@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { apiErrorMessage } from '../services/authErrors';
 import { setStoredToken } from '../services/api';
@@ -48,23 +49,31 @@ export function AcceptInvitePage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f4f6f5] px-4 py-10 text-[#202b36]">
-      <section className="w-full max-w-lg border border-[#d7dfdc] bg-white p-6 sm:p-8">
-        <span className="grid h-9 w-9 place-items-center bg-[#153f3a] text-xs font-bold text-white">FP</span>
-        <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#087f72]">FreightPilot workspace</p>
-        <h1 className="mt-1.5 text-2xl font-semibold text-[#172a24]">Accept your invitation</h1>
-        <p className="mt-2 text-xs leading-5 text-[#63766f]">
+    <main className="flex min-h-screen items-center justify-center bg-[#f7f7f5] px-4 py-10 text-[#252522]">
+      <section className="w-full max-w-lg rounded-lg border border-[#e5e4e0] bg-white p-6 sm:p-8">
+        <div className="inline-flex items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-[#2e4f47] text-[12px] font-semibold text-white">FP</span>
+          <span className="text-[15px] font-semibold text-[#252522]">FreightPilot</span>
+        </div>
+        <p className="mt-5 text-[12px] font-medium text-[#73736e]">FreightPilot workspace</p>
+        <h1 className="mt-1.5 text-2xl font-semibold text-[#252522]">Accept your invitation</h1>
+        <p className="mt-2 text-xs leading-5 text-[#5f5f59]">
           Create the account that will join the workspace. If the email already has an account,
-          enter that account's existing password.
+          enter that account&apos;s existing password.
         </p>
 
         {!token ? (
-          <p className="mt-5 border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm text-[#8f302a]">
-            This invitation link is missing a token.
-          </p>
+          <div className="mt-5 space-y-4">
+            <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] p-3 text-sm text-[#8f302a]">
+              This invitation link is missing a token.
+            </p>
+            <Link to="/login" className="fp-action-secondary w-full min-h-10">
+              Back to sign in
+            </Link>
+          </div>
         ) : (
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <label className="block text-xs font-medium text-[#40534c]">
+            <label className="block text-[13px] font-medium text-[#454540]">
               Username
               <input
                 className={FIELD}
@@ -75,8 +84,8 @@ export function AcceptInvitePage() {
                 autoComplete="username"
               />
             </label>
-            <label className="block text-xs font-medium text-[#40534c]">
-              Full name <span className="font-normal text-[#63766f]">(optional)</span>
+            <label className="block text-[13px] font-medium text-[#454540]">
+              Full name <span className="font-normal text-[#73736e]">(optional)</span>
               <input
                 className={FIELD}
                 value={fullName}
@@ -84,7 +93,7 @@ export function AcceptInvitePage() {
                 autoComplete="name"
               />
             </label>
-            <label className="block text-xs font-medium text-[#40534c]">
+            <label className="block text-[13px] font-medium text-[#454540]">
               Password
               <input
                 className={FIELD}
@@ -96,15 +105,26 @@ export function AcceptInvitePage() {
                 autoComplete="new-password"
               />
             </label>
-            {error ? <p role="alert" className="text-sm text-[#8f302a]">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3.5 py-2.5 text-sm text-[#8f302a]">
+                {error}
+              </p>
+            ) : null}
             <button
-              className="min-h-10 w-full bg-[#087f72] px-4 text-sm font-semibold text-white hover:bg-[#06675d] disabled:opacity-60"
+              type="submit"
+              className="fp-action-primary min-h-10 w-full"
               disabled={submitting}
             >
-              {submitting ? 'Joining workspace…' : 'Join workspace'}
+              {submitting ? 'Joining workspace...' : 'Join workspace'}
             </button>
           </form>
         )}
+
+        <div className="mt-6 border-t border-[#e5e4e0] pt-4 text-center">
+          <Link to="/login" className="text-xs font-medium text-[#176b5c] underline-offset-4 hover:underline">
+            Already in the workspace? Sign in
+          </Link>
+        </div>
       </section>
     </main>
   );

@@ -12,8 +12,8 @@
   --fp-muted: #73736e;
   --fp-secondary: #5f5f59;
   --fp-primary: #252522;
-  --fp-accent: #176b5c;
-  --fp-accent-hover: #115449;
+  --fp-accent: #087f72;
+  --fp-accent-hover: #176b5c;
   --fp-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -54,13 +54,6 @@ textarea {
     color: #73736e;
   }
 
-  .glass-panel {
-    @apply relative overflow-hidden;
-    border: 1px solid #e5e4e0;
-    background: #ffffff;
-    border-radius: 8px;
-  }
-
   .pill {
     @apply inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs;
     border: 1px solid #e5e4e0;
@@ -79,31 +72,9 @@ textarea {
     text-wrap: pretty;
   }
 
-  /* ── WCAG-compliant text utilities ── */
-  .text-muted {
-    color: #5f5f59;
-  }
-  .text-subtle {
-    color: #5f5f59;
-  }
-  .text-faint {
-    color: #73736e;
-  }
-
-  /* ── Section divider ── */
-  .divider-glow {
-    @apply mx-auto h-px w-full max-w-3xl;
-    background: #e5e4e0;
-  }
-
   /* ── Skip to content ── */
   .skip-to-content {
     @apply fixed left-4 top-4 z-[100] -translate-y-20 rounded-full bg-[#176b5c] px-5 py-3 text-sm font-medium text-white shadow-lg transition focus:translate-y-0;
-  }
-
-  /* ── Back-to-top button ── */
-  .back-to-top {
-    @apply fixed bottom-6 right-6 z-50 inline-flex h-11 w-11 items-center justify-center border border-[#d7dfdc] bg-white text-[#40534c] transition hover:bg-[#eef3f0];
   }
 
   .fp-site-input {
@@ -115,12 +86,8 @@ textarea {
     @apply text-balance text-[clamp(1.8rem,3.5vw,2.9rem)] font-semibold leading-[1.12] tracking-[-0.025em] text-[#252522];
   }
 
-  .site-action-primary {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#087f72] px-4 text-sm font-medium text-white transition-colors hover:bg-[#176b5c];
-  }
-
   .site-action-secondary {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#e5e4e0] bg-white px-4 text-sm font-medium text-[#454540] transition-colors hover:bg-[#f7f7f5];
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#e5e4e0] bg-white px-4 text-sm font-medium text-[#454540] transition-colors hover:border-[#d7d6d1] hover:bg-[#f7f7f5];
   }
 }
 
@@ -128,7 +95,6 @@ textarea {
 :focus-visible {
   outline: 2px solid #176b5c;
   outline-offset: 2px;
-  border-radius: 2px;
 }
 
 /* Horizontal table scrolling stays inside its own region, never the page. */

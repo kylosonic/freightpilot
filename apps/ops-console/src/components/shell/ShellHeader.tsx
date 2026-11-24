@@ -33,20 +33,20 @@ export function ShellHeader({ contextLabel, descriptor, user, onOpenNavigation }
           </button>
 
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-medium text-[#353530]">{contextLabel}</p>
-            <p className="hidden truncate text-[11px] text-[#85857e] sm:block">{descriptor}</p>
+            <p className="truncate text-[13px] font-medium text-[#252522]">{contextLabel}</p>
+            <p className="hidden truncate text-[11px] text-[#73736e] sm:block">{descriptor}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {user ? (
             <div className="flex min-w-0 items-center gap-2">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#efefec] text-[10px] font-medium text-[#42423d]">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#efefec] text-[10px] font-medium text-[#454540]">
                 {initials}
               </span>
               <div className="hidden min-w-0 max-w-[180px] xl:block">
-                <p className="truncate text-[12px] font-medium text-[#353530]">{displayName}</p>
-                <p className="truncate text-[11px] capitalize text-[#85857e]">
+                <p className="truncate text-[12px] font-medium text-[#252522]">{displayName}</p>
+                <p className="truncate text-[11px] capitalize text-[#73736e]">
                   {user.role} · {user.email || user.username}
                 </p>
               </div>

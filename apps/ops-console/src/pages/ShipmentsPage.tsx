@@ -14,8 +14,12 @@ const statusTransitions: ShipmentStatus[] = ['in_transit', 'delayed', 'delivered
 function statusTone(status: ShipmentStatus) {
   if (status === 'delivered') return 'success';
   if (status === 'delayed' || status === 'cancelled') return 'danger';
-  if (status === 'in_transit') return 'warning';
+  if (status === 'in_transit') return 'info';
   return 'neutral';
+}
+
+function formatEtb(value: number): string {
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /* ── Inline delay reason dialog ─────────────────────────────── */
@@ -23,11 +27,13 @@ function statusTone(status: ShipmentStatus) {
 function DelayReasonDialog({
   shipmentNo,
   defaultReason,
+  busy,
   onConfirm,
   onCancel,
 }: {
   shipmentNo: string;
   defaultReason: string;
+  busy: boolean;
   onConfirm: (reason: string) => void;
   onCancel: () => void;
 }) {
@@ -38,22 +44,24 @@ function DelayReasonDialog({
       eyebrow="Delay reason"
       title={`Mark ${shipmentNo} as delayed`}
       description="Add a short reason so the team knows what caused the delay."
+      onClose={onCancel}
       actions={
         <>
           <button
             type="button"
+            disabled={busy}
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+            className="fp-action-secondary !min-h-8 text-xs"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(reason)}
-            disabled={!reason.trim()}
-            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={busy || !reason.trim()}
+            className="fp-action-primary !min-h-8 text-xs"
           >
-            Confirm delay
+            {busy ? 'Saving...' : 'Confirm delay'}
           </button>
         </>
       }
@@ -80,10 +88,12 @@ function SkeletonBlock({ className }: { className?: string }) {
  */
 function DeliveryCashDialog({
   shipment,
+  busy,
   onConfirm,
   onCancel,
 }: {
   shipment: Shipment;
+  busy: boolean;
   onConfirm: (cashCollected: number | undefined, note: string) => void;
   onCancel: () => void;
 }) {
@@ -101,25 +111,27 @@ function DeliveryCashDialog({
       title={`Deliver ${shipment.shipment_no}`}
       description={
         hasCod
-          ? `Cash on delivery of ${expected.toFixed(2)} ETB is expected at the door. Enter what the driver actually collected — a shortfall is recorded, not hidden.`
+          ? `Cash on delivery of ${formatEtb(expected)} ETB is expected at the door. Enter what the driver actually collected — a shortfall is recorded, not hidden.`
           : 'This shipment carries no cash on delivery, so confirming records the delivery only.'
       }
+      onClose={onCancel}
       actions={
         <>
           <button
             type="button"
+            disabled={busy}
             onClick={onCancel}
-            className="glow-ring inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-xs font-semibold text-[#40534c] transition hover:bg-[#eef3f0]"
+            className="fp-action-secondary !min-h-8 text-xs"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(hasCod ? entered : undefined, note)}
-            disabled={hasCod && (!Number.isFinite(entered) || entered < 0)}
-            className="glow-ring inline-flex min-h-8 items-center justify-center bg-[#087f72] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={busy || (hasCod && (!Number.isFinite(entered) || entered < 0))}
+            className="fp-action-primary !min-h-8 text-xs"
           >
-            Confirm delivery
+            {busy ? 'Saving...' : 'Confirm delivery'}
           </button>
         </>
       }
@@ -127,11 +139,11 @@ function DeliveryCashDialog({
       <div className="grid gap-4">
         {hasCod ? (
           <>
-            <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+            <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
               Cash collected (ETB)
               <input
                 autoFocus
-                className="fp-input"
+                className="fp-input min-h-10"
                 type="number"
                 min={0}
                 step="0.01"
@@ -139,14 +151,14 @@ function DeliveryCashDialog({
                 onChange={(e) => setCollected(e.target.value)}
               />
             </label>
-            <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#63766f]'}`}>
+            <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#5f5f59]'}`}>
               {shortfall > 0
-                ? `Shortfall of ${shortfall.toFixed(2)} ETB will be recorded against this delivery.`
+                ? `Shortfall of ${formatEtb(shortfall)} ETB will be recorded against this delivery.`
                 : 'This clears the expected amount in full.'}
             </p>
           </>
         ) : null}
-        <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+        <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
           Delivery note (optional)
           <textarea
             className="fp-input min-h-20 px-4 py-3"
@@ -166,6 +178,7 @@ export function ShipmentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [busyShipmentId, setBusyShipmentId] = useState<string | null>(null);
   const [delayDialog, setDelayDialog] = useState<{ shipment: Shipment } | null>(null);
   const [deliveryDialog, setDeliveryDialog] = useState<{ shipment: Shipment } | null>(null);
   const [form, setForm] = useState({
@@ -246,17 +259,21 @@ export function ShipmentsPage() {
       return;
     }
     const payload: { status: ShipmentStatus; delay_reason?: string } = { status };
+    setBusyShipmentId(shipment.id);
     try {
       setError(null);
       await updateShipmentStatus(shipment.id, payload);
       await loadShipments();
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to update shipment status'));
+    } finally {
+      setBusyShipmentId(null);
     }
   }
 
   async function onDeliveryConfirm(cashCollected: number | undefined, note: string) {
     if (!deliveryDialog) return;
+    setBusyShipmentId(deliveryDialog.shipment.id);
     try {
       setError(null);
       await updateShipmentStatus(deliveryDialog.shipment.id, {
@@ -268,12 +285,14 @@ export function ShipmentsPage() {
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to confirm the delivery'));
     } finally {
+      setBusyShipmentId(null);
       setDeliveryDialog(null);
     }
   }
 
   async function onDelayConfirm(reason: string) {
     if (!delayDialog) return;
+    setBusyShipmentId(delayDialog.shipment.id);
     try {
       setError(null);
       await updateShipmentStatus(delayDialog.shipment.id, { status: 'delayed', delay_reason: reason });
@@ -281,6 +300,7 @@ export function ShipmentsPage() {
     } catch (err) {
       setError(apiErrorMessage(err, 'Failed to update shipment status'));
     } finally {
+      setBusyShipmentId(null);
       setDelayDialog(null);
     }
   }
@@ -298,6 +318,7 @@ export function ShipmentsPage() {
         <DelayReasonDialog
           shipmentNo={delayDialog.shipment.shipment_no}
           defaultReason={delayDialog.shipment.delay_reason || 'Traffic delay'}
+          busy={busyShipmentId === delayDialog.shipment.id}
           onConfirm={onDelayConfirm}
           onCancel={() => setDelayDialog(null)}
         />
@@ -306,6 +327,7 @@ export function ShipmentsPage() {
       {deliveryDialog ? (
         <DeliveryCashDialog
           shipment={deliveryDialog.shipment}
+          busy={busyShipmentId === deliveryDialog.shipment.id}
           onConfirm={onDeliveryConfirm}
           onCancel={() => setDeliveryDialog(null)}
         />
@@ -314,7 +336,7 @@ export function ShipmentsPage() {
       <PageHeader
         eyebrow="Shipments"
         title="Track every delivery"
-      description="See what is on the road, what is late, and what has arrived."
+        description="See what is on the road, what is late, and what has arrived."
       />
 
       <div className="grid overflow-hidden rounded-lg border border-[#e5e4e0] bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[#efeeea]">
@@ -325,34 +347,34 @@ export function ShipmentsPage() {
       </div>
 
       <Panel
-          eyebrow="New shipment"
+        eyebrow="New shipment"
         title="Create a shipment"
         description="Add a shipment here when it was not created from an imported order."
       >
-        <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreate}>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" onSubmit={onCreate}>
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Shipment No
-            <input className="fp-input" placeholder="Shipment No" value={form.shipment_no} onChange={(e) => setForm((prev) => ({ ...prev, shipment_no: e.target.value }))} required />
+            <input className="fp-input min-h-10" placeholder="Shipment No" value={form.shipment_no} onChange={(e) => setForm((prev) => ({ ...prev, shipment_no: e.target.value }))} required />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Origin Code
-            <input className="fp-input" placeholder="Origin Code" value={form.origin_warehouse_code} onChange={(e) => setForm((prev) => ({ ...prev, origin_warehouse_code: e.target.value.toUpperCase() }))} required />
+            <input className="fp-input min-h-10" placeholder="Origin Code" value={form.origin_warehouse_code} onChange={(e) => setForm((prev) => ({ ...prev, origin_warehouse_code: e.target.value.toUpperCase() }))} required />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Destination Code
-            <input className="fp-input" placeholder="Destination Code" value={form.destination_warehouse_code} onChange={(e) => setForm((prev) => ({ ...prev, destination_warehouse_code: e.target.value.toUpperCase() }))} required />
+            <input className="fp-input min-h-10" placeholder="Destination Code" value={form.destination_warehouse_code} onChange={(e) => setForm((prev) => ({ ...prev, destination_warehouse_code: e.target.value.toUpperCase() }))} required />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             SKU
-            <input className="fp-input" placeholder="SKU" value={form.sku} onChange={(e) => setForm((prev) => ({ ...prev, sku: e.target.value.toUpperCase() }))} required />
+            <input className="fp-input min-h-10" placeholder="SKU" value={form.sku} onChange={(e) => setForm((prev) => ({ ...prev, sku: e.target.value.toUpperCase() }))} required />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Quantity
-            <input className="fp-input" type="number" min={1} value={form.quantity_units} onChange={(e) => setForm((prev) => ({ ...prev, quantity_units: Number(e.target.value) }))} required />
+            <input className="fp-input min-h-10" type="number" min={1} value={form.quantity_units} onChange={(e) => setForm((prev) => ({ ...prev, quantity_units: Number(e.target.value) }))} required />
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Driver
-            <select className="fp-input" value={form.driver_id} onChange={(e) => setForm((prev) => ({ ...prev, driver_id: e.target.value }))}>
+            <select className="fp-input min-h-10" value={form.driver_id} onChange={(e) => setForm((prev) => ({ ...prev, driver_id: e.target.value }))}>
               <option value="">Unassigned</option>
               {drivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
@@ -362,10 +384,10 @@ export function ShipmentsPage() {
               ))}
             </select>
           </label>
-          <label className="grid gap-1.5 text-xs font-medium text-[#40534c]">
+          <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Cash on delivery (ETB)
             <input
-              className="fp-input"
+              className="fp-input min-h-10"
               type="number"
               min={0}
               step="0.01"
@@ -373,14 +395,14 @@ export function ShipmentsPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, cod_amount_etb: Number(e.target.value) }))}
             />
           </label>
-          <div className="flex justify-end lg:col-span-5">
+          <div className="flex items-end justify-end sm:col-span-2 lg:col-span-2 xl:col-span-1">
             <button
               type="submit"
               disabled={creating}
-              className="glow-ring inline-flex min-h-9 items-center justify-center gap-2 bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-60"
+              className="glow-ring fp-action-primary w-full xl:w-auto"
             >
               {creating ? (
-                <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
+                <svg className="animate-spin-slow h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="50 20" /></svg>
               ) : null}
               {creating ? 'Creating...' : 'Create'}
             </button>
@@ -393,7 +415,7 @@ export function ShipmentsPage() {
         title="Shipment status"
         description="Update a shipment when its status changes."
       >
-        {error ? <p role="alert" className="mb-3 border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
+        {error ? <p role="alert" className="mb-3 rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -409,33 +431,36 @@ export function ShipmentsPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={shipment.status} tone={statusTone(shipment.status)} />
-                    <span className="text-[10px] text-[#63766f]">{new Date(shipment.created_at).toLocaleString()}</span>
+                    <span className="text-[11px] text-[#73736e]">{new Date(shipment.created_at).toLocaleString()}</span>
                   </div>
-                  <h3 className="mt-1.5 text-sm font-semibold text-[#20372f]">{shipment.shipment_no}</h3>
+                  <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">{shipment.shipment_no}</h3>
                 </div>
-                <div className="text-right font-mono text-xs text-[#63766f] tabular-nums">
+                <div className="text-right font-mono text-xs text-[#5f5f59] tabular-nums">
                   <p>{shipment.origin_warehouse_code} → {shipment.destination_warehouse_code}</p>
                   <p>{shipment.sku} · {shipment.quantity_units} units</p>
-                  <p className={shipment.driver_name ? 'text-[#40534c]' : 'text-[#6b7d76]'}>
+                  <p className={shipment.driver_name ? 'text-[#454540]' : 'text-[#73736e]'}>
                     {shipment.driver_name || 'No driver assigned'}
                   </p>
                   {Number(shipment.cod_amount_etb ?? 0) > 0 ? (
-                    <p className="text-[#885100]">COD {Number(shipment.cod_amount_etb).toFixed(2)} ETB</p>
+                    <p className="text-[#885100]">COD {formatEtb(Number(shipment.cod_amount_etb))} ETB</p>
                   ) : null}
                 </div>
               </div>
 
-              <p className="mt-1.5 text-xs leading-5 text-[#63766f]">
-                {shipment.delay_reason ? `Delay note: ${shipment.delay_reason}` : 'No delay reason logged for this shipment.'}
-              </p>
+              {shipment.delay_reason || shipment.status === 'delayed' ? (
+                <p className="mt-1.5 text-xs leading-5 text-[#8f302a]">
+                  {shipment.delay_reason ? `Delay note: ${shipment.delay_reason}` : 'Delayed — add a delay reason.'}
+                </p>
+              ) : null}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {statusTransitions.map((status) => (
                   <button
                     key={status}
-                    className="glow-ring min-h-8 border border-[#d7dfdc] bg-white px-2.5 text-[11px] font-semibold text-[#40534c] transition hover:bg-[#eef3f0] disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    className="fp-action-secondary !min-h-8 text-xs"
                     onClick={() => onStatusUpdate(shipment, status)}
-                    disabled={shipment.status === status}
+                    disabled={shipment.status === status || busyShipmentId === shipment.id}
                   >
                     Mark {status.replace('_', ' ')}
                   </button>
@@ -445,9 +470,9 @@ export function ShipmentsPage() {
           ))}
 
           {!loading && shipments.length === 0 ? (
-            <div className="border border-dashed border-[#c8d4cf] bg-[#f8faf9] p-6 text-center">
-              <p className="text-sm font-semibold text-[#40534c]">No shipments yet</p>
-              <p className="mt-1 text-xs text-[#63766f]">Create your first shipment using the form above.</p>
+            <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
+              <p className="text-sm font-semibold text-[#252522]">No shipments yet</p>
+              <p className="mt-1 text-xs text-[#5f5f59]">Create your first shipment using the form above.</p>
             </div>
           ) : null}
         </div>

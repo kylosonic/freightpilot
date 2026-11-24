@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout, RouteFallback } from './components/Layout';
@@ -23,9 +23,38 @@ const DriverPage = lazy(() => import('./pages/DriverPage').then((m) => ({ defaul
 const TrackingPage = lazy(() => import('./pages/TrackingPage').then((m) => ({ default: m.TrackingPage })));
 const AcceptInvitePage = lazy(() => import('./pages/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage })));
 
+const ROUTE_TITLES: Record<string, string> = {
+  '/': 'Overview — FreightPilot',
+  '/routes': 'Routes — FreightPilot',
+  '/upload': 'Import data — FreightPilot',
+  '/shipments': 'Shipments — FreightPilot',
+  '/drivers': 'Fleet and cash — FreightPilot',
+  '/alerts': 'Exceptions — FreightPilot',
+  '/planning': 'Planning — FreightPilot',
+  '/dispatch': 'Dispatch — FreightPilot',
+  '/account': 'Settings — FreightPilot',
+  '/providers': 'Integrations — FreightPilot',
+  '/receipts': 'Payments — FreightPilot',
+  '/admin/receipts': 'Verify payments — FreightPilot',
+  '/login': 'Sign in — FreightPilot',
+  '/accept-invite': 'Accept invitation — FreightPilot',
+  '/driver': 'Driver route — FreightPilot',
+  '/track': 'Delivery status — FreightPilot',
+  '/unauthorized': 'Unauthorized — FreightPilot',
+};
+
+function RouteTitle() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    document.title = ROUTE_TITLES[pathname] ?? 'FreightPilot — Operations Console';
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
+      <RouteTitle />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

@@ -15,7 +15,7 @@ export function MotionSection({ children, className, delay = 0 }: MotionSectionP
   const classes = cn('min-w-0', className);
 
   if (reduceMotion) {
-    return <div className={classes}>{children}</div>;
+    return <section className={classes}>{children}</section>;
   }
 
   return (

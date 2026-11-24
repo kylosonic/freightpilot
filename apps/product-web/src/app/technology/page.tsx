@@ -28,9 +28,9 @@ export default function TechnologyPage() {
         }
         aside={
           <SpotlightCard>
-            <BrainCircuit className="h-5 w-5 text-[#087f72]" />
-            <h3 className="mt-3 text-base font-semibold text-[#172a24]">Model choice stays in your hands</h3>
-            <p className="mt-2 text-sm leading-6 text-[#5b6d66]">You can connect your own AI provider and change it at any time.</p>
+            <BrainCircuit className="h-5 w-5 text-[#087f72]" aria-hidden="true" />
+            <p className="mt-3 text-base font-semibold text-[#252522]">Model choice stays in your hands</p>
+            <p className="mt-2 text-sm leading-6 text-[#5f5f59]">You can connect your own AI provider and change it at any time.</p>
           </SpotlightCard>
         }
       />
@@ -43,11 +43,14 @@ export default function TechnologyPage() {
         />
         <div className="mt-8 grid grid-cols-1 divide-y divide-[#e5e4e0] border-y border-[#e5e4e0] md:grid-cols-2 md:divide-y-0">
           {technologyLayers.map((layer) => (
-            <article key={layer.title} className="min-w-0 py-6 md:px-6 md:first:pl-0">
-              <layer.icon className="h-5 w-5 text-[#087f72]" />
-              <h3 className="mt-3 text-base font-medium text-[#252522]">{layer.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[#73736e]">{layer.description}</p>
-              <p className="mt-3 border-t border-[#efeeea] pt-3 text-[12px] leading-5 text-[#85857e]">{layer.detail}</p>
+            <article
+              key={layer.title}
+              className="min-w-0 py-6 md:px-6 md:odd:pl-0 md:even:border-l md:even:border-[#e5e4e0] md:even:pr-0 md:[&:nth-child(n+3)]:border-t md:[&:nth-child(n+3)]:border-[#e5e4e0]"
+            >
+              <layer.icon className="h-5 w-5 text-[#087f72]" aria-hidden="true" />
+              <h3 className="mt-3 text-base font-semibold text-[#252522]">{layer.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5f5f59]">{layer.description}</p>
+              <p className="mt-3 border-t border-[#efeeea] pt-3 text-[12px] leading-5 text-[#73736e]">{layer.detail}</p>
             </article>
           ))}
         </div>
@@ -57,7 +60,7 @@ export default function TechnologyPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-12">
           <div>
             <p className="kicker">How decisions work</p>
-            <h3 className="mt-2 text-xl font-medium text-[#252522]">Notice, decide, act, and review.</h3>
+            <h2 className="mt-2 text-xl font-semibold text-[#252522]">Notice, decide, act, and review.</h2>
             <div className="mt-6 border-t border-[#e5e4e0]">
               {[
                 { icon: Radar, title: 'Notice', detail: 'Find late deliveries, low stock, and other issues that need attention.', color: 'text-[#087f72]' },
@@ -67,10 +70,10 @@ export default function TechnologyPage() {
               ].map((item) => (
                 <div key={item.title} className="border-b border-[#e5e4e0] py-3">
                   <div className="flex items-center gap-3">
-                    <item.icon className={`h-5 w-5 ${item.color}`} />
-                    <h4 className="text-sm font-medium text-[#252522]">{item.title}</h4>
+                    <item.icon className={`h-5 w-5 ${item.color}`} aria-hidden="true" />
+                    <h3 className="text-sm font-semibold text-[#252522]">{item.title}</h3>
                   </div>
-                  <p className="mt-1.5 text-sm leading-6 text-[#73736e]">{item.detail}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-[#5f5f59]">{item.detail}</p>
                 </div>
               ))}
             </div>
@@ -80,22 +83,22 @@ export default function TechnologyPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="kicker">Route API</p>
-                <h3 className="mt-2 text-xl font-medium text-[#252522]">Every route plan shows why it was chosen</h3>
+                <h2 className="mt-2 text-xl font-semibold text-[#252522]">Every route plan shows why it was chosen</h2>
               </div>
               <div className="pill">
-                <ShieldCheck className="h-4 w-4" />
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                 workspace only
               </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-lg bg-[#f7f7f5]">
-              <div className="flex items-center justify-between gap-3 px-4 py-3 text-[11px] text-[#73736e]">
-                <span>POST /routes/optimize</span>
+            <div className="mt-6 overflow-hidden rounded-lg border border-[#e5e4e0] bg-[#f7f7f5]">
+              <div className="flex items-center justify-between gap-3 px-4 py-3 text-[11px] text-[#5f5f59]">
+                <span>POST /api/v1/routes/optimize</span>
                 <span className="inline-flex items-center gap-2">
-                  plan a route <ArrowRight className="h-3.5 w-3.5" />
+                  plan a route <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </span>
               </div>
-              <pre className="overflow-x-auto border-t border-[#e5e4e0] bg-white px-4 py-4 text-xs leading-6 text-[#25483f]">
+              <pre className="overflow-x-auto border-t border-[#e5e4e0] bg-white px-4 py-4 text-xs leading-6 text-[#252522]">
                 <code>{codeSnippet}</code>
               </pre>
             </div>

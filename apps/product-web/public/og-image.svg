@@ -1,30 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#050505"/>
-      <stop offset="0.5" stop-color="#0b1220"/>
-      <stop offset="1" stop-color="#0f172a"/>
-    </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="0.5" stop-color="#22d3ee"/>
-      <stop offset="1" stop-color="#5eead4"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
-      <stop offset="0" stop-color="#3b82f6" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#3b82f6" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glow)"/>
-  <rect x="1" y="1" width="1198" height="628" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" rx="24"/>
-  <rect x="60" y="120" width="56" height="56" rx="14" fill="url(#accent)"/>
-  <text x="88" y="158" font-family="'Space Grotesk', system-ui, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="middle">FP</text>
-  <text x="132" y="142" font-family="'Space Grotesk', system-ui, sans-serif" font-size="34" font-weight="700" fill="#f8fafc">FreightPilot</text>
-  <text x="132" y="168" font-family="system-ui, sans-serif" font-size="18" fill="#94a3b8">AI Logistics Operations Platform</text>
-  <text x="60" y="300" font-family="'Space Grotesk', system-ui, sans-serif" font-size="52" font-weight="700" fill="#f8fafc">Plan routes, manage exceptions,</text>
-  <text x="60" y="366" font-family="'Space Grotesk', system-ui, sans-serif" font-size="52" font-weight="700" fill="url(#accent)">launch operations from one control layer.</text>
-  <text x="60" y="430" font-family="system-ui, sans-serif" font-size="22" fill="#94a3b8">Route planning, live exception management, operator launch readiness, and AI-assisted decision support.</text>
-  <rect x="60" y="500" width="240" height="52" rx="26" fill="url(#accent)"/>
-  <text x="180" y="534" font-family="system-ui, sans-serif" font-size="20" font-weight="600" fill="#0f172a" text-anchor="middle">Launch your workspace</text>
+  <rect width="1200" height="630" fill="#f7f7f5"/>
+  <rect x="32" y="32" width="1136" height="566" rx="16" fill="#ffffff" stroke="#e5e4e0" stroke-width="2"/>
+  <rect x="88" y="96" width="52" height="52" rx="10" fill="#2e4f47"/>
+  <text x="114" y="130" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#ffffff" text-anchor="middle">FP</text>
+  <text x="156" y="122" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#252522">FreightPilot</text>
+  <text x="156" y="146" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="16" fill="#5f5f59">Freight operations workspace</text>
+  <text x="88" y="268" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="54" font-weight="600" fill="#252522">Run your first optimized route</text>
+  <text x="88" y="334" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="54" font-weight="600" fill="#176b5c">in 5 minutes. Free.</text>
+  <text x="88" y="402" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="22" fill="#5f5f59">Plan routes, follow deliveries, handle problems, and manage cash handovers.</text>
+  <rect x="88" y="476" width="196" height="52" rx="26" fill="#087f72"/>
+  <text x="186" y="509" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff" text-anchor="middle">Start free</text>
 </svg>

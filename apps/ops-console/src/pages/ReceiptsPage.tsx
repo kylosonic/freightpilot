@@ -17,25 +17,26 @@ function statusTone(status: Receipt['status']) {
   return 'neutral';
 }
 
-function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (text: string) => void }) {
+function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (text: string) => Promise<boolean> }) {
   const [disputeText, setDisputeText] = useState('');
   const [showDispute, setShowDispute] = useState(false);
+  const [disputing, setDisputing] = useState(false);
 
   return (
     <article className="fp-row">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <StatusBadge label={receipt.status} tone={statusTone(receipt.status)} />
-        <span className="font-mono text-sm font-semibold tabular-nums text-[#20372f]">
+        <span className="font-mono text-sm font-semibold tabular-nums text-[#252522]">
           {receipt.amount_etb ? `${receipt.amount_etb} ETB` : 'Amount pending extraction'}
         </span>
-        <span className="text-[10px] uppercase tracking-wide text-[#6b7d76]">
+        <span className="text-[10px] uppercase tracking-wide text-[#73736e]">
           {receipt.reference_number ?? 'no reference extracted'}
         </span>
-        <span className="text-xs text-[#63766f]">
+        <span className="text-xs text-[#5f5f59]">
           Invoice: {receipt.invoice_number ?? '—'} · Sender: {receipt.sender_name ?? '—'} · Bank:{' '}
           {receipt.bank_code ?? '—'}
         </span>
-        <span className="ml-auto text-[10px] text-[#63766f]">{new Date(receipt.created_at).toLocaleString()}</span>
+        <span className="ml-auto text-[10px] text-[#73736e]">{new Date(receipt.created_at).toLocaleString()}</span>
       </div>
 
       {receipt.reversal_status ? (
@@ -51,7 +52,7 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
       ) : null}
 
       {receipt.reversal_status === 'reversed' ? (
-        <div className="mt-2 border border-[#e7c2be] bg-[#fff8f7] p-3">
+        <div className="mt-2 rounded-md border border-[#e7c2be] bg-[#fff8f7] p-3">
           <p className="text-xs text-[#8f302a]">
             This payment was reversed — the credited amount was restored to your invoice balance. See
             your notifications for the full message.
@@ -60,7 +61,7 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
       ) : null}
 
       {receipt.status === 'rejected' && receipt.rejection_reason ? (
-        <div className="mt-2 border border-[#e7c2be] bg-[#fff8f7] p-3">
+        <div className="mt-2 rounded-md border border-[#e7c2be] bg-[#fff8f7] p-3">
           <p className="text-xs text-[#8f302a]">{receipt.rejection_reason}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
@@ -69,14 +70,14 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
                 setShowDispute(false);
                 document.getElementById('receipt-upload-input')?.click();
               }}
-              className="inline-flex min-h-8 items-center justify-center border border-[#cfd9d5] bg-white px-3 text-[11px] font-semibold text-[#40534c] transition-colors hover:bg-[#eef3f0]"
+              className="fp-action-secondary !min-h-8 text-xs"
             >
               Re-upload
             </button>
             <button
               type="button"
               onClick={() => setShowDispute((v) => !v)}
-              className="inline-flex min-h-8 items-center justify-center border border-[#e7d1a8] bg-white px-3 text-[11px] font-semibold text-[#885100] transition-colors hover:bg-[#fcf6e9]"
+              className="fp-action-secondary !min-h-8 border-[#e7d1a8] !text-[#885100] hover:bg-[#fcf6e9] text-xs"
             >
               Dispute this decision
             </button>
@@ -84,6 +85,7 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
           {showDispute ? (
             <div className="mt-3 space-y-2">
               <textarea
+                aria-label="Explain why you believe the rejection was wrong"
                 value={disputeText}
                 onChange={(event) => setDisputeText(event.target.value)}
                 placeholder="Explain why you believe the rejection was wrong…"
@@ -92,14 +94,19 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
               />
               <button
                 type="button"
-                disabled={!disputeText.trim()}
-                onClick={() => {
-                  onDispute(disputeText.trim());
-                  setShowDispute(false);
+                disabled={!disputeText.trim() || disputing}
+                onClick={async () => {
+                  setDisputing(true);
+                  const ok = await onDispute(disputeText.trim());
+                  setDisputing(false);
+                  if (ok) {
+                    setDisputeText('');
+                    setShowDispute(false);
+                  }
                 }}
-                className="inline-flex min-h-8 items-center justify-center bg-[#a15b00] px-3 text-[11px] font-semibold text-white transition-colors hover:bg-[#885100] disabled:cursor-not-allowed disabled:opacity-50"
+                className="fp-action-primary !min-h-8 !bg-[#a15b00] text-xs hover:!bg-[#885100]"
               >
-                Submit dispute
+                {disputing ? 'Submitting...' : 'Submit dispute'}
               </button>
             </div>
           ) : null}
@@ -107,7 +114,7 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
       ) : null}
 
       {receipt.status === 'escalated' ? (
-        <p className="mt-2 border border-[#e7d1a8] bg-[#fffaf0] p-3 text-xs text-[#704500]">
+        <p className="mt-2 rounded-md border border-[#e7d1a8] bg-[#fffaf0] p-3 text-xs text-[#704500]">
           We are still checking this receipt. We will send you a message if we need more information.
         </p>
       ) : null}
@@ -116,8 +123,8 @@ function ReceiptCard({ receipt, onDispute }: { receipt: Receipt; onDispute: (tex
 }
 
 export function ReceiptsPage() {
-  const { data: receipts = [], refetch: refetchReceipts } = useReceipts();
-  const { data: wallet } = useWallet();
+  const { data: receipts = [], isLoading: receiptsLoading, refetch: refetchReceipts } = useReceipts();
+  const { data: wallet, isLoading: walletLoading } = useWallet();
   const disputeMutation = useSubmitDispute();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -148,32 +155,34 @@ export function ReceiptsPage() {
     setSelectedFile(event.target.files?.[0] ?? null);
   }
 
-  async function onDispute(receiptId: string, text: string) {
+  async function onDispute(receiptId: string, text: string): Promise<boolean> {
     setErrorMessage(null);
     try {
       await disputeMutation.mutateAsync({ id: receiptId, text });
       setStatusMessage('Dispute submitted — your receipt is now under review.');
+      return true;
     } catch {
       setErrorMessage('Failed to submit dispute.');
+      return false;
     }
   }
 
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow="Payments"
+        eyebrow="Billing"
         title="Payments"
         description="Upload your bank receipt and we will apply it to your oldest unpaid invoice. Most receipts are checked within 24 hours."
       />
 
       {statusMessage ? (
         <Panel className="border-[#bfd8e5] bg-[#f3f9fc]">
-          <p className="text-sm text-[#17679b]">{statusMessage}</p>
+          <p role="status" className="text-sm text-[#17679b]">{statusMessage}</p>
         </Panel>
       ) : null}
       {errorMessage ? (
         <Panel className="border-[#e7c2be] bg-[#fff8f7]">
-          <p className="text-sm text-[#8f302a]">{errorMessage}</p>
+          <p role="alert" className="text-sm text-[#8f302a]">{errorMessage}</p>
         </Panel>
       ) : null}
 
@@ -181,11 +190,12 @@ export function ReceiptsPage() {
         <Panel
           eyebrow="Upload"
           title="Upload a transfer receipt"
-          description="PNG, JPG, or PDF up to 5 MB. Keep the reference number and amount visible."
+          description="PNG, JPG, or PDF from CBE or Dashen up to 5 MB. Keep the reference number and amount visible."
         >
           <form onSubmit={onUpload} className="grid gap-3">
             <input
               id="receipt-upload-input"
+              aria-label="Upload bank transfer receipt"
               type="file"
               accept=".png,.jpg,.jpeg,.pdf"
               onChange={onFileSelected}
@@ -194,12 +204,12 @@ export function ReceiptsPage() {
             <button
               type="submit"
               disabled={!selectedFile || uploading}
-              className="inline-flex min-h-9 items-center justify-center bg-[#087f72] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#06675d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="fp-action-primary"
             >
               {uploading ? 'Uploading…' : 'Upload receipt'}
             </button>
           </form>
-          <p className="mt-3 text-xs text-[#63766f]">
+          <p className="mt-3 text-xs text-[#5f5f59]">
             {selectedFile ? `${selectedFile.name} (${Math.round(selectedFile.size / 1024)} KB) selected` : 'No file selected.'}
           </p>
         </Panel>
@@ -209,9 +219,11 @@ export function ReceiptsPage() {
           title="Credit balance"
           description="If you pay a little extra, the credit goes toward your next invoice."
         >
-          {wallet ? (
+          {walletLoading ? (
+            <p className="text-xs text-[#73736e]">Loading balance...</p>
+          ) : wallet ? (
             <>
-              <div className="border border-[#d7dfdc] bg-[#f8faf9] p-3">
+              <div className="rounded-md border border-[#e5e4e0] bg-[#f7f7f5] p-3">
                 <p className="text-xs text-[#73736e]">Available credit</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-[#252522]">
                   {wallet.available_etb} ETB
@@ -227,8 +239,8 @@ export function ReceiptsPage() {
                       key={`${credit.created_at}-${credit.amount_etb}`}
                       className="flex items-center justify-between fp-row px-4 py-3 text-sm"
                     >
-                      <span className="text-[#40534c]">+{credit.amount_etb} ETB</span>
-                      <span className="text-[10px] text-[#63766f]">
+                      <span className="text-[#252522]">+{credit.amount_etb} ETB</span>
+                      <span className="text-[10px] text-[#73736e]">
                         {credit.status}
                         {credit.applied_to_invoice_number ? ` → ${credit.applied_to_invoice_number}` : ''}
                       </span>
@@ -250,7 +262,9 @@ export function ReceiptsPage() {
         title="Your receipts"
         description="If we cannot accept a receipt, you can read why, upload it again, or ask us to review it."
       >
-        {receipts.length === 0 ? (
+        {receiptsLoading ? (
+          <p className="text-xs text-[#73736e]">Loading receipts...</p>
+        ) : receipts.length === 0 ? (
           <p className="text-xs text-[#73736e]">No receipts uploaded yet.</p>
         ) : (
           <div className="space-y-2">

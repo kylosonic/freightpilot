@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +7,20 @@ const ROOT = fileURLToPath(new URL('.', import.meta.url));
 
 function read(relativePath: string): string {
   return readFileSync(join(ROOT, relativePath), 'utf8');
+}
+
+function collectSourceFiles(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectSourceFiles(full));
+    } else if (!entry.name.includes('.test.') && /\.(ts|tsx|css)$/.test(entry.name)) {
+      files.push(full);
+    }
+  }
+  return files;
 }
 
 describe('ops-console reliability polish', () => {
@@ -58,5 +72,50 @@ describe('ops-console reliability polish', () => {
 
   it('bumps the driver service-worker cache after the data contract change', () => {
     expect(read('../public/driver-sw.js')).toContain("const CACHE = 'freightpilot-driver-v2'");
+  });
+
+  it('enforces warm neutral tokens, accessible Dialog semantics, and avoids native alert/confirm in admin surfaces', () => {
+    const forbiddenTokens = [
+      '#85857e',
+      '#6b7d76',
+      'text-red-500',
+      'text-green-500',
+      '#172a24',
+      '#20372f',
+      '#202b36',
+      '#25483f',
+      '#40534c',
+      '#52665e',
+      '#5b6d66',
+      '#63766f',
+      '#d7dfdc',
+      '#cfd9d5',
+      '#e6ebe8',
+      '#c8d4cf',
+      '#eef3f0',
+      '#f8faf9',
+      '#f5f8f6',
+      '#f4f6f5',
+      '#153f3a',
+      '#06675d',
+    ];
+
+    for (const file of collectSourceFiles(ROOT)) {
+      const text = readFileSync(file, 'utf8');
+      for (const token of forbiddenTokens) {
+        expect(text, `${file} still contains ${token}`).not.toContain(token);
+      }
+      expect(text, `${file} uses native window.alert`).not.toMatch(/\b(?:window\.)?alert\(/);
+    }
+
+    for (const pagePath of ['components/TeamPanel.tsx', 'pages/ProvidersPage.tsx', 'pages/AdminReceiptsPage.tsx']) {
+      expect(read(pagePath)).not.toContain('confirm(');
+    }
+
+    const dialog = read('components/ui/Dialog.tsx');
+    expect(dialog).toContain('role="dialog"');
+    expect(dialog).toContain('aria-modal="true"');
+    expect(dialog).toContain('aria-labelledby');
+    expect(dialog).toContain('Escape');
   });
 });

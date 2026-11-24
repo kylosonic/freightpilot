@@ -10,29 +10,29 @@ const STEP_DEFINITIONS = [
   },
   {
     key: 'connectedConsole',
-    title: 'Validate control tower connectivity',
+    title: 'Validate console connectivity',
     description: 'Run a connectivity test to confirm the ops console URL responds from this desktop environment.',
-    outcome: 'Dispatch workstation can reliably access the control tower URL.',
+    outcome: 'Dispatch workstation can reliably access the operations console URL.',
     actions: ['testConsole', 'markComplete'],
   },
   {
     key: 'invitedTeam',
-    title: 'Assign operators and playbook ownership',
-    description: 'Confirm role ownership and invite the first wave of operators and dispatchers into the workspace.',
+    title: 'Assign operators and role ownership',
+    description: 'Confirm workspace admin and operator ownership and invite the first wave of team members.',
     outcome: 'Named ownership for dispatch, data integrity, and security response.',
     actions: ['openDocs', 'markComplete'],
   },
   {
     key: 'importedData',
     title: 'Run data rehearsal and dry dispatch',
-    description: 'Import warehouse, fleet, and order data, then perform one dry-run optimization cycle before live dispatch.',
+    description: 'Import warehouse, item, fleet, inventory, and order data, then perform one dry-run optimization cycle before live dispatch.',
     outcome: 'Baseline data quality and route optimization flow validated.',
     actions: ['openDocs', 'launchConsole', 'markComplete'],
   },
   {
     key: 'launchedLive',
     title: 'Launch live operations',
-    description: 'Open the control tower and run your first live dispatch window with role owners monitoring outcomes.',
+    description: 'Open the operations console and run your first live dispatch window with role owners monitoring outcomes.',
     outcome: 'Production launch complete with readiness score and role sign-off captured.',
     actions: ['launchConsole', 'markComplete'],
   },
@@ -88,9 +88,29 @@ let onboarding = { ...onboardingDefaults };
 
 function setStatus(message, type) {
   elements.status.textContent = message;
-  elements.status.classList.remove('ok', 'warn');
+  elements.status.classList.remove('ok', 'warn', 'error');
+  elements.status.setAttribute('role', type === 'error' ? 'alert' : 'status');
   if (type) {
     elements.status.classList.add(type);
+  }
+}
+
+async function runWithBusy(button, busyLabel, task) {
+  if (!button || button.disabled) {
+    return;
+  }
+  const previousLabel = button.textContent;
+  button.disabled = true;
+  if (busyLabel) {
+    button.textContent = busyLabel;
+  }
+  try {
+    return await task();
+  } finally {
+    button.disabled = false;
+    if (busyLabel) {
+      button.textContent = previousLabel;
+    }
   }
 }
 
@@ -231,12 +251,17 @@ function renderWizardSteps() {
   STEP_DEFINITIONS.forEach((step, index) => {
     const item = document.createElement('li');
     const stepBtn = document.createElement('button');
-    const blocked = isStepBlocked(index);
-    const status = onboarding[step.key] ? 'Done' : blocked ? 'Blocked' : index === onboarding.activeStep ? 'In progress' : 'Pending';
+    const done = Boolean(onboarding[step.key]);
+    const blocked = !done && isStepBlocked(index);
+    const active = index === onboarding.activeStep;
+    const status = done ? 'Done' : blocked ? 'Blocked' : active ? 'In progress' : 'Pending';
 
     stepBtn.type = 'button';
-    stepBtn.className = `wizard-step ${onboarding[step.key] ? 'done' : ''} ${index === onboarding.activeStep ? 'active' : ''} ${blocked ? 'blocked' : ''}`;
+    stepBtn.className = `wizard-step ${done ? 'done' : ''} ${active ? 'active' : ''} ${blocked ? 'blocked' : ''}`.trim();
     stepBtn.disabled = blocked;
+    if (active) {
+      stepBtn.setAttribute('aria-current', 'step');
+    }
           const stepIndex = document.createElement('span');
           stepIndex.className = 'step-index';
           stepIndex.textContent = String(index + 1);
@@ -252,7 +277,7 @@ function renderWizardSteps() {
       onboarding.activeStep = index;
       renderWizard();
       persistConfig({ showMessage: false }).catch(() => {
-        setStatus('Could not persist step selection.', 'warn');
+        setStatus('Could not persist step selection.', 'error');
       });
     });
 
@@ -284,7 +309,7 @@ async function runConsoleConnectivityTest() {
   await persistConfig({ showMessage: false });
   setStatus('Testing connection...', null);
   const result = await bridge.testConsole(elements.opsUrl.value.trim());
-  setStatus(result.message, result.ok ? 'ok' : 'warn');
+  setStatus(result.message, result.ok ? 'ok' : 'error');
 
   if (result.ok) {
     await markStepComplete('connectedConsole', true);
@@ -293,14 +318,14 @@ async function runConsoleConnectivityTest() {
   return result.ok;
 }
 
-function createActionButton(label, className, handler) {
+function createActionButton(label, className, handler, busyLabel = null) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = className;
   button.textContent = label;
   button.addEventListener('click', () => {
-    Promise.resolve(handler()).catch((error) => {
-      setStatus(error instanceof Error ? error.message : 'Action failed.', 'warn');
+    runWithBusy(button, busyLabel, handler).catch((error) => {
+      setStatus(error instanceof Error ? error.message : 'Action failed.', 'error');
     });
   });
   return button;
@@ -316,43 +341,63 @@ function renderStepDetail() {
 
   if (step.actions.includes('openSignup')) {
     elements.stepActions.appendChild(
-      createActionButton('Open signup page', 'btn-secondary', async () => {
-        await persistConfig({ showMessage: false });
-        await bridge.openExternal(elements.signupUrl.value.trim());
-        setStatus('Opened signup page in browser.', 'ok');
-      }),
+      createActionButton(
+        'Open signup page',
+        'btn-secondary',
+        async () => {
+          await persistConfig({ showMessage: false });
+          await bridge.openExternal(elements.signupUrl.value.trim());
+          setStatus('Opened signup page in browser.', 'ok');
+        },
+        'Opening...',
+      ),
     );
   }
 
   if (step.actions.includes('openDocs')) {
     elements.stepActions.appendChild(
-      createActionButton('Open docs', 'btn-secondary', async () => {
-        await persistConfig({ showMessage: false });
-        await bridge.openExternal(elements.docsUrl.value.trim());
-        setStatus('Opened docs in browser.', 'ok');
-      }),
+      createActionButton(
+        'Open docs',
+        'btn-secondary',
+        async () => {
+          await persistConfig({ showMessage: false });
+          await bridge.openExternal(elements.docsUrl.value.trim());
+          setStatus('Opened docs in browser.', 'ok');
+        },
+        'Opening...',
+      ),
     );
   }
 
   if (step.actions.includes('testConsole')) {
     elements.stepActions.appendChild(
-      createActionButton('Run console test', 'btn-accent', async () => {
-        await runConsoleConnectivityTest();
-      }),
+      createActionButton(
+        'Run console test',
+        'btn-accent',
+        async () => {
+          await runConsoleConnectivityTest();
+        },
+        'Testing...',
+      ),
     );
   }
 
   if (step.actions.includes('launchConsole')) {
     elements.stepActions.appendChild(
-      createActionButton('Launch control tower', 'btn-accent', async () => {
-        await persistConfig({ showMessage: false });
-        await bridge.launchConsole(elements.opsUrl.value.trim());
-        setStatus('Control tower opened in a new window.', 'ok');
+      createActionButton(
+        'Open operations console',
+        'btn-accent',
+        async () => {
+          await persistConfig({ showMessage: false });
+          await bridge.launchConsole(elements.opsUrl.value.trim());
+          setStatus('Operations console opened in a new window.', 'ok');
 
-        if (step.key === 'launchedLive' && !onboarding.launchedLive) {
-          await markStepComplete('launchedLive', true);
-        }
-      }),
+          if (step.key === 'launchedLive' && !onboarding.launchedLive) {
+            await markStepComplete('launchedLive', true);
+          }
+        },
+        'Opening...',
+      ),
     );
   }
 
@@ -409,55 +454,57 @@ async function initialize() {
   config = await bridge.getConfig();
   loadUiFromConfig();
 
-  elements.saveBtn.addEventListener('click', async () => {
-    try {
+  elements.saveBtn.addEventListener('click', () => {
+    runWithBusy(elements.saveBtn, 'Saving...', async () => {
       await persistConfig();
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not save setup.', 'warn');
-    }
+    }).catch((error) => {
+      setStatus(error instanceof Error ? error.message : 'Could not save setup.', 'error');
+    });
   });
 
-  elements.testBtn.addEventListener('click', async () => {
-    try {
+  elements.testBtn.addEventListener('click', () => {
+    runWithBusy(elements.testBtn, 'Testing...', async () => {
       await runConsoleConnectivityTest();
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Connection test failed.', 'warn');
-    }
+      renderStepDetail();
+    }).catch((error) => {
+      setStatus(error instanceof Error ? error.message : 'Connection test failed.', 'error');
+    });
   });
 
-  elements.launchBtn.addEventListener('click', async () => {
-    try {
+  elements.launchBtn.addEventListener('click', () => {
+    runWithBusy(elements.launchBtn, 'Opening...', async () => {
       await persistConfig({ showMessage: false });
       await bridge.launchConsole(elements.opsUrl.value.trim());
-      if (!onboarding.launchedLive) {
+      if (!onboarding.launchedLive && !isStepBlocked(STEP_DEFINITIONS.length - 1)) {
         await markStepComplete('launchedLive', true);
       }
-      setStatus('Control tower opened in a new window.', 'ok');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not open control tower.', 'warn');
-    }
+      renderStepDetail();
+      setStatus('Operations console opened in a new window.', 'ok');
+    }).catch((error) => {
+      setStatus(error instanceof Error ? error.message : 'Could not open operations console.', 'error');
+    });
   });
 
-  elements.openSignup.addEventListener('click', async (event) => {
+  elements.openSignup.addEventListener('click', (event) => {
     event.preventDefault();
-    try {
+    runWithBusy(elements.openSignup, null, async () => {
       await persistConfig({ showMessage: false });
       await bridge.openExternal(elements.signupUrl.value.trim());
       setStatus('Opened company signup in your browser.', 'ok');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not open signup URL.', 'warn');
-    }
+    }).catch((error) => {
+      setStatus(error instanceof Error ? error.message : 'Could not open signup URL.', 'error');
+    });
   });
 
-  elements.openDocs.addEventListener('click', async (event) => {
+  elements.openDocs.addEventListener('click', (event) => {
     event.preventDefault();
-    try {
+    runWithBusy(elements.openDocs, null, async () => {
       await persistConfig({ showMessage: false });
       await bridge.openExternal(elements.docsUrl.value.trim());
       setStatus('Opened documentation in your browser.', 'ok');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not open docs URL.', 'warn');
-    }
+    }).catch((error) => {
+      setStatus(error instanceof Error ? error.message : 'Could not open docs URL.', 'error');
+    });
   });
 
   elements.prevStepBtn.addEventListener('click', async () => {
@@ -505,5 +552,5 @@ async function initialize() {
 }
 
 initialize().catch((error) => {
-  setStatus(error instanceof Error ? error.message : 'Could not initialize setup.', 'warn');
+  setStatus(error instanceof Error ? error.message : 'Could not initialize setup.', 'error');
 });

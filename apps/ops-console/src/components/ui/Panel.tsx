@@ -26,7 +26,7 @@ export function Panel({ eyebrow, title, description, actions, className, bodyCla
       {hasHeader ? (
         <header className="flex flex-wrap items-start justify-between gap-3 px-4 pb-1 pt-3.5">
           <div className="max-w-3xl space-y-0.5">
-            {eyebrow ? <p className="text-[11px] font-medium text-[#85857e]">{eyebrow}</p> : null}
+            {eyebrow ? <p className="text-[11px] font-medium text-[#73736e]">{eyebrow}</p> : null}
             {title ? <h2 className="text-[15px] font-semibold leading-5 text-[#252522]">{title}</h2> : null}
             {description ? <p className="text-[12px] leading-5 text-[#73736e]">{description}</p> : null}
           </div>
