@@ -5,9 +5,15 @@
   <text x="114" y="130" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#ffffff" text-anchor="middle">FP</text>
   <text x="156" y="122" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#252522">FreightPilot</text>
   <text x="156" y="146" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="16" fill="#5f5f59">Freight operations workspace</text>
-  <text x="88" y="268" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="54" font-weight="600" fill="#252522">Run your first optimized route</text>
-  <text x="88" y="334" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="54" font-weight="600" fill="#176b5c">in 5 minutes. Free.</text>
-  <text x="88" y="402" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="22" fill="#5f5f59">Plan routes, follow deliveries, handle problems, and manage cash handovers.</text>
-  <rect x="88" y="476" width="196" height="52" rx="26" fill="#087f72"/>
-  <text x="186" y="509" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff" text-anchor="middle">Start free</text>
+  <text x="88" y="272" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="48" font-weight="600" fill="#252522">Plan routes, follow deliveries,</text>
+  <text x="88" y="334" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="48" font-weight="600" fill="#176b5c">close cash in one place.</text>
+  <text x="88" y="404" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="21" fill="#5f5f59">Start free with sample data loaded — warehouses, fleet, inventory, and orders ready.</text>
+  <rect x="88" y="472" width="160" height="44" rx="22" fill="#f7f7f5" stroke="#e5e4e0" stroke-width="1.5"/>
+  <text x="168" y="500" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#454540" text-anchor="middle">Route planning</text>
+  <rect x="262" y="472" width="148" height="44" rx="22" fill="#f7f7f5" stroke="#e5e4e0" stroke-width="1.5"/>
+  <text x="336" y="500" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#454540" text-anchor="middle">Live dispatch</text>
+  <rect x="424" y="472" width="156" height="44" rx="22" fill="#f7f7f5" stroke="#e5e4e0" stroke-width="1.5"/>
+  <text x="502" y="500" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#454540" text-anchor="middle">Delivery proof</text>
+  <rect x="594" y="472" width="160" height="44" rx="22" fill="#f7f7f5" stroke="#e5e4e0" stroke-width="1.5"/>
+  <text x="674" y="500" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#454540" text-anchor="middle">Cash handover</text>
 </svg>

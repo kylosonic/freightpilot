@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.png?v=2',
         width: 1200,
         height: 630,
         alt: 'FreightPilot — Run your first optimized route in 5 minutes. Free.',
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'FreightPilot — Run your first optimized route in 5 minutes. Free.',
     description: siteDescription,
-    images: ['/og-image.png'],
+    images: ['/og-image.png?v=2'],
   },
   robots: {
     index: true,
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-    apple: '/apple-touch-icon.png',
+    apple: '/apple-touch-icon.png?v=2',
   },
 };
 

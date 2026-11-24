@@ -66,4 +66,24 @@ describe('product-site polish guards', () => {
     expect(chrome).toContain('useReducedMotion');
     expect(read('src/components/site/hero-entrance.tsx')).toContain('useReducedMotion');
   });
+
+  it('ships valid Open Graph and touch PNG assets with cache-busted layout metadata', () => {
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const expectedAssets = [
+      { path: 'public/og-image.png', width: 1200, height: 630 },
+      { path: 'public/apple-touch-icon.png', width: 180, height: 180 },
+    ];
+
+    for (const asset of expectedAssets) {
+      const buf = readFileSync(join(APP_ROOT, asset.path));
+      expect(buf.subarray(0, 8).equals(pngSignature), `${asset.path} PNG signature`).toBe(true);
+      expect(buf.subarray(12, 16).toString('ascii'), `${asset.path} IHDR chunk`).toBe('IHDR');
+      expect(buf.readUInt32BE(16), `${asset.path} width`).toBe(asset.width);
+      expect(buf.readUInt32BE(20), `${asset.path} height`).toBe(asset.height);
+    }
+
+    const layout = read('src/app/layout.tsx');
+    expect(layout).toContain("'/og-image.png?v=2'");
+    expect(layout).toContain("'/apple-touch-icon.png?v=2'");
+  });
 });
