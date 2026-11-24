@@ -19,7 +19,12 @@
     "cloudflare:deploy": "npm run build && npm run cloudflare:deploy:web:built && npm run cloudflare:deploy:console:built && npm run cloudflare:deploy:redirect && npm run cloudflare:deploy:api",
     "doctor:desktop": "npm --prefix apps/desktop run doctor",
     "test:ops": "npm --prefix apps/ops-console run test",
+    "test:web": "npm --prefix apps/product-web run test",
+    "test:desktop": "npm --prefix apps/desktop run test",
     "lint:ops": "npm --prefix apps/ops-console run lint",
-    "typecheck:ops": "npm --prefix apps/ops-console run typecheck"
+    "typecheck:ops": "npm --prefix apps/ops-console run typecheck",
+    "typecheck:web": "npx --prefix apps/product-web tsc --noEmit -p apps/product-web/tsconfig.json",
+    "check:bundle:web": "npm --prefix apps/product-web run check:bundle",
+    "check:frontend": "npm run test:desktop && npm run typecheck:ops && npm run lint:ops && npm run test:ops && npm run typecheck:web && npm run test:web"
   }
 }

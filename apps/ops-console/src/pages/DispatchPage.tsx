@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Panel } from '../components/ui/Panel';
+import { CloseCashDialog } from '../components/dispatch/CloseCashDialog';
+import type { CashCloseFormState } from '../components/dispatch/CloseCashDialog';
+import { DispatchPlanForm } from '../components/dispatch/DispatchPlanForm';
+import type { DispatchPlanFormState } from '../components/dispatch/DispatchPlanForm';
+import { DispatchRunsList } from '../components/dispatch/DispatchRunsList';
+import { DispatchSetupForms } from '../components/dispatch/DispatchSetupForms';
+import type {
+  CustomerFormState,
+  DeliveryOrderFormState,
+  DispatchDriverFormState,
+} from '../components/dispatch/DispatchSetupForms';
 import { PageHeader } from '../components/ui/PageHeader';
-import { StatusBadge } from '../components/ui/StatusBadge';
-import { Dialog } from '../components/ui/Dialog';
 import { useAuth } from '../context/AuthContext';
 import { useLivePayloadStream } from '../hooks/useLiveUpdates';
 import { apiErrorMessage } from '../services/authErrors';
@@ -20,8 +28,8 @@ import {
   listDeliveryOrders,
   listDispatchRuns,
   listDrivers,
-  planFleetDispatch,
   planDispatchRun,
+  planFleetDispatch,
 } from '../services/dispatchApi';
 import type { Customer, DeliveryOrder, DispatchRun, Driver } from '../types/api';
 
@@ -54,14 +62,14 @@ export function DispatchPage() {
   const [cashCloseTarget, setCashCloseTarget] = useState<DispatchRun | null>(null);
   const [closeCashError, setCloseCashError] = useState<string | null>(null);
   const [closingCash, setClosingCash] = useState(false);
-  const [cashCloseForm, setCashCloseForm] = useState({
+  const [cashCloseForm, setCashCloseForm] = useState<CashCloseFormState>({
     handed_over_etb: '',
-    deposit_bank: '' as '' | 'cbe' | 'dashen',
+    deposit_bank: '',
     deposit_reference: '',
     note: '',
   });
 
-  const [customerForm, setCustomerForm] = useState({
+  const [customerForm, setCustomerForm] = useState<CustomerFormState>({
     code: '',
     name: '',
     phone: '',
@@ -69,7 +77,7 @@ export function DispatchPage() {
     latitude: '9.03',
     longitude: '38.74',
   });
-  const [orderForm, setOrderForm] = useState({
+  const [orderForm, setOrderForm] = useState<DeliveryOrderFormState>({
     order_no: '',
     customer_id: '',
     quantity_units: '10',
@@ -79,12 +87,12 @@ export function DispatchPage() {
     window_start: '',
     window_end: '',
   });
-  const [driverForm, setDriverForm] = useState({
+  const [driverForm, setDriverForm] = useState<DispatchDriverFormState>({
     full_name: '',
     phone: '',
     vehicle_plate: '',
   });
-  const [planForm, setPlanForm] = useState({
+  const [planForm, setPlanForm] = useState<DispatchPlanFormState>({
     route_name: 'Customer dispatch',
     plan_date: today,
     start_label: 'Main depot',
@@ -391,391 +399,72 @@ export function DispatchPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <Panel eyebrow="Customers" title="Customer" description="A customer is a named, mapped delivery location.">
-          <form className="grid gap-3" onSubmit={onCreateCustomer}>
-            <input className={FIELD} placeholder="Customer code" required value={customerForm.code} onChange={(event) => setCustomerForm({ ...customerForm, code: event.target.value })} />
-            <input className={FIELD} placeholder="Customer name" required value={customerForm.name} onChange={(event) => setCustomerForm({ ...customerForm, name: event.target.value })} />
-            <input className={FIELD} placeholder="Phone (optional)" value={customerForm.phone} onChange={(event) => setCustomerForm({ ...customerForm, phone: event.target.value })} />
-            <input className={FIELD} placeholder="Address" required value={customerForm.address} onChange={(event) => setCustomerForm({ ...customerForm, address: event.target.value })} />
-            <div className="grid grid-cols-2 gap-2">
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Latitude</span>
-                <input className={FIELD} aria-label="Latitude" value={customerForm.latitude} onChange={(event) => setCustomerForm({ ...customerForm, latitude: event.target.value })} />
-              </label>
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Longitude</span>
-                <input className={FIELD} aria-label="Longitude" value={customerForm.longitude} onChange={(event) => setCustomerForm({ ...customerForm, longitude: event.target.value })} />
-              </label>
-            </div>
-            <button type="submit" className="fp-action-primary w-full">Add customer</button>
-          </form>
-        </Panel>
+      <DispatchSetupForms
+        fieldClassName={FIELD}
+        customers={customers}
+        customerForm={customerForm}
+        onCustomerFormChange={setCustomerForm}
+        onCreateCustomer={(event) => void onCreateCustomer(event)}
+        orderForm={orderForm}
+        onOrderFormChange={setOrderForm}
+        onCreateOrder={(event) => void onCreateOrder(event)}
+        driverForm={driverForm}
+        onDriverFormChange={setDriverForm}
+        onCreateDriver={(event) => void onCreateDriver(event)}
+      />
 
-        <Panel eyebrow="Orders" title="Delivery order" description="Demand, cash to collect, and optional time window.">
-          <form className="grid gap-3" onSubmit={onCreateOrder}>
-            <input className={FIELD} placeholder="Order number" required value={orderForm.order_no} onChange={(event) => setOrderForm({ ...orderForm, order_no: event.target.value })} />
-            <select className={FIELD} aria-label="Customer" required value={orderForm.customer_id} onChange={(event) => setOrderForm({ ...orderForm, customer_id: event.target.value })}>
-              <option value="">Select customer</option>
-              {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.code} · {customer.name}</option>)}
-            </select>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Quantity units</span>
-                <input className={FIELD} aria-label="Quantity units" type="number" min="1" value={orderForm.quantity_units} onChange={(event) => setOrderForm({ ...orderForm, quantity_units: event.target.value })} />
-              </label>
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Cash on delivery (ETB)</span>
-                <input className={FIELD} aria-label="Cash on delivery ETB" type="number" min="0" step="0.01" value={orderForm.cod_amount_etb} onChange={(event) => setOrderForm({ ...orderForm, cod_amount_etb: event.target.value })} />
-              </label>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Priority (1–5)</span>
-                <input className={FIELD} aria-label="Priority" type="number" min="1" max="5" value={orderForm.priority} onChange={(event) => setOrderForm({ ...orderForm, priority: event.target.value })} />
-              </label>
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Service minutes</span>
-                <input className={FIELD} aria-label="Service minutes" type="number" min="0" value={orderForm.service_minutes} onChange={(event) => setOrderForm({ ...orderForm, service_minutes: event.target.value })} />
-              </label>
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="order-window-start" className="text-xs text-[#5f5f59]">Window starts</label>
-              <input id="order-window-start" className={FIELD} type="datetime-local" value={orderForm.window_start} onChange={(event) => setOrderForm({ ...orderForm, window_start: event.target.value })} />
-              <label htmlFor="order-window-end" className="text-xs text-[#5f5f59]">Window ends</label>
-              <input id="order-window-end" className={FIELD} type="datetime-local" value={orderForm.window_end} onChange={(event) => setOrderForm({ ...orderForm, window_end: event.target.value })} />
-            </div>
-            <button type="submit" className="fp-action-primary w-full">Add delivery order</button>
-          </form>
-        </Panel>
+      <DispatchPlanForm
+        fieldClassName={FIELD}
+        planMode={planMode}
+        onPlanModeChange={setPlanMode}
+        planForm={planForm}
+        onPlanFormChange={setPlanForm}
+        drivers={drivers}
+        fleetVehicleIds={fleetVehicleIds}
+        onToggleFleetVehicle={(driverId, checked) =>
+          setFleetVehicleIds((current) =>
+            checked ? [...current, driverId] : current.filter((id) => id !== driverId),
+          )
+        }
+        fleetCapacities={fleetCapacities}
+        onFleetCapacityChange={(driverId, value) =>
+          setFleetCapacities((current) => ({ ...current, [driverId]: value }))
+        }
+        plannedOrders={plannedOrders}
+        selectedIds={selectedIds}
+        onToggleSelectedOrder={(orderId, checked) =>
+          setSelectedIds((current) =>
+            checked ? [...current, orderId] : current.filter((id) => id !== orderId),
+          )
+        }
+        onSubmit={(event) => void onPlan(event)}
+      />
 
-        <Panel eyebrow="Driver" title="Add a driver" description="The driver will receive a link to the delivery list.">
-          <form className="grid gap-3" onSubmit={onCreateDriver}>
-            <input className={FIELD} placeholder="Driver full name" required value={driverForm.full_name} onChange={(event) => setDriverForm({ ...driverForm, full_name: event.target.value })} />
-            <input className={FIELD} placeholder="Phone" required value={driverForm.phone} onChange={(event) => setDriverForm({ ...driverForm, phone: event.target.value })} />
-            <input className={FIELD} placeholder="Vehicle plate (optional)" value={driverForm.vehicle_plate} onChange={(event) => setDriverForm({ ...driverForm, vehicle_plate: event.target.value })} />
-            <button type="submit" className="fp-action-primary w-full">Add driver</button>
-          </form>
-        </Panel>
-      </div>
-
-      <Panel
-        eyebrow="Planning"
-        title="Plan deliveries"
-        description="Choose orders and drivers. The plan follows the delivery windows you entered."
-      >
-        <form className="grid gap-4" onSubmit={onPlan}>
-          <div className="inline-flex w-fit rounded-lg bg-[#f1f1ef] p-0.5" role="group" aria-label="Planning mode">
-            <button
-              type="button"
-              aria-pressed={planMode === 'single'}
-              onClick={() => setPlanMode('single')}
-              className={`min-h-8 rounded-md px-3 text-xs font-medium ${planMode === 'single' ? 'bg-white text-[#252522] shadow-sm' : 'text-[#73736e]'}`}
-            >
-              Single vehicle
-            </button>
-            <button
-              type="button"
-              aria-pressed={planMode === 'fleet'}
-              onClick={() => setPlanMode('fleet')}
-              className={`min-h-8 rounded-md px-3 text-xs font-medium ${planMode === 'fleet' ? 'bg-white text-[#252522] shadow-sm' : 'text-[#73736e]'}`}
-            >
-              Fleet plan
-            </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>Route name</span>
-              <input className={FIELD} aria-label="Route name" required value={planForm.route_name} onChange={(event) => setPlanForm({ ...planForm, route_name: event.target.value })} />
-            </label>
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>Plan date</span>
-              <input className={FIELD} aria-label="Plan date" type="date" required value={planForm.plan_date} onChange={(event) => setPlanForm({ ...planForm, plan_date: event.target.value })} />
-            </label>
-            {planMode === 'single' ? (
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Driver</span>
-                <select className={FIELD} aria-label="Driver" value={planForm.driver_id} onChange={(event) => setPlanForm({ ...planForm, driver_id: event.target.value })}>
-                  <option value="">No driver yet</option>
-                  {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.full_name} · {driver.phone}</option>)}
-                </select>
-              </label>
-            ) : null}
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>Start label</span>
-              <input className={FIELD} aria-label="Start label" required value={planForm.start_label} onChange={(event) => setPlanForm({ ...planForm, start_label: event.target.value })} />
-            </label>
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>Start latitude</span>
-              <input className={FIELD} aria-label="Start latitude" value={planForm.start_latitude} onChange={(event) => setPlanForm({ ...planForm, start_latitude: event.target.value })} />
-            </label>
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>Start longitude</span>
-              <input className={FIELD} aria-label="Start longitude" value={planForm.start_longitude} onChange={(event) => setPlanForm({ ...planForm, start_longitude: event.target.value })} />
-            </label>
-            {planMode === 'single' ? (
-              <label className="grid gap-1 text-xs text-[#454540]">
-                <span>Vehicle capacity</span>
-                <input className={FIELD} aria-label="Vehicle capacity" type="number" min="1" value={planForm.vehicle_capacity_units} onChange={(event) => setPlanForm({ ...planForm, vehicle_capacity_units: event.target.value })} />
-              </label>
-            ) : null}
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>Average speed (km/h)</span>
-              <input className={FIELD} aria-label="Average speed" type="number" min="1" value={planForm.average_speed_kmh} onChange={(event) => setPlanForm({ ...planForm, average_speed_kmh: event.target.value })} />
-            </label>
-            <label className="grid gap-1 text-xs text-[#454540]">
-              <span>{planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'}</span>
-              <input className={FIELD} aria-label={planMode === 'fleet' ? 'Max stops per vehicle' : 'Max stops'} type="number" min="1" max="100" value={planForm.max_stops} onChange={(event) => setPlanForm({ ...planForm, max_stops: event.target.value })} />
-            </label>
-          </div>
-          {planMode === 'fleet' ? (
-            <div className="space-y-2 border-t border-[#e5e4e0] pt-3">
-              <p className="text-xs font-semibold text-[#252522]">Drivers and vehicle capacity</p>
-              {drivers.length === 0 ? (
-                <p className="text-xs text-[#73736e]">No active drivers available.</p>
-              ) : null}
-              {drivers.map((driver) => {
-                const selected = fleetVehicleIds.includes(driver.id);
-                return (
-                  <div key={driver.id} className="grid items-center gap-3 border-t border-[#efeeea] px-1 py-2 first:border-t-0 sm:grid-cols-[1fr_160px]">
-                    <label className="flex items-center gap-3 text-xs text-[#454540]">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={(event) =>
-                          setFleetVehicleIds((current) =>
-                            event.target.checked
-                              ? [...current, driver.id]
-                              : current.filter((id) => id !== driver.id),
-                          )
-                        }
-                      />
-                      <span>{driver.full_name} · {driver.phone}</span>
-                    </label>
-                    <input
-                      className={FIELD}
-                      aria-label={`${driver.full_name} vehicle capacity`}
-                      type="number"
-                      min="1"
-                      disabled={!selected}
-                      value={fleetCapacities[driver.id] ?? '100'}
-                      onChange={(event) =>
-                        setFleetCapacities((current) => ({
-                          ...current,
-                          [driver.id]: event.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-          <div className="border-t border-[#e5e4e0] pt-3">
-            <p className="text-xs font-semibold text-[#252522]">Planned orders</p>
-            {plannedOrders.length === 0 ? <p className="mt-2 text-xs text-[#73736e]">No planned orders yet.</p> : null}
-            <div className="mt-2 grid gap-2">
-              {plannedOrders.map((order) => (
-                <label key={order.id} className="flex items-center gap-3 border-t border-[#efeeea] px-1 py-2 text-xs text-[#454540] first:border-t-0">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(order.id)}
-                    onChange={(event) => setSelectedIds((current) => event.target.checked ? [...current, order.id] : current.filter((id) => id !== order.id))}
-                  />
-                  {order.order_no} · {order.customer_name} · {order.quantity_units} units · {order.cod_amount_etb} ETB
-                </label>
-              ))}
-            </div>
-          </div>
-          <button type="submit" className="fp-action-primary w-fit">
-            {planMode === 'fleet' ? 'Plan across selected vehicles' : 'Plan selected orders'}
-          </button>
-        </form>
-      </Panel>
-
-      <Panel eyebrow="Runs" title="Dispatch runs" description="Open a driver link, monitor stop status, or close the day’s cash.">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3 text-xs" aria-live="polite">
-            <span className="flex items-center gap-2 text-[#5f5f59]">
-              <span className={`h-2 w-2 rounded-full ${liveUpdatedAt ? 'bg-[#16856b]' : 'bg-[#a8a7a1]'}`} />
-              {liveUpdatedAt ? 'Live dispatch sync' : 'Waiting for live dispatch updates'}
-            </span>
-            {liveUpdatedAt ? (
-              <span className="text-[#73736e]">
-                {new Date(liveUpdatedAt).toLocaleTimeString()}
-              </span>
-            ) : null}
-          </div>
-          {runs.length === 0 ? <p className="text-xs text-[#73736e]">No dispatch runs yet.</p> : null}
-          {runs.map((run) => (
-            <article key={run.id} className="border-b border-[#e5e4e0] pb-3 last:border-b-0">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#252522]">{run.route_name}</h3>
-                    <StatusBadge label={run.status} tone={run.status === 'closed' ? 'success' : 'info'} />
-                  </div>
-                  <p className="mt-0.5 text-[11px] text-[#5f5f59]">
-                    {run.plan_date} · {run.total_distance_km} km · {run.estimated_duration_min} min · {run.expected_cash_etb} ETB expected
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void onToggleRun(run.id)} className="fp-action-secondary !min-h-8 text-xs">
-                    {expandedRunId === run.id ? 'Hide stops' : 'View stops'}
-                  </button>
-                  {run.driver_id ? <button type="button" onClick={() => void onDriverLink(run.id)} className="fp-action-quiet !min-h-8 !text-[#17679b]">Create driver link</button> : null}
-                  {run.status !== 'closed' && (user?.role === 'admin' || user?.role === 'owner') ? <button type="button" onClick={() => openCashClose(run)} className="fp-action-quiet !min-h-8 !text-[#14745f]">Close cash</button> : null}
-                </div>
-              </div>
-              {expandedRunId === run.id ? (
-                <div className="mt-3 space-y-2 border-t border-[#efeeea] pt-3">
-                  {expandedLoading ? <p className="text-xs text-[#73736e]">Loading stops…</p> : null}
-                  {expandedRun?.stops?.map((stop) => (
-                    <div key={stop.order_id} className="flex flex-wrap items-center justify-between gap-2 border-t border-[#efeeea] px-1 py-2 first:border-t-0">
-                      <div>
-                        <p className="text-xs text-[#252522]">#{stop.sequence} · {stop.order_no} · {stop.customer_name}</p>
-                        <p className="text-[11px] text-[#5f5f59]">
-                          {stop.status.replace(/_/g, ' ')} · {stop.collected_cash_etb} ETB collected · window{' '}
-                          {stop.window_start ? new Date(stop.window_start).toLocaleTimeString() : '—'}
-                          {' – '}
-                          {stop.window_end ? new Date(stop.window_end).toLocaleTimeString() : '—'}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => void onCustomerTrackingLink(stop.order_id)} className="fp-action-quiet !min-h-8 !text-[#14745f]">
-                          Customer link
-                        </button>
-                        {stop.proof_id ? (
-                          <button type="button" onClick={() => void onViewProof(stop.order_id, stop.proof_id!)} className="fp-action-quiet !min-h-8 !text-[#17679b]">
-                            View proof
-                          </button>
-                        ) : <span className="text-[10px] text-[#73736e]">No proof</span>}
-                      </div>
-                    </div>
-                  ))}
-                  {expandedRun && expandedRun.stops?.length === 0 ? <p className="text-xs text-[#73736e]">No stops recorded.</p> : null}
-                  {expandedRun?.unassigned && expandedRun.unassigned.length > 0 ? (
-                    <div className="rounded-md bg-[#fffaf0] p-3">
-                      <p className="text-xs font-semibold text-[#885100]">
-                        Unassigned to this run
-                      </p>
-                      <ul className="mt-1 space-y-1 text-[11px] text-[#704500]">
-                        {expandedRun.unassigned.map((item) => (
-                          <li key={item.order_id}>{item.order_no}: {item.reason}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      </Panel>
+      <DispatchRunsList
+        liveUpdatedAt={liveUpdatedAt}
+        runs={runs}
+        canCloseCash={user?.role === 'admin' || user?.role === 'owner'}
+        expandedRunId={expandedRunId}
+        expandedRun={expandedRun}
+        expandedLoading={expandedLoading}
+        onToggleRun={(runId) => void onToggleRun(runId)}
+        onDriverLink={(runId) => void onDriverLink(runId)}
+        onOpenCashClose={openCashClose}
+        onCustomerTrackingLink={(orderId) => void onCustomerTrackingLink(orderId)}
+        onViewProof={(orderId, proofId) => void onViewProof(orderId, proofId)}
+      />
 
       {cashCloseTarget ? (
-        <Dialog
-          eyebrow="Cash handover"
-          title="Close driver cash"
-          description="Record what the office actually received and attach the bank deposit reference when available."
-          onClose={() => { if (!closingCash) setCashCloseTarget(null); }}
-        >
-          <form className="grid gap-3" onSubmit={onCloseCash}>
-            {closeCashError ? (
-              <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-xs text-[#8f302a]">
-                {closeCashError}
-              </p>
-            ) : null}
-            <div className="rounded-md bg-[#f7f7f5] px-3 py-2 text-xs text-[#454540]">
-              Expected: <span className="font-semibold text-[#252522]">{cashCloseTarget.expected_cash_etb} ETB</span>
-              {cashCloseTarget.cash_declared_etb ? (
-                <span className="ml-3 text-[#5f5f59]">Declared: {cashCloseTarget.cash_declared_etb} ETB</span>
-              ) : null}
-            </div>
-            <label className="grid gap-1 text-xs text-[#454540]">
-              Cash handed over
-              <input
-                className={FIELD}
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                value={cashCloseForm.handed_over_etb}
-                onChange={(event) =>
-                  setCashCloseForm((current) => ({
-                    ...current,
-                    handed_over_etb: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-xs text-[#454540]">
-                Deposit bank
-                <select
-                  className={FIELD}
-                  value={cashCloseForm.deposit_bank}
-                  onChange={(event) =>
-                    setCashCloseForm((current) => ({
-                      ...current,
-                      deposit_bank: event.target.value as '' | 'cbe' | 'dashen',
-                    }))
-                  }
-                >
-                  <option value="">No deposit slip</option>
-                  <option value="cbe">CBE</option>
-                  <option value="dashen">Dashen</option>
-                </select>
-              </label>
-              <label className="grid gap-1 text-xs text-[#454540]">
-                Deposit reference
-                <input
-                  className={FIELD}
-                  maxLength={128}
-                  disabled={!cashCloseForm.deposit_bank}
-                  value={cashCloseForm.deposit_reference}
-                  onChange={(event) =>
-                    setCashCloseForm((current) => ({
-                      ...current,
-                      deposit_reference: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <label className="grid gap-1 text-xs text-[#454540]">
-              Close note
-              <textarea
-                className={`${FIELD} min-h-24 py-3`}
-                maxLength={500}
-                value={cashCloseForm.note}
-                onChange={(event) =>
-                  setCashCloseForm((current) => ({
-                    ...current,
-                    note: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                disabled={closingCash}
-                onClick={() => setCashCloseTarget(null)}
-                className="fp-action-secondary !min-h-8 text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={closingCash}
-                className="fp-action-primary !min-h-8 text-xs"
-              >
-                {closingCash ? 'Closing...' : 'Close cash'}
-              </button>
-            </div>
-          </form>
-        </Dialog>
+        <CloseCashDialog
+          fieldClassName={FIELD}
+          target={cashCloseTarget}
+          form={cashCloseForm}
+          onFormChange={setCashCloseForm}
+          error={closeCashError}
+          busy={closingCash}
+          onClose={() => setCashCloseTarget(null)}
+          onSubmit={(event) => void onCloseCash(event)}
+        />
       ) : null}
     </div>
   );

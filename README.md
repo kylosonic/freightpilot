@@ -13,6 +13,17 @@ The repository contains four applications:
 
 The backend owns authentication, organization membership, tenant scoping, and operational data. The public site can create a company workspace, which starts with sample data so a new team can try route planning before importing its own CSVs.
 
+## Codebase navigation
+
+See [docs/architecture.md](docs/architecture.md) for a module-by-module map of the backend (`dispatch/` sub-package, services, Cloudflare Durable Object groups), Ops Console domain types and feature folders, Product Web routes, and Desktop wrapper.
+
+Root frontend verification shortcuts:
+
+- `npm run check:frontend` — run Desktop tests, Ops Console typecheck/lint/tests, and Product Web typecheck/tests
+- `npm run test:desktop` / `npm run test:ops` / `npm run test:web`
+- `npm run typecheck:ops` / `npm run typecheck:web`
+- `npm run check:bundle:web`
+
 ## Local stack
 
 ### Requirements

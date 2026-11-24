@@ -108,7 +108,7 @@ describe('ops-console reliability polish', () => {
       expect(text, `${file} uses native window.alert`).not.toMatch(/\b(?:window\.)?alert\(/);
     }
 
-    for (const pagePath of ['components/TeamPanel.tsx', 'pages/ProvidersPage.tsx', 'pages/AdminReceiptsPage.tsx']) {
+    for (const pagePath of ['components/TeamPanel.tsx', 'pages/ProvidersPage.tsx', 'pages/AdminReceiptsPage.tsx', 'components/receipts/ReceiptReviewDetailPane.tsx']) {
       expect(read(pagePath)).not.toContain('confirm(');
     }
 

@@ -1,10 +1,13 @@
 import { FormEvent, useEffect, useState } from 'react';
 
+import { DeclareCashDialog, SettleCashDialog } from '../components/drivers/CashDialogs';
+import { DriverCashLedgerPanel } from '../components/drivers/DriverCashLedgerPanel';
+import { DriverRosterPanel } from '../components/drivers/DriverRosterPanel';
+import { EMPTY_LEDGER, etb } from '../components/drivers/driverFormatting';
 import { Dialog } from '../components/ui/Dialog';
 import { MetricTile } from '../components/ui/MetricTile';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
-import { StatusBadge } from '../components/ui/StatusBadge';
 import { useAuth } from '../context/AuthContext';
 import { apiErrorMessage } from '../services/authErrors';
 import {
@@ -17,14 +20,7 @@ import {
   listDrivers,
   settleCash,
 } from '../services/logisticsApi';
-import type {
-  CashCollection,
-  CashLedgerSummary,
-  CashCollectionStatus,
-  Driver,
-  DriverShipment,
-  DriverStatus,
-} from '../types/api';
+import type { CashCollection, CashLedgerSummary, Driver, DriverShipment } from '../types/api';
 
 /**
  * Driver roster and end-of-day cash position (NB-86).
@@ -34,169 +30,6 @@ import type {
  * cash is still out with drivers and how much never came back*. Both are cash
  * risk in this market, so they live on one surface rather than behind a filter.
  */
-
-const EMPTY_LEDGER: CashLedgerSummary = {
-  outstanding_count: 0,
-  outstanding_expected_etb: '0.00',
-  collected_count: 0,
-  collected_etb: '0.00',
-  settled_count: 0,
-  settled_etb: '0.00',
-  shortfall_etb: '0.00',
-};
-
-function driverTone(status: DriverStatus) {
-  return status === 'active' ? 'success' : 'neutral';
-}
-
-function cashTone(status: CashCollectionStatus) {
-  if (status === 'settled') return 'success';
-  if (status === 'outstanding') return 'warning';
-  if (status === 'voided') return 'danger';
-  return 'info';
-}
-
-/** Money is summed as a decimal string on the server; this only formats it. */
-function etb(value: string | number | null | undefined): string {
-  const parsed = Number(value ?? 0);
-  if (!Number.isFinite(parsed)) return '0.00 ETB';
-  return `${parsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`;
-}
-
-function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`skeleton ${className ?? ''}`} />;
-}
-
-function DeclareCashDialog({
-  record,
-  busy = false,
-  onConfirm,
-  onCancel,
-}: {
-  record: CashCollection;
-  busy?: boolean;
-  onConfirm: (collected: number, note: string) => void;
-  onCancel: () => void;
-}) {
-  const [collected, setCollected] = useState<string>(record.collected_etb ?? '0');
-  const [note, setNote] = useState('');
-
-  const expected = Number(record.expected_etb ?? 0);
-  const entered = Number(collected);
-  const shortfall = Number.isFinite(entered) ? Math.max(0, expected - entered) : 0;
-
-  return (
-    <Dialog
-      eyebrow="Cash on hand"
-      title={`Record cash for ${record.shipment_no}`}
-      description={`We expect ${etb(record.expected_etb)}. Enter the amount the driver actually has. If it is less, we record the difference.`}
-      onClose={() => { if (!busy) onCancel(); }}
-      actions={
-        <>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onCancel}
-            className="fp-action-secondary !min-h-8 text-xs"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirm(entered, note)}
-            disabled={busy || !Number.isFinite(entered) || entered < 0}
-            className="fp-action-primary !min-h-8 text-xs"
-          >
-            {busy ? 'Saving...' : 'Record cash'}
-          </button>
-        </>
-      }
-    >
-      <div className="grid gap-4">
-        <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
-          Cash collected (ETB)
-          <input
-            autoFocus
-            className="fp-input"
-            type="number"
-            min={0}
-            step="0.01"
-            value={collected}
-            onChange={(e) => setCollected(e.target.value)}
-          />
-        </label>
-        <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
-          Note (optional)
-          <textarea
-            className="fp-input min-h-20 px-4 py-3"
-            placeholder="Anything the office should know about this collection..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </label>
-        <p className={`text-xs ${shortfall > 0 ? 'text-[#885100]' : 'text-[#5f5f59]'}`}>
-          {shortfall > 0
-            ? `Shortfall of ${etb(shortfall)} will be recorded against this delivery.`
-            : 'This clears the expected amount in full.'}
-        </p>
-      </div>
-    </Dialog>
-  );
-}
-
-function SettleCashDialog({
-  record,
-  busy = false,
-  onConfirm,
-  onCancel,
-}: {
-  record: CashCollection;
-  busy?: boolean;
-  onConfirm: (note: string) => void;
-  onCancel: () => void;
-}) {
-  const [note, setNote] = useState('');
-
-  return (
-    <Dialog
-      eyebrow="Cash handover"
-      title={`Settle cash for ${record.shipment_no}`}
-      description="Use this after the office receives the cash. It closes the record and keeps any missing amount visible."
-      onClose={() => { if (!busy) onCancel(); }}
-      actions={
-        <>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onCancel}
-            className="fp-action-secondary !min-h-8 text-xs"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onConfirm(note)}
-            className="fp-action-primary !min-h-8 text-xs"
-          >
-            {busy ? 'Settling...' : 'Settle'}
-          </button>
-        </>
-      }
-    >
-      <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
-        Settlement note (optional)
-        <textarea
-          autoFocus
-          className="fp-input min-h-20 px-4 py-3"
-          placeholder="e.g. Cash banked with the CBE deposit on Monday."
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-      </label>
-    </Dialog>
-  );
-}
 
 export function DriversPage() {
   const { user } = useAuth();
@@ -375,7 +208,7 @@ export function DriversPage() {
       ) : null}
 
       <PageHeader
-        eyebrow="Fleet and cash"
+        eyebrow="Fleet"
         title="Fleet and cash"
         description="See who is on the road, how much cash they have, and what still needs to be handed in."
       />
@@ -411,14 +244,14 @@ export function DriversPage() {
         />
       </div>
 
-      {error ? <p role="alert" className="border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
+      {error ? <p role="alert" className="rounded-md border border-[#e7c2be] bg-[#fff8f7] px-3 py-2 text-sm text-[#8f302a]">{error}</p> : null}
 
       <Panel
         eyebrow="Roster"
         title="Add a driver"
         description="The phone number is how you will recognise each driver, so please check it carefully."
       >
-        <form className="grid grid-cols-1 gap-3 lg:grid-cols-5" onSubmit={onCreateDriver}>
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" onSubmit={onCreateDriver}>
           <label className="grid gap-1.5 text-xs font-medium text-[#454540]">
             Full name
             <input
@@ -483,186 +316,24 @@ export function DriversPage() {
         </form>
       </Panel>
 
-      <Panel
-        eyebrow="Roster"
-        title="Who is on the fleet today"
-        description="Choose a driver to see their current deliveries and cash."
-      >
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <SkeletonBlock key={i} className="h-[96px]" />
-            ))}
-          </div>
-        ) : null}
+      <DriverRosterPanel
+        drivers={drivers}
+        loading={loading}
+        canManageFleet={canManageFleet}
+        van={van}
+        onShowVan={(driver) => void onShowVan(driver)}
+        onRequestDeactivate={setDeactivateTarget}
+        onCloseVan={() => setVan(null)}
+      />
 
-        <div className="space-y-3">
-          {drivers.map((driver) => (
-            <article key={driver.id} className="fp-row">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge label={driver.status} tone={driverTone(driver.status)} />
-                    <span className="text-xs text-[#73736e]">{driver.phone}</span>
-                  </div>
-                  <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">
-                    {driver.full_name}
-                  </h3>
-                </div>
-                <div className="text-right font-mono text-xs text-[#5f5f59] tabular-nums">
-                  <p>{driver.vehicle_plate || 'No plate on file'}</p>
-                  <p>{driver.license_no || 'No license on file'}</p>
-                </div>
-              </div>
-
-              {driver.notes ? (
-                <p className="mt-1.5 text-xs leading-5 text-[#5f5f59]">{driver.notes}</p>
-              ) : null}
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => onShowVan(driver)}
-                  className="fp-action-secondary !min-h-8 text-xs"
-                >
-                  What is on the van
-                </button>
-                {canManageFleet && driver.status === 'active' ? (
-                  <button
-                    type="button"
-                    onClick={() => setDeactivateTarget(driver)}
-                    className="fp-action-quiet !min-h-8 !text-[#a3342f]"
-                  >
-                    Deactivate
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-
-          {!loading && drivers.length === 0 ? (
-            <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
-              <p className="text-sm font-semibold text-[#454540]">No drivers on the roster</p>
-              <p className="mt-1 text-xs text-[#73736e]">
-                Add your first driver above. A fleet CSV upload does not create drivers — the roster is maintained here.
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </Panel>
-
-      {van ? (
-        <Panel
-          eyebrow="Current load"
-          title={`What ${van.driverName} is carrying`}
-          description="Open shipments assigned to this driver, newest schedule first."
-        >
-          <div className="space-y-3">
-            {van.shipments.map((shipment) => (
-              <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[#efeeea] py-2">
-                <div className="flex items-center gap-3">
-                  <StatusBadge
-                    label={shipment.status}
-                    tone={
-                      shipment.status === 'delivered'
-                        ? 'success'
-                        : shipment.status === 'delayed' || shipment.status === 'cancelled'
-                          ? 'danger'
-                          : shipment.status === 'in_transit'
-                            ? 'info'
-                            : 'neutral'
-                    }
-                  />
-                  <span className="text-xs text-[#252522]">{shipment.shipment_no}</span>
-                </div>
-                <span className="font-mono text-xs text-[#5f5f59] tabular-nums">
-                  COD {etb(shipment.cod_amount_etb)}
-                </span>
-              </div>
-            ))}
-            {van.shipments.length === 0 ? (
-              <p className="text-xs text-[#73736e]">Nothing assigned to this driver right now.</p>
-            ) : null}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setVan(null)}
-                className="fp-action-secondary !min-h-8 text-xs"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </Panel>
-      ) : null}
-
-      <Panel
-        eyebrow="End of day"
-        title="Cash position"
-        description="Record what each driver has collected. Once the office receives the cash, mark it as handed in."
-      >
-        <div className="space-y-3">
-          {collections.map((record) => (
-            <article key={record.id} className="fp-row">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge label={record.status} tone={cashTone(record.status)} />
-                    <span className="text-[11px] text-[#73736e]">{record.shipment_no}</span>
-                  </div>
-                  <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">
-                    {record.driver_name || 'Unassigned driver'}
-                  </h3>
-                </div>
-                <div className="text-right font-mono text-xs text-[#5f5f59] tabular-nums">
-                  <p>Expected {etb(record.expected_etb)}</p>
-                  <p>Collected {etb(record.collected_etb)}</p>
-                  <p className={Number(record.shortfall_etb ?? 0) > 0 ? 'text-[#885100]' : 'text-[#73736e]'}>
-                    Shortfall {etb(record.shortfall_etb)}
-                  </p>
-                </div>
-              </div>
-
-              {record.note ? <p className="mt-1.5 text-xs leading-5 text-[#5f5f59]">{record.note}</p> : null}
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {record.status === 'outstanding' ? (
-                  <button
-                    type="button"
-                    onClick={() => setDeclareTarget(record)}
-                    className="fp-action-secondary !min-h-8 text-xs"
-                  >
-                    Record cash
-                  </button>
-                ) : null}
-                {canManageFleet && record.status !== 'settled' && record.status !== 'voided' ? (
-                  <button
-                    type="button"
-                    onClick={() => setSettleTarget(record)}
-                    className="fp-action-quiet !min-h-8 !text-[#14745f]"
-                  >
-                    Settle
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-
-          {!loading && collections.length === 0 ? (
-            <div className="rounded-md bg-[#f7f7f5] p-6 text-center">
-            <p className="text-sm font-semibold text-[#454540]">No cash to collect right now</p>
-              <p className="mt-1 text-xs text-[#73736e]">
-                A cash record opens when a cash-on-delivery shipment is marked delivered on the Shipments board.
-              </p>
-            </div>
-          ) : null}
-        </div>
-
-        <p className="mt-3 text-xs text-[#5f5f59]">
-          Settled to date: <span className="font-mono text-[#252522]">{etb(ledger.settled_etb)}</span> across{' '}
-          {ledger.settled_count} collections.
-        </p>
-      </Panel>
+      <DriverCashLedgerPanel
+        collections={collections}
+        ledger={ledger}
+        loading={loading}
+        canManageFleet={canManageFleet}
+        onDeclare={setDeclareTarget}
+        onSettle={setSettleTarget}
+      />
     </div>
   );
 }

@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
+import { PlanComparisonSection } from '../components/account/PlanComparisonSection';
+import { ProviderKeysCard } from '../components/account/ProviderKeysCard';
+import { TeamPanel } from '../components/TeamPanel';
+import { WorkspaceResetDangerZone } from '../components/WorkspaceResetDangerZone';
 import { MetricTile } from '../components/ui/MetricTile';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Panel } from '../components/ui/Panel';
-import { StatusBadge } from '../components/ui/StatusBadge';
-import { TeamPanel } from '../components/TeamPanel';
-import { WorkspaceResetDangerZone } from '../components/WorkspaceResetDangerZone';
 import { useAuth } from '../context/AuthContext';
 import {
   createProviderKey,
-  getCurrentUsage,
   getCurrentSubscription,
+  getCurrentUsage,
   getProviderPreference,
   listPlans,
   listProviderKeys,
@@ -22,14 +23,8 @@ import {
   updateContactPhone,
 } from '../services/billingApi';
 import { getAuditTimeline } from '../services/logisticsApi';
-import { includedTasksLabel, overageCostLabel, overageRateLabel, planPriceLabel, usageMetricLabel, usageProgressPercent } from './accountUsageUtils';
 import type { AuditEvent, CurrentSubscription, ProviderKey, SubscriptionPlan, SubscriptionTier, UsageSummary } from '../types/api';
-
-function keyTone(status: string) {
-  if (status === 'active') return 'success';
-  if (status === 'revoked') return 'danger';
-  return 'neutral';
-}
+import { usageMetricLabel, usageProgressPercent } from './accountUsageUtils';
 
 type StatusBanner = {
   tone: 'info' | 'error';
@@ -265,116 +260,18 @@ export function AccountPage() {
         </Panel>
       ) : null}
 
-      {/* Plan and usage take the full width because they affect what every teammate can use. */}
-      <Panel
-        eyebrow="Billing"
-        title="Plan and usage"
-        description="Change your plan, check how much you have used, and review what each tier includes."
-        actions={
-          <button
-            type="button"
-            onClick={onRefreshUsage}
-            className="fp-action-quiet !min-h-8"
-          >
-            Refresh usage
-          </button>
-        }
-      >
-        <div className="rounded-md bg-[#f7f7f5] p-3">
-          <p className="text-sm font-semibold text-[#252522]">{tierLabel} plan</p>
-          <p className="mt-1 text-xs text-[#5f5f59]">{subscription?.organization_name ?? 'Workspace name not loaded'}</p>
-        </div>
-
-        <div className="mt-3 border-t border-[#e5e4e0] pt-3">
-          <p className="text-xs font-semibold text-[#252522]">Tasks used this month</p>
-          <p className="mt-0.5 text-[11px] text-[#73736e]">{metricLabel} counts toward your plan limit.</p>
-
-          {usage ? (
-            <div className="mt-4 space-y-4">
-              <div className="grid gap-2 text-xs text-[#5f5f59] md:grid-cols-3">
-                <p>
-                  Period: <span className="font-semibold text-[#252522]">{usage.period_start}</span> to{' '}
-                  <span className="font-semibold text-[#252522]">{usage.period_end}</span>
-                </p>
-                <p>
-                  Used: <span className="font-mono font-semibold tabular-nums text-[#252522]">{usage.used_units.toLocaleString()}</span>
-                </p>
-                <p>
-                  Included:{' '}
-                  <span className="font-mono font-semibold tabular-nums text-[#252522]">
-                    {usage.included_units == null ? 'Unlimited' : usage.included_units.toLocaleString()}
-                  </span>
-                </p>
-              </div>
-
-              {usage.included_units != null ? (
-                <>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[#e5e4e0]">
-                    <div className="h-full bg-[#176b5c]" style={{ width: `${progressPercent}%` }} />
-                  </div>
-                  <p className="text-xs text-[#5f5f59]">
-                    Used: <span className="font-mono font-semibold tabular-nums text-[#252522]">{usage.utilization_percent ?? 0}%</span>
-                  </p>
-                </>
-              ) : (
-                <p className="text-xs text-[#73736e]">This plan has no monthly task limit.</p>
-              )}
-
-              <div className="grid gap-2 text-xs text-[#5f5f59] md:grid-cols-2">
-                <p>
-                  Extra tasks: <span className="font-mono font-semibold tabular-nums text-[#252522]">{usage.overage_units.toLocaleString()}</span>
-                </p>
-                <p>
-                  Estimated extra cost:{' '}
-                  <span className="font-mono font-semibold tabular-nums text-[#252522]">
-                    {overageCostLabel(usage)}
-                  </span>
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-3 text-xs text-[#73736e]">Usage could not be loaded. Refresh in a moment.</p>
-          )}
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {plans.map((plan) => (
-            <div key={plan.tier} className="flex flex-col justify-between border-t border-[#e5e4e0] pt-3">
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-[#252522]">{plan.title}</h3>
-                    <p className="font-mono text-xs tabular-nums text-[#5f5f59]">{planPriceLabel(plan)}</p>
-                  </div>
-                  {currentTier === plan.tier ? <StatusBadge label="Current" tone="info" /> : null}
-                </div>
-                <div className="mt-2 space-y-0.5 text-[11px] text-[#5f5f59]">
-                  {plan.tier !== 'free' || plan.seat_limit != null ? (
-                    <p>Seats: <span className="font-mono tabular-nums">{plan.seat_limit ?? 'Unlimited'}</span></p>
-                  ) : null}
-                  {plan.tier !== 'free' || plan.vehicle_limit != null ? (
-                    <p>Vehicles: <span className="font-mono tabular-nums">{plan.vehicle_limit ?? 'Unlimited'}</span></p>
-                  ) : null}
-                  <p>Included tasks: <span className="font-mono tabular-nums">{includedTasksLabel(plan)}</span></p>
-                  <p>Extra task rate: <span className="font-mono tabular-nums">{overageRateLabel(plan)}</span></p>
-                </div>
-              </div>
-              <button
-                type="button"
-                disabled={currentTier === plan.tier || savingTier !== null}
-                onClick={() => onSelectTier(plan.tier)}
-                className="fp-action-secondary mt-3 w-full !min-h-8 text-xs"
-              >
-                {currentTier === plan.tier
-                  ? 'Current plan'
-                  : savingTier === plan.tier
-                    ? 'Updating...'
-                    : 'Switch to plan'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </Panel>
+      <PlanComparisonSection
+        tierLabel={tierLabel}
+        subscription={subscription}
+        usage={usage}
+        metricLabel={metricLabel}
+        progressPercent={progressPercent}
+        plans={plans}
+        currentTier={currentTier}
+        savingTier={savingTier}
+        onRefreshUsage={() => void onRefreshUsage()}
+        onSelectTier={(tier) => void onSelectTier(tier)}
+      />
 
       {/* Sections 2 + 3 — escalation contact and provider control side by side */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -398,7 +295,7 @@ export function AccountPage() {
               <button
                 type="button"
                 disabled={savingPhone}
-                onClick={onSaveContactPhone}
+                onClick={() => void onSaveContactPhone()}
                 className="fp-action-primary"
               >
                 {savingPhone ? 'Saving...' : 'Save phone'}
@@ -410,113 +307,26 @@ export function AccountPage() {
           </div>
         </Panel>
 
-        <Panel
-          eyebrow="AI settings"
-          title="AI provider keys"
-          description="Choose which AI provider to use, test a key, and replace it when needed."
-        >
-          <div>
-            <label htmlFor="preferredKeySelect" className="text-xs font-semibold text-[#454540]">
-              Preferred AI provider
-            </label>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <select
-                id="preferredKeySelect"
-                value={preferredKeyId}
-                onChange={(event) => setPreferredKeyId(event.target.value)}
-                className={`${fieldClassName} min-w-0 flex-1 sm:min-w-[240px]`}
-              >
-                <option value="">Select active provider key</option>
-                {keys
-                  .filter((key) => key.status === 'active')
-                  .map((key) => (
-                    <option key={key.id} value={key.id}>{`${key.provider_name} - ${key.key_name} (${key.masked_key})`}</option>
-                  ))}
-              </select>
-              <button
-                type="button"
-                disabled={savingProvider}
-                onClick={onSetPreferredKey}
-                className="fp-action-primary"
-              >
-                {savingProvider ? 'Saving...' : 'Save provider'}
-              </button>
-            </div>
-            <p className="mt-2 text-[11px] text-[#73736e]">
-              {subscription?.preferred_ai_provider ? `Using ${subscription.preferred_ai_provider}` : 'No AI provider selected.'}
-            </p>
-          </div>
-
-          <form onSubmit={onAddKey} className="mt-4 grid gap-3 md:grid-cols-3">
-            <input
-              aria-label="Provider name"
-              value={providerName}
-              onChange={(event) => setProviderName(event.target.value)}
-              className={fieldClassName}
-              placeholder="Provider name"
-            />
-            <input
-              aria-label="Key label"
-              value={keyName}
-              onChange={(event) => setKeyName(event.target.value)}
-              className={fieldClassName}
-              placeholder="Key label"
-            />
-            <input
-              aria-label="API key"
-              value={apiKey}
-              onChange={(event) => setApiKey(event.target.value)}
-              className={fieldClassName}
-              placeholder="API key"
-              type="password"
-              autoComplete="new-password"
-            />
-            <div className="md:col-span-3">
-              <button type="submit" disabled={addingKey} className="fp-action-primary">
-                {addingKey ? 'Saving...' : 'Save key'}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-4 space-y-3">
-            {keys.map((key) => (
-              <article key={key.id} className="fp-row">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge label={key.status} tone={keyTone(key.status)} />
-                      <span className="text-xs text-[#73736e]">{key.provider_name}</span>
-                    </div>
-                    <h3 className="mt-1.5 text-sm font-semibold text-[#252522]">{key.key_name}</h3>
-                    <p className="mt-0.5 text-[11px] text-[#73736e]">{key.status === 'active' ? 'Key is ready to use.' : 'This key no longer works.'}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      disabled={busyKeyId === key.id}
-                      onClick={() => onTestKey(key.id)}
-                      className="fp-action-quiet !min-h-8"
-                    >
-                      {busyKeyId === key.id ? 'Checking...' : 'Check key'}
-                    </button>
-                    {key.status === 'active' ? (
-                      <button
-                        type="button"
-                        disabled={busyKeyId === key.id}
-                        onClick={() => onRevokeKey(key.id)}
-                        className="fp-action-quiet !min-h-8 !text-[#a3342f]"
-                      >
-                        Revoke
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </article>
-            ))}
-
-            {keys.length === 0 ? <p className="text-xs text-[#73736e]">No API keys yet.</p> : null}
-          </div>
-        </Panel>
+        <ProviderKeysCard
+          preferredAiProvider={subscription?.preferred_ai_provider}
+          preferredKeyId={preferredKeyId}
+          onPreferredKeyIdChange={setPreferredKeyId}
+          onSetPreferredKey={() => void onSetPreferredKey()}
+          savingProvider={savingProvider}
+          providerName={providerName}
+          onProviderNameChange={setProviderName}
+          keyName={keyName}
+          onKeyNameChange={setKeyName}
+          apiKey={apiKey}
+          onApiKeyChange={setApiKey}
+          onAddKey={onAddKey}
+          addingKey={addingKey}
+          keys={keys}
+          busyKeyId={busyKeyId}
+          onTestKey={(keyId) => void onTestKey(keyId)}
+          onRevokeKey={(keyId) => void onRevokeKey(keyId)}
+          fieldClassName={fieldClassName}
+        />
       </div>
 
       <TeamPanel />
