@@ -14,6 +14,7 @@ A change is ready to merge when the checks in `.github/workflows/ci.yml` pass. T
 | `product-web` | Clean install, TypeScript check, tests, production build, bundle budget, deployed-dependency audit |
 | `desktop` | Clean install, archive-path tests, Electron runtime check, dependency audit |
 | `docker` | Compose configuration validation and production image builds |
+| `release-gate` | Aggregates every blocking CI job; fails unless all eight jobs pass |
 
 The npm applications are installed independently from their per-application lockfiles. The repository root intentionally has no workspace lockfile.
 
@@ -21,18 +22,26 @@ The npm applications are installed independently from their per-application lock
 
 Run the commands in [README.md](../README.md#tests-and-checks) before pushing.
 
-## Deployment blocking
+## Automatic deployment
 
-Production is deployed with the `cloudflare:deploy` commands in
-[README.md](../README.md#deployment). Run the release from a commit whose CI
-run is green. Configure GitHub branch protection to require every CI job before
-merging, and keep deployment credentials out of pull-request workflows. A red
-CI run must block the release.
+`release-gate` must be a required status check on `master`, and `master` must
+require a pull request before merging. Pull-request runs never receive
+production secrets. A push to `master` deploys only when `release-gate` proves
+that all eight CI jobs passed for that exact commit.
 
-Apply any pending Alembic migration before deploying API code that depends on
-it. The API's `/health` endpoint compares the live revision with the migration
-head packaged in the deployed Worker. The production smoke workflow fails if
-the revision is missing, pending, or different from the expected head.
+The `deploy-production` job then applies pending Alembic migrations, deploys
+the API Worker, waits for `/health` to report a current schema, publishes both
+Pages projects and the redirect Workers, and invokes
+`.github/workflows/production-smoke.yml`. A failed migration, deployment, health
+check, or smoke test marks the release failed. Database migrations must remain
+forward-compatible and have a reviewed recovery plan because a database schema
+change cannot be rolled back atomically with every Cloudflare asset.
+
+The workflow expects `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and
+`PRODUCTION_DATABASE_URL` to be configured as repository secrets or secrets on
+the `production` GitHub environment. The API's Hyperdrive binding remains the
+runtime database connection; `PRODUCTION_DATABASE_URL` is used only by the
+migration step.
 
 ## Dependency advisories
 
@@ -48,7 +57,7 @@ Before merging:
 - A rollback path is known.
 - Any database migration has been tested forward and backward where the migration can be reversed.
 
-After deploying:
+After the automatic deployment:
 
 - `GET /health` reports `db: ok`, `schema: current`, and matching `revision` and `expected_revision`.
 - The product site and operations console load.

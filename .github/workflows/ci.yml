@@ -21,8 +21,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend-tests:
@@ -206,7 +206,13 @@ jobs:
         run: npm --prefix apps/ops-console run test
 
       - name: Build ops console
+        env:
+          VITE_API_BASE_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
+          VITE_SIGNUP_URL: https://freightpilot.pages.dev/launch/
         run: npm --prefix apps/ops-console run build
+
+      - name: Verify ops console production API target
+        run: grep -R -q 'https://freightpilot-api.freightpilot.workers.dev/api/v1' apps/ops-console/dist
 
       - name: Audit ops console dependencies (deployed set)
         # Audit dependencies that ship to users. Development-only advisories
@@ -240,7 +246,13 @@ jobs:
         run: npx --prefix apps/product-web tsc --noEmit -p apps/product-web/tsconfig.json
 
       - name: Build product web
+        env:
+          NEXT_PUBLIC_PLATFORM_API_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
+          NEXT_PUBLIC_SITE_URL: https://freightpilot.pages.dev
         run: npm --prefix apps/product-web run build
+
+      - name: Verify product web production API target
+        run: grep -R -q 'https://freightpilot-api.freightpilot.workers.dev/api/v1' apps/product-web/out
 
       - name: Check page-weight budget
         run: npm --prefix apps/product-web run check:bundle
@@ -294,3 +306,195 @@ jobs:
 
       - name: Build deployable images
         run: docker compose build backend frontend product-web
+
+  release-gate:
+    name: release-gate
+    if: always()
+    needs:
+      - backend-tests
+      - backend-dependency-audit
+      - backend-postgres
+      - worker-dependency-audit
+      - ops-console
+      - product-web
+      - desktop
+      - docker
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every CI job to pass
+        if: >-
+          needs.backend-tests.result != 'success' ||
+          needs.backend-dependency-audit.result != 'success' ||
+          needs.backend-postgres.result != 'success' ||
+          needs.worker-dependency-audit.result != 'success' ||
+          needs.ops-console.result != 'success' ||
+          needs.product-web.result != 'success' ||
+          needs.desktop.result != 'success' ||
+          needs.docker.result != 'success'
+        run: |
+          echo 'One or more required CI jobs did not pass; production release is blocked.'
+          exit 1
+
+      - name: Release gate passed
+        run: echo 'All required CI jobs passed.'
+
+  deploy-production:
+    name: deploy-production
+    needs: release-gate
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false
+    environment:
+      name: production
+      url: https://freightpilot.pages.dev
+    env:
+      NEXT_PUBLIC_PLATFORM_API_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
+      NEXT_PUBLIC_SITE_URL: https://freightpilot.pages.dev
+      VITE_API_BASE_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
+      VITE_SIGNUP_URL: https://freightpilot.pages.dev/launch/
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Verify release credentials are configured
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'CLOUDFLARE_API_TOKEN is not configured.'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'CLOUDFLARE_ACCOUNT_ID is not configured.'; exit 1; }
+          test -n "$PRODUCTION_DATABASE_URL" || { echo 'PRODUCTION_DATABASE_URL is not configured.'; exit 1; }
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apps/ops-console/package-lock.json
+            apps/product-web/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          npm --prefix apps/product-web ci
+          npm --prefix apps/ops-console ci
+
+      - name: Build production frontends
+        run: |
+          npm --prefix apps/product-web run build
+          npm --prefix apps/ops-console run build
+          grep -R -q 'https://freightpilot-api.freightpilot.workers.dev/api/v1' apps/product-web/out
+          grep -R -q 'https://freightpilot-api.freightpilot.workers.dev/api/v1' apps/ops-console/dist
+
+      - name: Install migration tooling
+        run: |
+          python -m pip install --upgrade pip uv==0.13.8
+          uv sync --locked
+        working-directory: apps/platform-api
+
+      - name: Normalize production database URL
+        env:
+          PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import os
+
+          url = os.environ['PRODUCTION_DATABASE_URL']
+          if '\n' in url or '\r' in url:
+              raise SystemExit('PRODUCTION_DATABASE_URL contains a newline')
+          if url.startswith('postgres://'):
+              url = 'postgresql+psycopg://' + url[len('postgres://'):]
+          elif url.startswith('postgresql://'):
+              url = 'postgresql+psycopg://' + url[len('postgresql://'):]
+          if not url.startswith('postgresql+psycopg://'):
+              raise SystemExit('PRODUCTION_DATABASE_URL must be a PostgreSQL URL')
+          print(f'DATABASE_URL={url}')
+          PY
+
+      - name: Apply production migrations
+        run: |
+          .venv/bin/alembic upgrade head
+          current="$(.venv/bin/alembic current 2>&1 | tail -n 1)"
+          head="$(.venv/bin/alembic heads 2>&1 | awk 'NR == 1 { print $1 }')"
+          test -n "$head"
+          case "$current" in
+            *"$head"*) echo "Production schema is at $head" ;;
+            *) echo "Production schema is not at its expected head"; exit 1 ;;
+          esac
+        working-directory: apps/platform-api
+
+      - name: Clear production database URL from later steps
+        run: echo 'DATABASE_URL=' >> "$GITHUB_ENV"
+
+      - name: Deploy API Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run cloudflare:deploy:api
+
+      - name: Wait for production API and schema health
+        run: |
+          ready=0
+          for attempt in $(seq 1 24); do
+            if curl --fail --silent --show-error --max-time 30 \
+              https://freightpilot-api.freightpilot.workers.dev/health \
+              -o /tmp/freightpilot-health.json; then
+              if python3 - <<'PY'
+          import json
+
+          with open('/tmp/freightpilot-health.json', encoding='utf-8') as handle:
+              health = json.load(handle)
+          assert health['status'] == 'ok', health
+          assert health['db'] == 'ok', health
+          assert health['schema'] == 'current', health
+          assert health['revision'] == health['expected_revision'], health
+          PY
+              then
+                ready=1
+                break
+              fi
+            fi
+            echo "Health attempt ${attempt}/24 was not ready; retrying in 10 seconds."
+            sleep 10
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo 'Production API did not become healthy after migration deployment.'
+            exit 1
+          fi
+          cat /tmp/freightpilot-health.json
+
+      - name: Deploy product site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run cloudflare:deploy:web:built
+
+      - name: Deploy operations console
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run cloudflare:deploy:console:built
+
+      - name: Deploy legacy redirects
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run cloudflare:deploy:redirect
+
+  post-deploy-smoke:
+    name: post-deploy-smoke
+    needs: deploy-production
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/master'
+    uses: ./.github/workflows/production-smoke.yml
