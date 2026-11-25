@@ -182,9 +182,6 @@ jobs:
   ops-console:
     name: ops-console
     runs-on: ubuntu-24.04
-    env:
-      VITE_API_BASE_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
-      VITE_SIGNUP_URL: https://freightpilot.pages.dev/launch/
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -209,6 +206,9 @@ jobs:
         run: npm --prefix apps/ops-console run test
 
       - name: Build ops console
+        env:
+          VITE_API_BASE_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
+          VITE_SIGNUP_URL: https://freightpilot.pages.dev/launch/
         run: npm --prefix apps/ops-console run build
 
       - name: Verify ops console production API target
@@ -225,9 +225,6 @@ jobs:
   product-web:
     name: product-web
     runs-on: ubuntu-24.04
-    env:
-      NEXT_PUBLIC_PLATFORM_API_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
-      NEXT_PUBLIC_SITE_URL: https://freightpilot.pages.dev
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -249,6 +246,9 @@ jobs:
         run: npx --prefix apps/product-web tsc --noEmit -p apps/product-web/tsconfig.json
 
       - name: Build product web
+        env:
+          NEXT_PUBLIC_PLATFORM_API_URL: https://freightpilot-api.freightpilot.workers.dev/api/v1
+          NEXT_PUBLIC_SITE_URL: https://freightpilot.pages.dev
         run: npm --prefix apps/product-web run build
 
       - name: Verify product web production API target
