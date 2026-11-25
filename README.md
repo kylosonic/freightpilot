@@ -243,7 +243,33 @@ The full backend tree still has a SQLAlchemy typing backlog. The mypy CI gate co
 Production runs on Cloudflare and Neon PostgreSQL. The API uses Cloudflare
 Hyperdrive for its pooled database connection. The product site is served by
 Cloudflare Pages at `freightpilot.pages.dev`; the operations console is a
-Cloudflare Pages project at `freightpilot-ops.pages.dev`. From the repository root:
+Cloudflare Pages project at `freightpilot-ops.pages.dev`.
+
+Production deploys are automatic. A push to `master` first reruns every CI job;
+only after the `release-gate` job succeeds does `deploy-production`:
+
+1. apply pending Alembic migrations to Neon;
+2. build both frontends with their production API URLs;
+3. deploy the API Worker and wait for database/schema health;
+4. deploy the product site, operations console, and legacy redirect Workers;
+5. run the complete production smoke workflow.
+
+Pull requests run the same CI jobs but never receive deployment credentials.
+The `master` branch should require a pull request and the `release-gate` status
+check before merging. Once configured, the only routine release action is to
+merge a green pull request.
+
+Configure these repository or `production` environment secrets once in GitHub:
+
+- `CLOUDFLARE_API_TOKEN` with Workers Scripts, Pages, and Workers Routes write access for the FreightPilot account.
+- `CLOUDFLARE_ACCOUNT_ID` for the Cloudflare account that owns the Worker and Pages projects.
+- `PRODUCTION_DATABASE_URL`, using the Neon PostgreSQL connection URL that has permission to run Alembic migrations.
+
+Deployment credentials must never be added to pull-request workflows or
+committed files. The deployment job uses the `production` GitHub environment,
+so the three secrets can be scoped there.
+
+The manual release command remains available as an emergency fallback from the repository root:
 
 ```powershell
 npm run cloudflare:deploy
@@ -265,7 +291,8 @@ npx wrangler secret put PROVIDER_KEY_ENCRYPTION_SECRET --config infra/cloudflare
 npx wrangler secret put PLATFORM_ADMIN_EMAILS --config infra/cloudflare/freightpilot-api/wrangler.jsonc
 ```
 
-Before deploying code that depends on a new migration, apply the migration:
+For an emergency manual deployment that includes a migration, apply the
+migration before deploying the API:
 
 ```powershell
 ./scripts/apply_production_migrations.ps1
@@ -275,7 +302,9 @@ The Worker configuration is in `infra/cloudflare/freightpilot-api/wrangler.jsonc
 The Neon connection is provided by the Hyperdrive binding, so the Worker does
 not need a production `DATABASE_URL` secret.
 
-Production health checks can be run manually with the "Production smoke" workflow in `.github/workflows/production-smoke.yml`.
+The same checks run automatically after every automated deployment. The
+"Production smoke" workflow can also be selected manually or on its nightly
+schedule from `.github/workflows/production-smoke.yml`.
 
 The production API's `/health` response includes `schema`, `revision`, and
 `expected_revision`. A `schema` value of `current` means the live database's
